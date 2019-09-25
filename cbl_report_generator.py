@@ -44,38 +44,36 @@ async def make_student_object(course, student_id):
             rollup_response = await resp.json()
 
     rollups = rollup_response['rollups'][0]
-    outcomes = rollup_response['linked']['outcomes']
+    outcomes_info = rollup_response['linked']['outcomes']
 
     # Add outcome name to rollup
-    outcome_averages = []
+    outcomes = []
     for rollup in rollups['scores']:
-        outcome = find_outcome(outcomes, int(
-            rollup['links']['outcome']))
-        outcome_average = {
-            'id': outcome['id'],
-            'title': outcome['title'],
-            'outcome_display_name': outcome['display_name'],
-            'url': outcome['url'],
-            'outcome_average': rollup['score']
-        }
-        outcome_averages.append(outcome_average)
+        if rollup['score'] is not None:
+            outcome_info = find_outcome(outcomes_info, int(
+                rollup['links']['outcome']))
+            outcome = {
+                'id': outcome_info['id'],
+                'title': outcome_info['title'],
+                'outcome_display_name': outcome_info['display_name'],
+                'url': outcome_info['url'],
+                'outcome_average': rollup['score']
+            }
+            outcomes.append(outcome)
 
 
     # calculate traditional_grade
-    print(rollups)
-    traditional_grade_rollup = rollup_to_traditional_grade(rollups)
+    scores = [outcome['outcome_average'] for outcome in outcomes]
+    traditional_grade_rollup = rollup_to_traditional_grade(scores)
     course_results = {
         'id': course.id,
         'name': course.name,
         'grade': traditional_grade_rollup['grade'],
         'threshold': traditional_grade_rollup['threshold'],
         'min_score': traditional_grade_rollup['min_score'],
-        'outcome_averages': outcome_averages
+        'outcomes': outcomes
     }
-    # course_results = {
-    #     'rollups': rollups,
-    #     'traditional_grade_rollup': traditional_grade_rollup
-    # }
+
 
     return course_results
 
@@ -216,7 +214,7 @@ if __name__ == '__main__':
     canvas = Canvas(api_url, access_token)
     user = canvas.get_user(466)
     courses = user.get_courses(enrollment_type='student')
-    courses = [course for course in courses if course.enrollment_term_id == 10]
+    # courses = [course for course in courses if course.enrollment_term_id == 10]
     pattern = '^@dtech|Innovation Diploma FIT'
 
     # make_report_for_student('student_491', True)

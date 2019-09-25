@@ -14,8 +14,9 @@ def get_min_score(scores):
     # Check if list is empty
     if len(scores) == 0:
         return ('empty', 0) # todo - should be something besides empty
-    print(scores)
-    return sorted(scores, key=itemgetter(1))[0]
+
+    ordered_scores = sorted(scores)[0]
+    return ordered_scores
 
 
 def count_above_number(scores, number):
@@ -25,7 +26,7 @@ def count_above_number(scores, number):
     :param number: Number to check if score is higher than
     :return: count of scores >= number
     '''
-    return len([score for score in scores if score[1] >= number])
+    return len([score for score in scores if score >= number])
 
 
 def calculate_percentage_per_threshold(scores, thresholds=(3.5, 3.0, 2.5, 0)):
@@ -118,20 +119,13 @@ def calculate_final_grade(percents, min_score, scores):
     return calculation_dictionaries[-1]
 
 
-def rollup_to_traditional_grade(rollup, thresholds=(3.5, 3.0, 2.5, 0)):
-    scores = extract_scores_from_outcome_rollup(rollup) # todo - remove this
+def rollup_to_traditional_grade(scores, thresholds=(3.5, 3.0, 2.5, 0)):
+
     min_score = get_min_score(scores)
     percents = calculate_percentage_per_threshold(scores,
                                                   thresholds)
 
-    traditional_grade = calculate_final_grade(percents, min_score[1], scores)
-
-    # TODO - remove redundant information
-    # traditional_grade_rollup = {
-    #     'min_score': min_score,
-    #     'percents': percents,
-    #     'traditional_grade': traditional_grade
-    # }
+    traditional_grade = calculate_final_grade(percents, min_score, scores)
 
     return traditional_grade
 

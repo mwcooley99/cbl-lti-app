@@ -1,0 +1,55 @@
+{% extends 'base.htm.j2' %}
+{% block content %}
+<div class="container">
+  <h2>Accordion Example</h2>
+  <p><strong>Note:</strong> The <strong>data-parent</strong> attribute makes sure that all collapsible elements under the specified parent will be closed when one of the collapsible item is shown.</p>
+  <div id="accordion">
+    <div class="card">
+      <div class="card-header">
+        <a class="card-link" data-toggle="collapse" href="#collapseOne">
+          <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">Course</th>
+                  <th scope="col">Grade</th>
+                  <th scope="col">75% of Outcome Averages Greater Than</th>
+                  <th scope="col">No Outcome Average Below</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>English 2</td>
+                  <td>A</td>
+                  <td>3.5</td>
+                  <td>3</td>
+                </tr>
+
+              </tbody>
+            </table>
+        </a>
+      </div>
+      <div id="collapseOne" class="collapse show" data-parent="#accordion">
+        <div class="card-body">
+          <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">Outcome</th>
+                  <th scope="col">Outcome Average</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">This is an Outcome</th>
+                  <td>8</td>
+                </tr>
+
+              </tbody>
+            </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends 'base.htm.j2' %}
+{% block content %}
+
+    <div>
+
+
+        <ul>
+            {% for course in student_object %}
+                <li>{{ course.traditional_grade_rollup.traditional_grade.grade }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+<script type="text/javascript" src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% endblock content %}
+

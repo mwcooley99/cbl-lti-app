@@ -1,15 +1,55 @@
-{% extends 'base.htm.j2' %}
+{% extends 'base.html' %}
 {% block content %}
+    <div class="container">
+        <h2>Accordion Example</h2>
+        <p><strong>Note:</strong> The <strong>data-parent</strong> attribute
+            makes sure that all collapsible elements under the specified parent
+            will be closed when one of the collapsible item is shown.</p>
+        {#        {{ student_object.courses }}#}
+        <div id="accordion">
 
-    <div>
+            {% for course in student_object.courses %}
+                <div class="card">
+                    <div class="card-header">
+                        <a class="card-link" data-toggle="collapse"
+                           href="#collapse{{ loop.index }}">
+
+                            {{ course.name }}: {{ course.grade }}
+                        </a>
+                    </div>
+
+                    <div id="collapse{{ loop.index }}" class="collapse hide"
+                         data-parent="#accordion">
 
 
-        <ul>
-            {% for course in student_object %}
-                <li>{{ course.traditional_grade_rollup.traditional_grade.grade }}</li>
+                        <div class="card-body">
+                            <p>You earned a {{ course.grade }} because 75% of your
+                            Outcome Averages were above
+                            a {{ course.threshold }} and your Lowest Outcome
+                                Average was above a {{ course.min_score }}</p>
+                            <table class="table">
+                                <thead>
+                                <tr>
+                                    <th scope="col">Outcome</th>
+                                    <th scope="col">Score</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for outcome in course.outcomes %}
+                                    <tr>
+                                        <th scope="row">{{ outcome.title }}</th>
+                                        <td>{{ outcome.outcome_average }}</td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+
+                        </div>
+                    </div>
+                </div>
             {% endfor %}
-        </ul>
+        </div>
     </div>
-<script type="text/javascript" src="{{ url_for('static', filename='js/app.js') }}"></script>
+
 {% endblock content %}
 

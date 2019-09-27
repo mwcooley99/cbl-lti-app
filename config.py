@@ -15,6 +15,7 @@ class DevelopmentConfig(BaseConfig):
     DEBUG = True
     TESTING = True
     PYLTI_CONFIG = settings.PYLTI_CONFIG
+    MONGO_URI = 'mongodb://localhost:27017/test_database'
 
 
 class TestingConfig(BaseConfig):

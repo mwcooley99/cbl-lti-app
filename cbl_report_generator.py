@@ -1,15 +1,26 @@
-from cbl_calculator import rollup_to_traditional_grade
+from cbl_calculator import rollup_to_traditional_grade, \
+    calculate_traditional_grade
 from canvasapi import Canvas
 
 from pdf_reports import pug_to_html, write_report, preload_stylesheet
 
-import os, re, requests
+import os, re, requests, json
 from datetime import datetime
 import pytz
+import itertools
+from operator import itemgetter
+import time
+import pymongo
+from pymongo import MongoClient
+
 
 import aiohttp, asyncio
 
 import settings
+
+access_token = os.getenv('ACCESS_TOKEN')
+headers = {'Authorization': f'Bearer {access_token}'}
+url = 'https://dtechhs.instructure.com'
 
 
 def find_outcome(outcomes, outcome_id):
@@ -34,7 +45,7 @@ def make_pdf(html, file_path="out/example_report.pdf",
 async def make_student_object(course, student_id):
     api = f'https://dtechhs.instructure.com/api/v1/courses/{course.id}/outcome_rollups'
     params = {'user_ids[]': student_id, 'include[]': 'outcomes',
-              "per_page": 100}
+              "per_page": 10}
 
     access_token = os.getenv('ACCESS_TOKEN')
     headers = {'Authorization': f'Bearer {access_token}'}
@@ -61,10 +72,10 @@ async def make_student_object(course, student_id):
             }
             outcomes.append(outcome)
 
-
     # calculate traditional_grade
     scores = [outcome['outcome_average'] for outcome in outcomes]
-    traditional_grade_rollup = rollup_to_traditional_grade(scores)
+    # traditional_grade_rollup = rollup_to_traditional_grade(scores)
+    traditional_grade_rollup = calculate_traditional_grade(scores)
     course_results = {
         'id': course.id,
         'name': course.name,
@@ -73,7 +84,6 @@ async def make_student_object(course, student_id):
         'min_score': traditional_grade_rollup['min_score'],
         'outcomes': outcomes
     }
-
 
     return course_results
 
@@ -208,24 +218,155 @@ def make_all_students_one_pdf(student_ids, sis_id=True):
     make_pdf(html, file_path='out/monster.pdf')
 
 
-if __name__ == '__main__':
+def make_all_student_objects():
     api_url = 'https://dtechhs.instructure.com/'
     access_token = os.getenv('ACCESS_TOKEN')
     canvas = Canvas(api_url, access_token)
-    user = canvas.get_user(466)
-    courses = user.get_courses(enrollment_type='student')
-    # courses = [course for course in courses if course.enrollment_term_id == 10]
-    pattern = '^@dtech|Innovation Diploma FIT'
 
-    # make_report_for_student('student_491', True)
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+    account = canvas.get_account(1)
+    users = account.get_users(enrollment_type='StudentEnrollment')
 
-    data = loop.run_until_complete(asyncio.gather(
-            *(make_student_object(course, user.id) for course in
-              courses)))
-    print(data)
-    loop.close()
+    for user in users[:5]:
+        print(user)
+
+
+def create_grade_rollup(course, outcomes_info, rollups):
+    # Add outcome name to rollup
+    outcomes = []
+    for rollup in rollups['scores']:
+        if rollup['score'] is not None:
+            outcome_info = find_outcome(outcomes_info, int(
+                rollup['links']['outcome']))
+            outcome = {
+                'outcome_id': outcome_info['id'],
+                'title': outcome_info['title'],
+                'outcome_display_name': outcome_info['display_name'],
+                'url': outcome_info['url'],
+                'outcome_info': outcome_info,
+                'outcome_average': rollup['score']
+            }
+            outcomes.append(outcome)
+
+    # calculate traditional_grade
+    scores = [outcome['outcome_average'] for outcome in outcomes]
+    # traditional_grade_rollup = rollup_to_traditional_grade(scores)
+    traditional_grade_rollup = calculate_traditional_grade(scores)
+    course_results = {
+        'course_id': course['id'],
+        'name': course['name'],
+        'student_id': rollups['links']['user'],
+        'grade': traditional_grade_rollup['grade'],
+        'threshold': traditional_grade_rollup['threshold'],
+        'min_score': traditional_grade_rollup['min_score'],
+        'outcomes': outcomes
+    }
+
+    return course_results
+
+
+def append_rollup_details(data, course):
+    rollups = data['rollups']
+    outcomes_info = data['linked']['outcomes']
+
+    grade_rollup = [create_grade_rollup(course, outcomes_info, rollup) for
+                    rollup in rollups]
+
+    return grade_rollup
+
+
+def main():
+    print()
+    # Get current term(s) - todo search for all terms within a date. Will return a list if more than one term
+    current_term = 10
+
+    # get all active courses
+    url = "https://dtechhs.instructure.com/api/v1/accounts/1/courses"
+    querystring = {'enrollment_term_id': 10, 'published': True,
+                   'per_page': 100}
+    response = requests.request("GET", url, headers=headers,
+                                params=querystring)
+    courses = response.json()
+
+    # todo, wrap in a function
+    while response.links.get('next'):
+        url = response.links['next']['url']
+        response = requests.request("GET", url, headers=headers,
+                                    params=querystring)
+        courses += response.json()
+    print(courses)
+
+    # get outcome result rollups for each course - attach to the course dictionary
+
+    outcome_grades = []
+    for course in courses:
+
+        # Get the outcome_rollups for the current class
+        outcome_rollups = []
+        url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/outcome_rollups"
+        querystring = {"include[]": "outcomes", "per_page": "100"}
+        response = requests.request("GET", url, headers=headers,
+                                    params=querystring)
+        # Pagination
+        outcome_rollups.append(response.json())
+        while response.links.get('next'):
+            url = response.links['next']['url']
+            response = requests.request("GET", url, headers=headers,
+                                        params=querystring)
+            outcome_rollups.append(response.json())
+
+        # Shouldn't need this line
+        # course['rollups'] = outcome_rollups
+
+        # Make the student Objects
+        for outcome_rollup in outcome_rollups:
+            outcome_grades += append_rollup_details(outcome_rollup, course)
+
+    timestamp = datetime.timestamp(datetime.utcnow())
+    timestamp = datetime.utcnow()
+    # group by student
+    data_sorted = sorted(outcome_grades, key=itemgetter('student_id'))
+    grouped = itertools.groupby(data_sorted, key=itemgetter('student_id'))
+    student_objects = [{'student_id': student_id, 'timestamp': timestamp,
+                        'courses': list(values)} for
+                       student_id, values in grouped]
+
+
+    client = MongoClient('localhost', 27017)
+    db = client.test_database
+    grades = db.grades
+    grades.insert_many(student_objects)
+
+
+
+if __name__ == '__main__':
+    start = time.time()
+    main()
+    end = time.time()
+    print(end - start)
+    # make_all_student_objects()
+    # api_url = 'https://dtechhs.instructure.com/'
+    # access_token = os.getenv('ACCESS_TOKEN')
+    # canvas = Canvas(api_url, access_token)
+    # account = canvas.get_account(1)
+    # user = canvas.get_user(466)
+    # courses = user.get_courses(enrollment_type='student')
+    # # courses = [course for course in courses if course.enrollment_term_id == 10]
+    # pattern = '^@dtech|Innovation Diploma FIT'
+    #
+    # # # make_report_for_student('student_491', True)
+    # for user in account.get_users(enrollment_type='student'):
+    #     loop = asyncio.new_event_loop()
+    #     asyncio.set_event_loop(loop)
+    #
+    #     data = loop.run_until_complete(asyncio.gather(
+    #         *(make_student_object(course, user.id) for course in
+    #           courses)))
+    #     student_object = {
+    #         'student_id': user.id,
+    #         'courses': data
+    #     }
+    #     print(student_object)
+    #     loop.close()
 
     # api_url = 'https://dtechhs.instructure.com/'
     # access_token = os.getenv('ACCESS_TOKEN')

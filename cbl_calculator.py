@@ -3,6 +3,8 @@ import json
 
 from canvasapi import Canvas
 import settings
+import math
+
 
 def get_min_score(scores):
     '''
@@ -13,7 +15,7 @@ def get_min_score(scores):
 
     # Check if list is empty
     if len(scores) == 0:
-        return ('empty', 0) # todo - should be something besides empty
+        return ('empty', 0)  # todo - should be something besides empty
 
     ordered_scores = sorted(scores)[0]
     return ordered_scores
@@ -119,8 +121,68 @@ def calculate_final_grade(percents, min_score, scores):
     return calculation_dictionaries[-1]
 
 
-def rollup_to_traditional_grade(scores, thresholds=(3.5, 3.0, 2.5, 0)):
+def calculate_traditional_grade(scores):
+    # check if the outcome is assessed.
+    if len(scores) == 0:
+        return {
+            'grade': 'n/a',
+            'threshold': 'n/a',
+            'min_score': 'n/a',
+        }
 
+    calculation_dictionaries = [
+        {
+            'grade': 'A',
+            'threshold': 3.5,
+            'min_score': 3
+        },
+        {
+            'grade': 'A-',
+            'threshold': 3.5,
+            'min_score': 2.5
+        },
+        {
+            'grade': 'B+',
+            'threshold': 3,
+            'min_score': 2.5
+        },
+        {
+            'grade': 'B',
+            'threshold': 3,
+            'min_score': 2.25
+        },
+        {
+            'grade': 'B-',
+            'threshold': 3,
+            'min_score': 2
+        },
+        {
+            'grade': 'C',
+            'threshold': 2.5,
+            'min_score': 2
+        },
+        {
+            'grade': 'I',
+            'threshold': 0,
+            'min_score': 0
+        }
+    ]
+
+    scores_sorted = sorted(scores, reverse=True)
+    threshold_index = math.ceil(0.75 * len(scores_sorted)) - 1
+
+    threshold_score = scores_sorted[threshold_index]
+    min_score = scores_sorted[-1]
+
+    for grade in calculation_dictionaries:
+        if threshold_score >= grade['threshold'] and min_score >= grade[
+            'min_score']:
+            return grade
+
+    return calculation_dictionaries[-1]
+
+
+def rollup_to_traditional_grade(scores, thresholds=(3.5, 3.0, 2.5, 0)):
     min_score = get_min_score(scores)
     percents = calculate_percentage_per_threshold(scores,
                                                   thresholds)
@@ -135,7 +197,6 @@ if __name__ == '__main__':
     user = canvas.get_user(466)
     courses = user.get_courses(enrollment_type='student', enrollment_term=10)
     pattern = '^@dtech|Innovation Diploma FIT'
-
 
     # traditional_grade_rollup = rollup_to_traditional_grade({
     #     "scores": [

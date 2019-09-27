@@ -10,15 +10,10 @@ import logging
 import json
 from logging.handlers import RotatingFileHandler
 
-
-from canvasapi import Canvas
-
-from cbl_report_generator import make_student_object
-
 app = Flask(__name__)
 app.secret_key = settings.secret_key
 app.config.from_object(settings.configClass)
-# app.config['MONGO_URI'] = 'mongodb://localhost:27017/test_database'
+
 mongo = PyMongo(app)
 
 Bootstrap(app)
@@ -35,9 +30,6 @@ handler = RotatingFileHandler(
 handler.setLevel(logging.getLevelName(settings.LOG_LEVEL))
 handler.setFormatter(formatter)
 app.logger.addHandler(handler)
-
-# Canvas api call wrapper
-# canvas = Canvas(settings.CANVAS_API_URL, settings.CANVAS_API_KEY)
 
 
 # ============================================
@@ -73,14 +65,11 @@ def launch(lti=lti):
     session['lis_person_name_full'] = request.form.get('lis_person_name_full')
     session['user_id'] = request.form.get('custom_canvas_user_id')
 
-    user_data = mongo.db.grades.find({'student_id': session['user_id']}).sort('_id', -1).limit(1)[0]
-    user_data['courses'] = user_data['values']
-    print(request.form['ext_roles'])
+    user_data = mongo.db.grades.find({'student_id': session['user_id']}).sort('_id',-1).limit(1)[0]
+    if 'courses' not in user_data.keys():
+        user_data['courses'] = user_data['values']
 
     app.logger.info(json.dumps(request.form, indent=2))
-
-    for outcome in user_data['courses'][0]['outcomes']:
-        print(outcome)
 
     return render_template('launch.html', lis_person_name_full=session[
         'lis_person_name_full'], student_object=user_data)

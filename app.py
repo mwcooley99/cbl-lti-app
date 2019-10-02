@@ -38,7 +38,7 @@ app.logger.addHandler(handler)
 # ============================================
 
 def return_error(msg):
-    return render_template('error.htm.j2', msg=msg)
+    return render_template('error.html', msg=msg)
 
 
 def error(exception=None):
@@ -61,27 +61,33 @@ def launch(lti=lti):
     request.form will contain all the lti params
     """
 
-    # example of getting lti data from the request
-    # let's just store it in our session
+    # store some of the user data in the session
     session['lis_person_name_full'] = request.form.get('lis_person_name_full')
     session['user_id'] = request.form.get('custom_canvas_user_id')
-    print(mongo.db.grades.find_one())
-    # user_data = mongo.db.grades.find({'student_id': session['user_id']}).sort('_id', -1).limit(1)[0]
-    # user_data = mongo.db.grades.find_one({'student_id': session['user_id']},
-    #                                      sort=[('_id', pymongo.DESCENDING)])
-    # if 'courses' not in user_data.keys():
-    #     user_data['courses'] = user_data['values']
-    user_data = ''
+
     app.logger.info(json.dumps(request.form, indent=2))
 
-    return render_template('launch.html', lis_person_name_full=session[
-        'lis_person_name_full'], student_object=user_data)
+    user_data = mongo.db.grades.find_one({'student_id': session['user_id']},
+                                         sort=[('_id', pymongo.DESCENDING)])
+
+    for course in user_data['courses']:
+        for outcome in course['outcomes']:
+            outcome_info = mongo.db.outcomes.find_one({'_id': outcome['outcome_id']})
+            outcome['info'] = outcome_info
+        print(outcome['info'])
+
+    # if user is student
+    if user_data:
+        return render_template('launch.html', lis_person_name_full=session[
+            'lis_person_name_full'], student_object=user_data)
+
+    return "You are not a student of any course"
 
 
 # Home page
 @app.route('/', methods=['GET'])
 def index(lti=lti):
-    return render_template('index.htm.j2')
+    return render_template('index.html')
 
 
 # LTI XML Configuration
@@ -110,3 +116,6 @@ def dashboard():
 @app.template_filter('strftime')
 def datetimeformat(value, format='%m-%d-%Y'):
     return value.strftime(format)
+
+if __name__ == '__main__':
+    app.run()

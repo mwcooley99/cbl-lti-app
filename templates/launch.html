@@ -11,7 +11,7 @@
                     <div class="card-header">
                         <a class="card-link" data-toggle="collapse"
                            href="#collapse{{ loop.index }}">
-                            {% set course_name = course.name.split(' - ') %}
+                            {% set course_name = course.course_name.split(' - ') %}
                             {{ course_name[0] }}: {{ course.grade }}
                         </a>
                     </div>
@@ -35,10 +35,10 @@
                                 <tbody>
                                 {% for outcome in course.outcomes %}
                                     <tr>
-                                        {% if outcome.outcome_display_name %}
-                                            <th scope="row">{{ outcome.outcome_display_name }}</th>
+                                        {% if outcome.info.outcome_display_name %}
+                                            <td scope="row">{{ outcome.info.outcome_display_name }}</td>
                                         {% else %}
-                                            <th scope="row">{{ outcome.title }}</th>
+                                            <td scope="row">{{ outcome.info.title }}</td>
                                         {% endif %}
                                         <td>{{ outcome.outcome_average }}</td>
                                     </tr>

@@ -8,6 +8,7 @@ from pylti.flask import lti
 import settings
 import logging
 import json
+import dateutil
 from logging.handlers import RotatingFileHandler
 
 app = Flask(__name__)
@@ -64,11 +65,13 @@ def launch(lti=lti):
     # let's just store it in our session
     session['lis_person_name_full'] = request.form.get('lis_person_name_full')
     session['user_id'] = request.form.get('custom_canvas_user_id')
-
-    user_data = mongo.db.grades.find({'student_id': session['user_id']}).sort('_id',-1).limit(1)[0]
-    if 'courses' not in user_data.keys():
-        user_data['courses'] = user_data['values']
-
+    print(mongo.db.grades.find_one())
+    # user_data = mongo.db.grades.find({'student_id': session['user_id']}).sort('_id', -1).limit(1)[0]
+    # user_data = mongo.db.grades.find_one({'student_id': session['user_id']},
+    #                                      sort=[('_id', pymongo.DESCENDING)])
+    # if 'courses' not in user_data.keys():
+    #     user_data['courses'] = user_data['values']
+    user_data = ''
     app.logger.info(json.dumps(request.form, indent=2))
 
     return render_template('launch.html', lis_person_name_full=session[
@@ -102,3 +105,8 @@ def xml():
 # @lti(error=error, request='initial', role='any', app=app)
 def dashboard():
     return jsonify({'key:': "hello"})
+
+
+@app.template_filter('strftime')
+def datetimeformat(value, format='%m-%d-%Y'):
+    return value.strftime(format)

@@ -6,16 +6,14 @@ from pdf_reports import pug_to_html, write_report, preload_stylesheet
 
 import os, re, requests, json
 from datetime import datetime
-import pytz
+
 import itertools
 from operator import itemgetter
 import time
-import pymongo
+
 from pymongo import MongoClient
 
-import aiohttp, asyncio
 
-import settings
 
 access_token = os.getenv('ACCESS_TOKEN')
 headers = {'Authorization': f'Bearer {access_token}'}
@@ -64,12 +62,13 @@ def create_grade_rollup(course, outcomes_info, rollups):
     traditional_grade_rollup = calculate_traditional_grade(scores)
     course_results = {
         'course_id': course['id'],
-        'name': course['name'],
+        'course_name': course['name'],
         'student_id': rollups['links']['user'],
         'grade': traditional_grade_rollup['grade'],
         'threshold': traditional_grade_rollup['threshold'],
         'min_score': traditional_grade_rollup['min_score'],
-        'outcomes': outcomes
+        'outcomes': sorted(outcomes, key=itemgetter('outcome_average'),
+                           reverse=True)
     }
 
     return course_results
@@ -86,7 +85,6 @@ def append_rollup_details(data, course):
 
 
 def main():
-    print()
     # Get current term(s) - todo search for all terms within a date. Will return a list if more than one term
     current_term = 10
 
@@ -104,10 +102,8 @@ def main():
         response = requests.request("GET", url, headers=headers,
                                     params=querystring)
         courses += response.json()
-    print(courses)
 
     # get outcome result rollups for each course - attach to the course dictionary
-
     outcome_grades = []
     for course in courses:
 
@@ -138,9 +134,11 @@ def main():
     data_sorted = sorted(outcome_grades, key=itemgetter('student_id'))
     grouped = itertools.groupby(data_sorted, key=itemgetter('student_id'))
     student_objects = [{'student_id': student_id, 'timestamp': timestamp,
-                        'courses': list(values)} for
+                        'courses': sorted(list(values),
+                                          key=itemgetter('course_name'))} for
                        student_id, values in grouped]
 
+    # Load into database
     client = MongoClient('localhost', 27017)
     db = client.test_database
     grades = db.grades

@@ -1,10 +1,8 @@
 {% extends 'base.html' %}
 {% block content %}
     <div class="container">
-        <h2>Accordion Example</h2>
-        <p><strong>Note:</strong> The <strong>data-parent</strong> attribute
-            makes sure that all collapsible elements under the specified parent
-            will be closed when one of the collapsible item is shown.</p>
+        <h2>dTech Student Outcome Summary</h2>
+        <p>Data last updated: {{ student_object.timestamp|strftime }}</p>
         {#        {{ student_object.courses }}#}
         <div id="accordion">
 
@@ -13,8 +11,8 @@
                     <div class="card-header">
                         <a class="card-link" data-toggle="collapse"
                            href="#collapse{{ loop.index }}">
-
-                            {{ course.name }}: {{ course.grade }}
+                            {% set course_name = course.name.split(' - ') %}
+                            {{ course_name[0] }}: {{ course.grade }}
                         </a>
                     </div>
 
@@ -37,7 +35,11 @@
                                 <tbody>
                                 {% for outcome in course.outcomes %}
                                     <tr>
-                                        <th scope="row">{{ outcome.title }}</th>
+                                        {% if outcome.outcome_display_name %}
+                                            <th scope="row">{{ outcome.outcome_display_name }}</th>
+                                        {% else %}
+                                            <th scope="row">{{ outcome.title }}</th>
+                                        {% endif %}
                                         <td>{{ outcome.outcome_average }}</td>
                                     </tr>
                                 {% endfor %}

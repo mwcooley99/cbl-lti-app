@@ -69,17 +69,20 @@ def launch(lti=lti):
 
     user_data = mongo.db.grades.find_one({'student_id': session['user_id']},
                                          sort=[('_id', pymongo.DESCENDING)])
-
-    for course in user_data['courses']:
-        for outcome in course['outcomes']:
-            outcome_info = mongo.db.outcomes.find_one({'_id': outcome['outcome_id']})
-            outcome['info'] = outcome_info
-        print(outcome['info'])
-
-    # if user is student
     if user_data:
+        for course in user_data['courses']:
+            for outcome in course['outcomes']:
+                outcome_info = mongo.db.outcomes.find_one(
+                    {'_id': outcome['outcome_id']})
+                outcome['info'] = outcome_info
+            print(outcome['info'])
+
         return render_template('launch.html', lis_person_name_full=session[
             'lis_person_name_full'], student_object=user_data)
+
+
+    # if user is student
+
 
     return "You are not a student of any course"
 

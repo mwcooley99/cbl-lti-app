@@ -77,12 +77,12 @@ def get_outcomes():
     outcomes_collection = db.outcomes
 
     outcome_ids = db.grades.distinct("courses.outcomes.outcome_id")
-    print(outcome_ids)
+
     outcome_ids_in_db = db.outcomes.distinct('_id')
     # check if id is already in database if so, remove it
-    print(outcome_ids_in_db)
+
     new_outcomes = set(outcome_ids) - set(outcome_ids_in_db)
-    print(new_outcomes)
+
     outcomes = [outcome_request(outcome_id) for outcome_id in new_outcomes]
 
     # If there are any new outcomes, add them to the list

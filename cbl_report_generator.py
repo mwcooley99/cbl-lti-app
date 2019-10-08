@@ -80,6 +80,7 @@ def get_outcomes():
 
     outcome_ids_in_db = db.outcomes.distinct('_id')
     # check if id is already in database if so, remove it
+    # probably don't want to do this since there could be changes in the outcomes
 
     new_outcomes = set(outcome_ids) - set(outcome_ids_in_db)
 

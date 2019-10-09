@@ -26,7 +26,7 @@ url = 'https://dtechhs.instructure.com'
 # todo - move to it's own folder
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, distinct, func
 
 
 username = 'TheDoctor'
@@ -41,6 +41,7 @@ Base.prepare(engine, reflect=True)
 # mapped classes
 OutcomeAverage = Base.classes.outcome_averages
 Record = Base.classes.records
+Outcome = Base.classes.outcomes
 
 print(OutcomeAverage.__table__)
 
@@ -70,17 +71,19 @@ def make_pdf(html, file_path="out/example_report.pdf",
 
 def outcome_request(outcome_id):
     url = f"https://dtechhs.instructure.com/api/v1/outcomes/{outcome_id}"
+    print(url)
     response = requests.request("GET", url, headers=headers)
 
     data = response.json()
-    requested_fields = ['id', 'title', 'display_name']
+    print(data)
     data_cleaned = {
-        '_id': data['id'],
+        'canvas_id': data['id'],
         'title': data['title'],
         'display_name': data['display_name']
     }
 
-    return data_cleaned
+    outcome = Outcome(**data_cleaned)
+    return outcome
 
 
 async def fetch(session, url):
@@ -100,23 +103,19 @@ async def main_loop(outcome_ids):
 
 
 def get_outcomes():
-    client = MongoClient('localhost', 27017)
-    db = client.test_database
-    outcomes_collection = db.outcomes
-
-    outcome_ids = db.grades.distinct("courses.outcomes.outcome_id")
-
-    outcome_ids_in_db = db.outcomes.distinct('_id')
+    session = Session(engine)
+    unique_outcomes = session.query(OutcomeAverage).distinct(OutcomeAverage.outcome_id)
     # check if id is already in database if so, remove it
     # probably don't want to do this since there could be changes in the outcomes
 
-    new_outcomes = set(outcome_ids) - set(outcome_ids_in_db)
+    # new_outcomes = set(outcome_ids) - set(outcome_ids_in_db)
+    #
+    outcomes = [outcome_request(outcome.outcome_id) for outcome in unique_outcomes]
 
-    outcomes = [outcome_request(outcome_id) for outcome_id in new_outcomes]
-
+    session.add_all(outcomes)
+    session.commit()
     # If there are any new outcomes, add them to the list
-    if len(outcomes):
-        outcomes_collection.insert_many(outcomes)
+
 
 
 def create_grade_rollup(course, outcomes_info, rollups):
@@ -191,7 +190,6 @@ def extract_outcome_avg_data(score, course, user_id, record_id):
     course_id = course['id']
     outcome_id = score['links']['outcome']
 
-
     return outcome_avg
 
 
@@ -207,7 +205,6 @@ def main():
     record = Record(created_at=timestamp, term_id=current_term)
     session.add(record)
     session.commit()
-
 
 
     # get all active courses
@@ -228,16 +225,16 @@ def main():
     # get outcome result rollups for each course - attach to the course dictionary
     outcome_averages = []
     pattern = '@dtech|Innovation Diploma FIT'
-    for course in courses[:1]:
+    for course in courses:
         if re.search(pattern, course['name']):
             continue
         # Get the outcome_rollups for the current class
         outcome_rollups_list = get_outcome_rollups(course)
+
         # Make the student Objects
         outcome_averages = []
         for outcome_rollups in outcome_rollups_list:
             for student_rollup in outcome_rollups['rollups']:
-                print(student_rollup)
                 user_id = student_rollup['links']['user']
                 outcome_averages += [extract_outcome_avg_data(score, course, user_id, record.id) for score in student_rollup['scores']]
         session.add_all(outcome_averages)
@@ -261,10 +258,9 @@ def main():
     # grades = db.grades
     # grades.insert_many(student_objects)
 
-
 if __name__ == '__main__':
     start = time.time()
-    main()
-    # get_outcomes()
+    # main()
+    get_outcomes()
     end = time.time()
     print(end - start)

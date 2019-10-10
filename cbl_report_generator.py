@@ -22,7 +22,10 @@ url = 'https://dtechhs.instructure.com'
 # todo - move to it's own folder
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
-from sqlalchemy import create_engine, distinct, func
+from sqlalchemy import create_engine, Integer, String, Table, Column, MetaData, \
+    ForeignKey, DateTime
+from sqlalchemy.dialects import postgresql
+from sqlalchemy.sql import text
 
 config = configuration[os.getenv('CONFIG')]
 username = 'TheDoctor'
@@ -37,10 +40,41 @@ engine = create_engine(
 Base.prepare(engine, reflect=True)
 
 # mapped classes
-OutcomeAverage = Base.classes.outcome_averages
+# OutcomeAverage = Base.classes.outcome_averages
 Record = Base.classes.records
-# Outcome = Base.classes.outcomes
 
+metadata = MetaData()
+metadata.bind = engine
+
+Records = Table('records', metadata,
+                # Column('id', Integer, primary_key=True),
+                Column('created_at', DateTime),
+                Column('term_id', Integer),
+
+                )
+
+OutcomeAverages = Table('outcome_averages', metadata,
+                        # Column('id', Integer, primary_key=True),
+                        Column('user_id', Integer),
+                        Column('outcome_id', Integer),
+                        Column('record_id', Integer, ForeignKey('Records.id')),
+                        Column('outcome_avg', Integer),
+                        Column('course_id', Integer)
+                        )
+
+Courses = Table('courses', metadata,
+                Column('primary_id', Integer, primary_key=True),
+                Column('id', Integer, unique=True),
+                Column('name', String),
+                Column('enrollment_term_id', Integer))
+
+Outcomes = Table('outcomes', metadata,
+                 Column('id', Integer, primary_key=True),
+                 Column('title', String),
+                 Column('display_name', String))
+
+
+# Outcome = Base.classes.outcomes
 
 
 def find_outcome(outcomes, outcome_id):
@@ -168,10 +202,17 @@ def get_outcome_rollups(course):
 
 
 def extract_outcome_avg_data(score, course, user_id, record_id):
-    outcome_avg = OutcomeAverage(
-        user_id=user_id,
-        course_id=course['id'],
-        outcome_id=score['links']['outcome'],
+    # outcome_avg = OutcomeAverage(
+    #     user_id=user_id,
+    #     course_id=course['id'],
+    #     outcome_id=score['links']['outcome'],
+    #     outcome_avg=score['score'],
+    #     record_id=record_id
+    # )
+    outcome_avg = dict(
+        user_id=int(user_id),
+        course_id=int(course['id']),
+        outcome_id=int(score['links']['outcome']),
         outcome_avg=score['score'],
         record_id=record_id
     )
@@ -179,6 +220,42 @@ def extract_outcome_avg_data(score, course, user_id, record_id):
     outcome_id = score['links']['outcome']
 
     return outcome_avg
+    # return user_id, course_id, outcome_id, outcome_avg, record_id
+
+
+def extract_outcomes(outcomes):
+    return [(outcome['id'], outcome['title'], outcome['display_name']) for
+            outcome in outcomes]
+
+
+def upsert_outcomes(outcomes, session):
+    keys = ['id', 'title', 'display_name']
+    values = dict(zip(keys, outcomes))
+    insert_stmt = postgresql.insert(Outcomes).values(values)
+    update_stmt = insert_stmt.on_conflict_do_update(
+        index_elements=['id'],
+        set_={
+            'title': insert_stmt.excluded.title,
+            'display_name': insert_stmt.excluded.display_name
+        }
+    )
+    session.execute(update_stmt)
+    session.commit()
+
+
+def upsert_courses(courses, session):
+    keys = ['id', 'name', 'enrollment_term_id']
+    values = [{key: course[key] for key in keys} for course in courses]
+    insert_stmt = postgresql.insert(Courses).values(values)
+    update_stmt = insert_stmt.on_conflict_do_update(
+        index_elements=['id'],
+        set_={
+            'name': insert_stmt.excluded.name,
+            'enrollment_term_id': insert_stmt.excluded.enrollment_term_id
+        }
+    )
+    session.execute(update_stmt)
+    session.commit()
 
 
 def main():
@@ -193,24 +270,15 @@ def main():
     session.commit()
 
     # get all active courses
-    url = "https://dtechhs.instructure.com/api/v1/accounts/1/courses"
-    querystring = {'enrollment_term_id': current_term, 'published': True,
-                   'per_page': 100}
-    response = requests.request("GET", url, headers=headers,
-                                params=querystring)
-    courses = response.json()
+    courses = get_courses(current_term)
 
-    # todo, wrap in a function
-    while response.links.get('next'):
-        url = response.links['next']['url']
-        response = requests.request("GET", url, headers=headers,
-                                    params=querystring)
-        courses += response.json()
+    # add courses to database
+    upsert_courses(courses, session)
 
     # get outcome result rollups for each course - attach to the course dictionary
-    outcome_averages = []
+    outcomes = []
     pattern = '@dtech|Innovation Diploma FIT'
-    for course in courses[:5]:
+    for course in courses:
 
         print(course['name'])
         if re.search(pattern, course['name']):
@@ -226,14 +294,39 @@ def main():
                 outcome_averages += [
                     extract_outcome_avg_data(score, course, user_id, record.id)
                     for score in student_rollup['scores']]
-        print(len(outcome_averages))
-        session.add_all(outcome_averages)
-        start = time.time()
-        session.commit()
-        end = time.time()
-        print(end - start)
-        print('******')
-        print()
+
+            # create list of outcomes
+            outcomes += extract_outcomes(outcome_rollups['linked']['outcomes'])
+            outcomes = list(set(outcomes))
+
+        if len(outcome_averages):
+            start = time.time()
+            session.execute(OutcomeAverages.insert().values(outcome_averages))
+            # OutcomeAverage.insert().execute(outcome_averages)
+            session.commit()
+            end = time.time()
+            print(end - start)
+            print('******')
+            print()
+
+    # Add courses to the db
+    upsert_outcomes(outcomes, session)
+
+
+def get_courses(current_term):
+    url = "https://dtechhs.instructure.com/api/v1/accounts/1/courses"
+    querystring = {'enrollment_term_id': current_term, 'published': True,
+                   'per_page': 100}
+    response = requests.request("GET", url, headers=headers,
+                                params=querystring)
+    courses = response.json()
+    # todo, wrap in a function
+    while response.links.get('next'):
+        url = response.links['next']['url']
+        response = requests.request("GET", url, headers=headers,
+                                    params=querystring)
+        courses += response.json()
+    return courses
 
 
 if __name__ == '__main__':

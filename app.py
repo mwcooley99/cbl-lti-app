@@ -15,7 +15,7 @@ app = Flask(__name__)
 app.secret_key = settings.secret_key
 app.config.from_object(settings.configClass)
 
-mongo = PyMongo(app)
+# mongo = PyMongo(app)
 
 Bootstrap(app)
 # ============================================

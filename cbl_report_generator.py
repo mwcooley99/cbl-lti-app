@@ -1,39 +1,37 @@
 from cbl_calculator import rollup_to_traditional_grade, \
     calculate_traditional_grade
-from canvasapi import Canvas
 
 from pdf_reports import pug_to_html, write_report, preload_stylesheet
 
-import os, re, requests, json
+import os, re, requests
 from datetime import datetime
 
-import itertools
 from operator import itemgetter
 import time
-
-from pymongo import MongoClient
-import psycopg2
-# from config import db_config
 
 import asyncio
 import aiohttp
 
-access_token = os.getenv('ACCESS_TOKEN')
+from config import configuration
+
+access_token = os.getenv('CANVAS_API_KEY')
+
 headers = {'Authorization': f'Bearer {access_token}'}
 url = 'https://dtechhs.instructure.com'
-
 
 # todo - move to it's own folder
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, distinct, func
 
-
+config = configuration[os.getenv('CONFIG')]
 username = 'TheDoctor'
 db_pass = os.getenv('DB_PASSWORD')
 
 Base = automap_base()
-engine = create_engine(f"postgresql+psycopg2://{username}:{db_pass}@localhost/cbldb")
+
+engine = create_engine(
+    config.SQLALCHEMY_DATABASE_URI)
 
 # reflect the tables
 Base.prepare(engine, reflect=True)
@@ -41,12 +39,7 @@ Base.prepare(engine, reflect=True)
 # mapped classes
 OutcomeAverage = Base.classes.outcome_averages
 Record = Base.classes.records
-Outcome = Base.classes.outcomes
-
-print(OutcomeAverage.__table__)
-
-
-
+# Outcome = Base.classes.outcomes
 
 
 
@@ -104,18 +97,16 @@ async def main_loop(outcome_ids):
 
 def get_outcomes():
     session = Session(engine)
-    unique_outcomes = session.query(OutcomeAverage).distinct(OutcomeAverage.outcome_id)
+    unique_outcomes = session.query(OutcomeAverage).distinct(
+        OutcomeAverage.outcome_id)
     # check if id is already in database if so, remove it
-    # probably don't want to do this since there could be changes in the outcomes
 
-    # new_outcomes = set(outcome_ids) - set(outcome_ids_in_db)
-    #
-    outcomes = [outcome_request(outcome.outcome_id) for outcome in unique_outcomes]
+    outcomes = [outcome_request(outcome.outcome_id) for outcome in
+                unique_outcomes]
 
+    # todo - want to do more of an upsert
     session.add_all(outcomes)
     session.commit()
-    # If there are any new outcomes, add them to the list
-
 
 
 def create_grade_rollup(course, outcomes_info, rollups):
@@ -177,22 +168,17 @@ def get_outcome_rollups(course):
 
 
 def extract_outcome_avg_data(score, course, user_id, record_id):
-    print('******')
-    print(score)
     outcome_avg = OutcomeAverage(
-        user_id = user_id,
-        course_id = course['id'],
-        outcome_id = score['links']['outcome'],
-        outcome_avg = score['score'],
-        record_id = record_id,
-        course_name = course['name']
+        user_id=user_id,
+        course_id=course['id'],
+        outcome_id=score['links']['outcome'],
+        outcome_avg=score['score'],
+        record_id=record_id
     )
     course_id = course['id']
     outcome_id = score['links']['outcome']
 
     return outcome_avg
-
-
 
 
 def main():
@@ -205,7 +191,6 @@ def main():
     record = Record(created_at=timestamp, term_id=current_term)
     session.add(record)
     session.commit()
-
 
     # get all active courses
     url = "https://dtechhs.instructure.com/api/v1/accounts/1/courses"
@@ -225,7 +210,9 @@ def main():
     # get outcome result rollups for each course - attach to the course dictionary
     outcome_averages = []
     pattern = '@dtech|Innovation Diploma FIT'
-    for course in courses:
+    for course in courses[:5]:
+
+        print(course['name'])
         if re.search(pattern, course['name']):
             continue
         # Get the outcome_rollups for the current class
@@ -236,31 +223,22 @@ def main():
         for outcome_rollups in outcome_rollups_list:
             for student_rollup in outcome_rollups['rollups']:
                 user_id = student_rollup['links']['user']
-                outcome_averages += [extract_outcome_avg_data(score, course, user_id, record.id) for score in student_rollup['scores']]
+                outcome_averages += [
+                    extract_outcome_avg_data(score, course, user_id, record.id)
+                    for score in student_rollup['scores']]
+        print(len(outcome_averages))
         session.add_all(outcome_averages)
+        start = time.time()
         session.commit()
-    #
-    # print(outcome_rollups)
-    # timestamp = datetime.utcnow()
-    #
-    # # group by student
-    # data_sorted = sorted(outcome_grades, key=itemgetter('student_id'))
-    # grouped = itertools.groupby(data_sorted, key=itemgetter('student_id'))
-    # student_objects = [{'student_id': student_id, 'timestamp': timestamp,
-    #                     'term_id': current_term,
-    #                     'courses': sorted(list(values),
-    #                                       key=itemgetter('course_name'))} for
-    #                    student_id, values in grouped]
-    #
-    # # Load into database
-    # client = MongoClient('localhost', 27017)
-    # db = client.test_database
-    # grades = db.grades
-    # grades.insert_many(student_objects)
+        end = time.time()
+        print(end - start)
+        print('******')
+        print()
+
 
 if __name__ == '__main__':
     start = time.time()
-    # main()
-    get_outcomes()
+    main()
+    # get_outcomes()
     end = time.time()
     print(end - start)

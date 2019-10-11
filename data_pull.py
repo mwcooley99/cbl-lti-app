@@ -1,16 +1,9 @@
-from cbl_calculator import rollup_to_traditional_grade, \
-    calculate_traditional_grade
-
 from pdf_reports import pug_to_html, write_report, preload_stylesheet
 
 import os, re, requests
 from datetime import datetime
 
-from operator import itemgetter
 import time
-
-import asyncio
-import aiohttp
 
 from config import configuration
 
@@ -25,7 +18,6 @@ from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, Integer, String, Table, Column, MetaData, \
     ForeignKey, DateTime, Float
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.sql import text
 
 config = configuration[os.getenv('CONFIG')]
 username = 'TheDoctor'
@@ -40,7 +32,6 @@ engine = create_engine(
 Base.prepare(engine, reflect=True)
 
 # mapped classes
-# OutcomeAverage = Base.classes.outcome_averages
 Record = Base.classes.records
 
 metadata = MetaData()

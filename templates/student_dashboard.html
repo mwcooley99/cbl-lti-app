@@ -1,55 +1,56 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="container">
-  <h2>Accordion Example</h2>
-  <p><strong>Note:</strong> The <strong>data-parent</strong> attribute makes sure that all collapsible elements under the specified parent will be closed when one of the collapsible item is shown.</p>
-  <div id="accordion">
-    <div class="card">
-      <div class="card-header">
-        <a class="card-link" data-toggle="collapse" href="#collapseOne">
-          <table class="table">
-              <thead>
-                <tr>
-                  <th scope="col">Course</th>
-                  <th scope="col">Grade</th>
-                  <th scope="col">75% of Outcome Averages Greater Than</th>
-                  <th scope="col">No Outcome Average Below</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>English 2</td>
-                  <td>A</td>
-                  <td>3.5</td>
-                  <td>3</td>
-                </tr>
+    <div class="container">
+        <h2>dTech Student Outcome Summary</h2>
+        <p>Data last updated: {{ student_object.timestamp|strftime }}</p>
+                {{ student_object.courses }}
+        <div id="accordion">
 
-              </tbody>
-            </table>
-        </a>
-      </div>
-      <div id="collapseOne" class="collapse show" data-parent="#accordion">
-        <div class="card-body">
-          <table class="table">
-              <thead>
-                <tr>
-                  <th scope="col">Outcome</th>
-                  <th scope="col">Outcome Average</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <th scope="row">This is an Outcome</th>
-                  <td>8</td>
-                </tr>
+            {% for course in student_object.courses %}
+                <div class="card">
+                    <div class="card-header">
+                        <a class="card-link" data-toggle="collapse"
+                           href="#collapse{{ loop.index }}">
+                            {% set course_name = course.course_name.split(' - ') %}
+                            {{ course_name[0] }}: {{ course.grade }}
+                        </a>
+                    </div>
 
-              </tbody>
-            </table>
+                    <div id="collapse{{ loop.index }}" class="collapse hide"
+                         data-parent="#accordion">
+
+
+                        <div class="card-body">
+                            <p>You earned a {{ course.grade }} because 75% of your
+                            Outcome Averages were above
+                            a {{ course.threshold }} and your Lowest Outcome
+                                Average was above a {{ course.min_score }}</p>
+                            <table class="table">
+                                <thead>
+                                <tr>
+                                    <th scope="col">Outcome</th>
+                                    <th scope="col">Score</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for outcome in course.outcomes %}
+                                    <tr>
+                                        {% if outcome.info.outcome_display_name %}
+                                            <td scope="row">{{ outcome.info.outcome_display_name }}</td>
+                                        {% else %}
+                                            <td scope="row">{{ outcome.info.title }}</td>
+                                        {% endif %}
+                                        <td>{{ outcome.outcome_average }}</td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
         </div>
-      </div>
     </div>
-  </div>
-
-</div>
 
 {% endblock %}

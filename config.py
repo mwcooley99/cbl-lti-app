@@ -19,7 +19,9 @@ class DevelopmentConfig(BaseConfig):
     DEBUG = True
     TESTING = True
     PYLTI_CONFIG = settings.PYLTI_CONFIG
-    SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://{username}:{db_pass}@localhost/cbldb"
+    SQLALCHEMY_DATABASE_URI = os.getenv('DEVELOPMENT_DB_URI')
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+
 
 class ProductionConfig(BaseConfig):
     db_pass = os.getenv('DB_PASSWORD')
@@ -28,6 +30,7 @@ class ProductionConfig(BaseConfig):
     TESTING = False
     PYLTI_CONFIG = settings.PYLTI_CONFIG
     SQLALCHEMY_DATABASE_URI = os.getenv('PRODUCTION_DB_URI')
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 
 class TestingConfig(BaseConfig):

@@ -3,7 +3,7 @@
     <div class="container">
         <h2>dTech Student Outcome Summary</h2>
         <p>Data last updated: {{ student_object.timestamp|strftime }}</p>
-        {#        {{ student_object.courses }}#}
+                {{ student_object.courses }}
         <div id="accordion">
 
             {% for course in student_object.courses %}

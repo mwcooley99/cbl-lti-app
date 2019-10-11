@@ -1,21 +1,27 @@
 from flask import Flask, render_template, session, request, Response, jsonify
 from flask_pymongo import PyMongo
 from flask_bootstrap import Bootstrap
+from flask_sqlalchemy import SQLAlchemy
 import pymongo
 # from flask_oauthlib.provider import OAuth1Provider
 
-from pylti.flask import lti
+from pylti.flask import lti, LTI
 import settings
 import logging
 import json
+import os
 import dateutil
 from logging.handlers import RotatingFileHandler
 
 app = Flask(__name__)
 app.secret_key = settings.secret_key
 app.config.from_object(settings.configClass)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DEVELOPMENT_DB_URI')
 
-# mongo = PyMongo(app)
+db = SQLAlchemy(app)
+db.metadata.reflect(bind=db.engine)
+
+from models import Record, Outcome_Average, Outcome, Course
 
 Bootstrap(app)
 # ============================================
@@ -65,26 +71,22 @@ def launch(lti=lti):
     session['lis_person_name_full'] = request.form.get('lis_person_name_full')
     session['user_id'] = request.form.get('custom_canvas_user_id')
 
+    print(lti.is_role(role='instructor'))
+
     app.logger.info(json.dumps(request.form, indent=2))
-
-    user_data = mongo.db.grades.find_one({'student_id': session['user_id']},
-                                         sort=[('_id', pymongo.DESCENDING)])
-    if user_data:
-        for course in user_data['courses']:
-            for outcome in course['outcomes']:
-                outcome_info = mongo.db.outcomes.find_one(
-                    {'_id': outcome['outcome_id']})
-                outcome['info'] = outcome_info
-            print(outcome['info'])
-
-        return render_template('launch.html', lis_person_name_full=session[
-            'lis_person_name_full'], student_object=user_data)
-
-
-    # if user is student
-
+    # print(json.dumps(request.form, indent=2))
+    session['roles'] = request.form.get('roles')
+    print(session['roles'])
 
     return "You are not a student of any course"
+
+
+@app.route('/student_dashboard', methods=['GET'])
+def student_dashboard():
+    print(session['user_id'])
+
+    print(Outcome.query.first())
+    return render_template('student_dashboard.html')
 
 
 # Home page
@@ -119,6 +121,7 @@ def dashboard():
 @app.template_filter('strftime')
 def datetimeformat(value, format='%m-%d-%Y'):
     return value.strftime(format)
+
 
 if __name__ == '__main__':
     app.run()

@@ -29,7 +29,7 @@ class ProductionConfig(BaseConfig):
     DEBUG = False
     TESTING = False
     PYLTI_CONFIG = settings.PYLTI_CONFIG
-    SQLALCHEMY_DATABASE_URI = os.getenv('PRODUCTION_DB_URI')
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 

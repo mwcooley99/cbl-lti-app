@@ -86,17 +86,11 @@ def launch(lti=lti):
     session['user_id'] = request.form.get('custom_canvas_user_id')
 
     if lti.is_role(role='student'):
-        print("********")
-        print(session['user_id'])
         # get most recent record
         record = Record.query.order_by(Record.id.desc()).first()
-        print(record.id)
 
         # Get all student outcome averages from that record
-        outcome_averages = OutcomeAverage.query \
-            .filter_by(record_id=record.id, user_id=session['user_id']) \
-            .join(OutcomeAverage.course) \
-            .order_by(Course.name, OutcomeAverage.outcome_avg.desc()).all()
+        outcome_averages = get_student_outcome_averages(record, session['user_id'])
 
         courses = [make_course_object(k, g) for k, g in
                    groupby(outcome_averages, lambda x: x.course.name)]
@@ -109,6 +103,13 @@ def launch(lti=lti):
     print(session['roles'])
 
     return "You are not a student of any course"
+
+
+def get_student_outcome_averages(record, user_id):
+    return OutcomeAverage.query \
+        .filter_by(record_id=record.id, user_id=user_id) \
+        .join(OutcomeAverage.course) \
+        .order_by(Course.name, OutcomeAverage.outcome_avg.desc()).all()
 
 
 @app.route('/student_dashboard', methods=['GET'])

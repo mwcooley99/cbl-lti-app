@@ -1,5 +1,4 @@
 # Flask
-settings.py
 *.pyc
 venv/
 error.log

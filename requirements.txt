@@ -1,5 +1,6 @@
 aiohttp==3.6.1
 appnope==0.1.0
+APScheduler==3.6.1
 async-timeout==3.0.1
 asyncio==3.4.3
 attrs==19.1.0
@@ -34,11 +35,14 @@ ipywidgets==7.5.1
 itsdangerous==1.1.0
 jedi==0.15.1
 Jinja2==2.10.1
+json5==0.8.5
 jsonschema==3.0.2
 jupyter==1.0.0
 jupyter-client==5.3.3
 jupyter-console==6.0.0
 jupyter-core==4.5.0
+jupyterlab==1.1.4
+jupyterlab-server==1.0.6
 Markdown==3.1.1
 MarkupSafe==1.1.1
 mistune==0.8.4
@@ -59,6 +63,7 @@ pickleshare==0.7.5
 Pillow==6.1.0
 prometheus-client==0.7.1
 prompt-toolkit==2.0.9
+psycopg2==2.8.3
 ptyprocess==0.6.0
 pycparser==2.19
 Pygments==2.4.2
@@ -68,6 +73,7 @@ Pyphen==0.9.5
 pypugjs==5.8.1
 pyrsistent==0.15.4
 python-dateutil==2.8.0
+python-dotenv==0.10.3
 pytz==2019.2
 pyzmq==18.1.0
 qtconsole==4.5.5
@@ -82,6 +88,7 @@ testpath==0.4.2
 tinycss2==1.0.2
 tornado==6.0.3
 traitlets==4.3.2
+tzlocal==2.0.0
 urllib3==1.25.6
 visitor==0.1.3
 wcwidth==0.1.7

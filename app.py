@@ -7,7 +7,8 @@ from pylti.flask import lti, LTI
 import settings
 import logging
 import json
-import os
+import os, time
+import requests
 from itertools import groupby
 
 from cbl_calculator import calculate_traditional_grade
@@ -22,9 +23,7 @@ print(app.config['SQLALCHEMY_DATABASE_URI'])
 print(settings.configClass)
 print(os.getenv('CONFIG'))
 
-
 db = SQLAlchemy(app)
-
 
 from models import Record, OutcomeAverage, Outcome, Course
 
@@ -55,6 +54,13 @@ def make_course_object(k, g):
     scores = [outcome.outcome_avg for outcome in course['outcomes']]
 
     return {**course, **calculate_traditional_grade(scores)}
+
+
+def get_student_outcome_averages(record, user_id):
+    return OutcomeAverage.query \
+        .filter_by(record_id=record.id, user_id=user_id) \
+        .join(OutcomeAverage.course) \
+        .order_by(Course.name, OutcomeAverage.outcome_avg.desc()).all()
 
 
 # ============================================
@@ -89,39 +95,66 @@ def launch(lti=lti):
     session['lis_person_name_full'] = request.form.get('lis_person_name_full')
     session['user_id'] = request.form.get('custom_canvas_user_id')
 
-    if lti.is_role(role='student'):
+    if 'lis_person_sourcedid' in session.keys():
         # get most recent record
         record = Record.query.order_by(Record.id.desc()).first()
 
         # Get all student outcome averages from that record
-        outcome_averages = get_student_outcome_averages(record, session['user_id'])
+        outcome_averages = get_student_outcome_averages(record,
+                                                        session['user_id'])
 
         courses = [make_course_object(k, g) for k, g in
                    groupby(outcome_averages, lambda x: x.course.name)]
 
-        return render_template('student_dashboard.html', record=record, courses=courses)
+        student = dict(
+            user_id=session['user_id'],
+            courses=courses,
+        )
+        print("I'm here")
+
+        return render_template('student_dashboard.html', record=record,
+                               students=[student])
+    else:
+        record = Record.query.order_by(Record.id.desc()).first()
+
+        url = f"https://dtechhs.test.instructure.com/api/v1/users/{session['user_id']}/observees"
+        access_token = os.getenv('CANVAS_API_KEY')
+        headers = {'Authorization': f'Bearer {access_token}'}
+        response = requests.request("GET", url, headers=headers)
+        print(json.dumps(response.json(), indent=2))
+
+        students = []
+        for observee in response.json():
+            # Get all student outcome averages from that record
+            outcome_averages = get_student_outcome_averages(record,
+                                                            observee['id'])
+
+            courses = [make_course_object(k, g) for k, g in
+                       groupby(outcome_averages, lambda x: x.course.name)]
+
+            students.append({**observee, 'courses': courses})
+            print(len(students))
+
+        return render_template('student_dashboard.html', record=record,
+                               students=students)
 
     app.logger.info(json.dumps(request.form, indent=2))
-    # print(json.dumps(request.form, indent=2))
+    print(json.dumps(request.form, indent=2))
     session['roles'] = request.form.get('roles')
-    print(session['roles'])
+    # print(session['roles'])
 
     return "You are not a student of any course"
 
 
-def get_student_outcome_averages(record, user_id):
-    return OutcomeAverage.query \
-        .filter_by(record_id=record.id, user_id=user_id) \
-        .join(OutcomeAverage.course) \
-        .order_by(Course.name, OutcomeAverage.outcome_avg.desc()).all()
-
-
 @app.route('/student_dashboard', methods=['GET'])
 def student_dashboard():
-    print(session['user_id'])
-
-    print(Outcome.query.first())
     return render_template('student_dashboard.html')
+
+
+@app.route('/course_navigation', methods=['POST', 'GET'])
+@lti(error=error, request='initial', role='any', app=app)
+def course_navigation(lti=lti):
+    return "Hello World"
 
 
 # Home page

@@ -3,10 +3,25 @@
     <div class="container-fluid">
         <h2>dTech Student Outcome Summary</h2>
         <p>Data last updated: {{ record.created_at|strftime }}</p>
-
-        <div id="accordion">
-
-            {% for course in courses %}
+        <form action="#" method="post" id="frmMyform">
+            {% if students|length > 1 %}
+                <div class="form-group">
+                    <label for="sel">Current Student</label>
+                    <select class="form-control" id="sel"
+                            onchange="showHide()">
+                        {% for student in students %}
+                            <option value="{{ loop.index }}">{{ student.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            {% endif %}
+            {% for student in students %}
+                {% if loop.index == 1 %}
+                    <div id="accordion{{ loop.index }}" class="student" style="display: block">
+                {% else %}
+                    <div id="accordion{{ loop.index }}" class="student" style="display: none">
+                {% endif %}
+            {% for course in student.courses %}
                 <div class="card">
                     <div class="card-header">
                         <a class="card-link" data-toggle="collapse"
@@ -16,15 +31,20 @@
                         </a>
                     </div>
 
-                    <div id="collapse{{ loop.index }}" class="collapse hide"
+                    <div id="collapse{{ loop.index }}"
+                         class="collapse hide"
                          data-parent="#accordion">
 
-
                         <div class="card-body">
-                            <p>You earned a {{ course.grade }} because 75% of your
-                            Outcome Averages were above
-                            a {{ course.threshold }} and your Lowest Outcome
-                                Average was above a {{ course.min_score }}</p>
+                            <p>You earned a {{ course.grade }} because
+                                75%
+                                of your
+                                Outcome Averages were above
+                                a {{ course.threshold }} and your
+                                Lowest
+                                Outcome
+                                Average was above
+                                a {{ course.min_score }}</p>
                             <table class="table">
                                 <thead>
                                 <tr>
@@ -50,7 +70,9 @@
                     </div>
                 </div>
             {% endfor %}
-        </div>
+            </div>
+            {% endfor %}
+        </form>
     </div>
 
 {% endblock %}

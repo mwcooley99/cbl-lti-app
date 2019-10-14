@@ -47,12 +47,11 @@ LOG_BACKUP_COUNT = 1
 
 # Config object settings
 # See config.py other environments and options
-configClass = 'config.ProductionConfig'
-configClass = 'config.DevelopmentConfig'
+configClass = os.getenv('CONFIG')
 
 # Store application wide settings here
 # For example: we could store our app's api keys for canvas
 #
 CANVAS_API_URL = os.environ.get('CANVAS_API_URL')
 CANVAS_API_KEY = os.environ.get('CANVAS_API_KEY')
-#
+

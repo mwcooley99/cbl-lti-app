@@ -17,10 +17,14 @@ from logging.handlers import RotatingFileHandler
 app = Flask(__name__)
 app.secret_key = settings.secret_key
 app.config.from_object(settings.configClass)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DEVELOPMENT_DB_URI')
+
+print(app.config['SQLALCHEMY_DATABASE_URI'])
+print(settings.configClass)
+print(os.getenv('CONFIG'))
+
 
 db = SQLAlchemy(app)
-# db.metadata.reflect(bind=db.engine)
+
 
 from models import Record, OutcomeAverage, Outcome, Course
 

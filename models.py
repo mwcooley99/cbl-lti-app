@@ -1,11 +1,7 @@
 from app import db
-from datetime import datetime
 
 
-# print(db.Model.metadata.tables['records'])
-#
 class Record(db.Model):
-    # __table__ = db.Model.metadata.tables['records']
     __tablename__ = 'records'
     id = db.Column(db.Integer, primary_key=True)
     created_at = db.Column(db.DateTime)
@@ -18,7 +14,6 @@ class Record(db.Model):
 
 
 class Course(db.Model):
-    # __table__ = db.Model.metadata.tables['courses']
     __tablename__ = 'courses'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
@@ -31,7 +26,6 @@ class Course(db.Model):
 
 
 class OutcomeAverage(db.Model):
-    # __table__ = db.Model.metadata.tables['outcome_averages']
     __tablename__ = 'outcome_averages'
     id = db.Column(db.Integer, primary_key=True)
     outcome_avg = db.Column(db.Float)
@@ -45,7 +39,6 @@ class OutcomeAverage(db.Model):
 
 
 class Outcome(db.Model):
-    # __table__ = db.Model.metadata.tables['outcomes']
     __tablename__ = 'outcomes'
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String, nullable=False)

@@ -1,17 +1,17 @@
 {% extends 'base.html' %}
 {% block content %}
-    <div class="container">
+    <div class="container-fluid">
         <h2>dTech Student Outcome Summary</h2>
-        <p>Data last updated: {{ student_object.timestamp|strftime }}</p>
-                {{ student_object.courses }}
+        <p>Data last updated: {{ record.created_at|strftime }}</p>
+
         <div id="accordion">
 
-            {% for course in student_object.courses %}
+            {% for course in courses %}
                 <div class="card">
                     <div class="card-header">
                         <a class="card-link" data-toggle="collapse"
                            href="#collapse{{ loop.index }}">
-                            {% set course_name = course.course_name.split(' - ') %}
+                            {% set course_name = course.name.split(' - ') %}
                             {{ course_name[0] }}: {{ course.grade }}
                         </a>
                     </div>
@@ -33,14 +33,14 @@
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {% for outcome in course.outcomes %}
+                                {% for outcome_average in course.outcomes %}
                                     <tr>
-                                        {% if outcome.info.outcome_display_name %}
-                                            <td scope="row">{{ outcome.info.outcome_display_name }}</td>
+                                        {% if outcome_average.outcome.display_name %}
+                                            <td scope="row">{{ outcome_average.outcome.display_name }}</td>
                                         {% else %}
-                                            <td scope="row">{{ outcome.info.title }}</td>
+                                            <td scope="row">{{ outcome_average.outcome.title }}</td>
                                         {% endif %}
-                                        <td>{{ outcome.outcome_average }}</td>
+                                        <td>{{ outcome_average.outcome_avg }}</td>
                                     </tr>
                                 {% endfor %}
                                 </tbody>

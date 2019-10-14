@@ -1,17 +1,17 @@
 from flask import Flask, render_template, session, request, Response, jsonify
-from flask_pymongo import PyMongo
-from sqlalchemy.sql import text, bindparam
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
-import pymongo
-# from flask_oauthlib.provider import OAuth1Provider
 
 from pylti.flask import lti, LTI
+
 import settings
 import logging
 import json
 import os
-import dateutil
+from itertools import groupby
+
+from cbl_calculator import calculate_traditional_grade
+
 from logging.handlers import RotatingFileHandler
 
 app = Flask(__name__)
@@ -38,6 +38,19 @@ handler = RotatingFileHandler(
 handler.setLevel(logging.getLevelName(settings.LOG_LEVEL))
 handler.setFormatter(formatter)
 app.logger.addHandler(handler)
+
+
+# ============================================
+# Helper Functions
+# ============================================
+def make_course_object(k, g):
+    course = dict(
+        name=k,
+        outcomes=list(g),
+    )
+    scores = [outcome.outcome_avg for outcome in course['outcomes']]
+
+    return {**course, **calculate_traditional_grade(scores)}
 
 
 # ============================================
@@ -78,43 +91,17 @@ def launch(lti=lti):
         # get most recent record
         record = Record.query.order_by(Record.id.desc()).first()
         print(record.id)
+
         # Get all student outcome averages from that record
-        # Use sql directly. Need to use a connection.
+        outcome_averages = OutcomeAverage.query \
+            .filter_by(record_id=record.id, user_id=session['user_id']) \
+            .join(OutcomeAverage.course) \
+            .order_by(Course.name, OutcomeAverage.outcome_avg.desc()).all()
 
-        # query = text('''
-        # SELECT *
-        #     FROM outcome_averages
-        #     WHERE outcome_averages.user_id = :iddata
-        #     AND outcome_averages.record_id = :rec_id;
-        # ''')
-        #
-        # data = {'iddata': session['user_id'], 'rec_id': record.id}
-        # conn = db.engine.connect()
-        # res = conn.execute(query, **data)
-        # outcome_averages_list = [{k: v for k, v in row.items()} for row in res]
-        # print(outcome_averages_list)
-        # for row in res:
-        #     print({k: v for k, v in row.items()})
-        # print(res)
-        join = OutcomeAverage.query.join(Outcome,
-                                         OutcomeAverage.outcome_id == Outcome.id)
-        join = db.session.query(OutcomeAverage).join(Outcome,
-                                                     OutcomeAverage.outcome_id == id)
-        results = join.filter(
-            OutcomeAverage.user_id == session['user_id']).all()
-        print(type(results[0]))
+        courses = [make_course_object(k, g) for k, g in
+                   groupby(outcome_averages, lambda x: x.course.name)]
 
-        # results = db.session.query(Outcome_Average).join(Outcome, Outcome_Average.outcome_id == Outcome.id)
-        # .add_columns(Outcome.title).filter_by(user_id=session['user_id'],
-        # record_id=record.id).all()
-        # group by course
-        # Calculate grade per course - Could do this in javascript?
-        # Format to json for the template
-        # Merge outcome averages with outcome table
-        # Render template
-        # print(f'results: {results[0][0].__dict__}')
-
-        return "Hello world"
+        return render_template('student_dashboard.html', record=record, courses=courses)
 
     app.logger.info(json.dumps(request.form, indent=2))
     # print(json.dumps(request.form, indent=2))

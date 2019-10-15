@@ -21,6 +21,8 @@ app.secret_key = settings.secret_key
 app.config.from_object(settings.configClass)
 # todo - figure out the samesite cookie setting. Getting warning in Chrome
 app.config.update(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Lax',
 )
 
@@ -95,37 +97,40 @@ def launch(lti=lti):
     """
 
     # store some of the user data in the session
-    session['lis_person_name_full'] = request.form.get('lis_person_name_full')
-    session['user_id'] = request.form.get('custom_canvas_user_id')
+    user_id = request.form.get('custom_canvas_user_id')
 
-    if 'lis_person_sourcedid' in session.keys():
+    print(json.dumps(request.form, indent=2))
+
+    # Check if they are a student
+    # TODO - exclude Teachers
+    if 'lis_person_sourcedid' in request.form.keys():
         # get most recent record
         record = Record.query.order_by(Record.id.desc()).first()
 
         # Get all student outcome averages from that record
         outcome_averages = get_student_outcome_averages(record,
-                                                        session['user_id'])
+                                                        user_id)
 
         courses = [make_course_object(k, g) for k, g in
                    groupby(outcome_averages, lambda x: x.course.name)]
 
         student = dict(
-            user_id=session['user_id'],
+            user_id=user_id,
             courses=courses,
         )
-        print("I'm here")
 
         return render_template('student_dashboard.html', record=record,
                                students=[student])
+    # Otherwise they must be an observer
     else:
         record = Record.query.order_by(Record.id.desc()).first()
 
-        url = f"https://dtechhs.test.instructure.com/api/v1/users/{session['user_id']}/observees"
+        url = f"https://dtechhs.test.instructure.com/api/v1/users/{user_id}/observees"
         access_token = os.getenv('CANVAS_API_KEY')
         headers = {'Authorization': f'Bearer {access_token}'}
         response = requests.request("GET", url, headers=headers)
-        print(json.dumps(response.json(), indent=2))
 
+        # TODO - Check that they have a student.
         students = []
         for observee in response.json():
             # Get all student outcome averages from that record
@@ -136,15 +141,11 @@ def launch(lti=lti):
                        groupby(outcome_averages, lambda x: x.course.name)]
 
             students.append({**observee, 'courses': courses})
-            print(len(students))
 
         return render_template('student_dashboard.html', record=record,
                                students=students)
 
     app.logger.info(json.dumps(request.form, indent=2))
-    print(json.dumps(request.form, indent=2))
-    session['roles'] = request.form.get('roles')
-    # print(session['roles'])
 
     return "You are not a student of any course"
 
@@ -157,6 +158,43 @@ def student_dashboard():
 @app.route('/course_navigation', methods=['POST', 'GET'])
 @lti(error=error, request='initial', role='instructor', app=app)
 def course_navigation(lti=lti):
+    course_title = request.form.get('context_title')
+    course_id = request.form.get('custom_canvas_course_id')
+    if course_title.startswith('@dtech'):
+        # Get all students of the class
+        url = f"https://dtechhs.instructure.com/api/v1/courses/{course_id}/users"
+        querystring = {"sort": "email", "enrollment_type[]": "student",
+                       "per_page": "100"}
+        access_token = os.getenv('CANVAS_API_KEY')
+        headers = {'Authorization': f'Bearer {access_token}'}
+        response = requests.request("GET", url, headers=headers,
+                                    params=querystring)
+        users = response.json()
+
+        # pagination (
+        while response.links.get('next'):
+            url = response.links['next']['url']
+            response = requests.request("GET", url, headers=headers,
+                                        params=querystring)
+            users += response.json()
+
+        record = Record.query.order_by(Record.id.desc()).first()
+
+        # Create student objects
+        students = []
+        for user in users:
+            # Get all student outcome averages from that record
+            outcome_averages = get_student_outcome_averages(record,
+                                                            user['id'])
+
+            courses = [make_course_object(k, g) for k, g in
+                       groupby(outcome_averages, lambda x: x.course.name)]
+
+            students.append({**user, 'courses': courses})
+
+        return render_template('student_dashboard.html', record=record,
+                               students=students)
+
     return "Work in progess"
 
 

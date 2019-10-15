@@ -24,6 +24,7 @@ Flask-Bootstrap==3.3.7.1
 Flask-OAuthlib==0.9.5
 Flask-PyMongo==2.3.0
 Flask-SQLAlchemy==2.3.2
+Flask-WTF==0.14.2
 gunicorn==19.9.0
 html5lib==1.0.1
 httplib2==0.13.1
@@ -96,4 +97,5 @@ WeasyPrint==50
 webencodings==0.5.1
 Werkzeug==0.16.0
 widgetsnbextension==3.5.1
+WTForms==2.2.1
 yarl==1.3.0

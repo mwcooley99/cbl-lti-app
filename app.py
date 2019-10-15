@@ -1,6 +1,7 @@
 from flask import Flask, render_template, session, request, Response, jsonify
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
+from flask_wtf.csrf import CSRFProtect
 
 from pylti.flask import lti, LTI
 
@@ -18,16 +19,18 @@ from logging.handlers import RotatingFileHandler
 app = Flask(__name__)
 app.secret_key = settings.secret_key
 app.config.from_object(settings.configClass)
-
-print(app.config['SQLALCHEMY_DATABASE_URI'])
-print(settings.configClass)
-print(os.getenv('CONFIG'))
+# todo - figure out the samesite cookie setting. Getting warning in Chrome
+app.config.update(
+    SESSION_COOKIE_SAMESITE='Lax',
+)
 
 db = SQLAlchemy(app)
 
 from models import Record, OutcomeAverage, Outcome, Course
 
-Bootstrap(app)
+# csrf = CSRFProtect(app)
+bootstrap = Bootstrap(app)
+
 # ============================================
 # Logging
 # ============================================
@@ -152,9 +155,9 @@ def student_dashboard():
 
 
 @app.route('/course_navigation', methods=['POST', 'GET'])
-@lti(error=error, request='initial', role='any', app=app)
+@lti(error=error, request='initial', role='instructor', app=app)
 def course_navigation(lti=lti):
-    return "Hello World"
+    return "Work in progess"
 
 
 # Home page

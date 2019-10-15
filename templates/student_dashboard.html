@@ -3,76 +3,81 @@
     <div class="container-fluid">
         <h2>dTech Student Outcome Summary</h2>
         <p>Data last updated: {{ record.created_at|strftime }}</p>
-        <form action="#" method="post" id="frmMyform">
-            {% if students|length > 1 %}
-                <div class="form-group">
-                    <label for="sel">Current Student</label>
-                    <select class="form-control" id="sel"
-                            onchange="showHide()">
-                        {% for student in students %}
-                            <option value="{{ loop.index }}">{{ student.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+        {% if students|length > 1 %}
+            <div class="form-group">
+                <label for="sel">Current Student</label>
+                <select class="form-control" id="sel"
+                        onchange="showHide()">
+                    {% for student in students %}
+                        <option value="{{ loop.index }}">{{ student.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        {% endif %}
+        {% for student in students %}
+            {% set student_number = loop.index %}
+            {% if loop.index == 1 %}
+                <div id="accordion{{ loop.index }}" class="student"
+                     style="display: block">
+            {% else %}
+                <div id="accordion{{ loop.index }}" class="student"
+                     style="display: none">
             {% endif %}
-            {% for student in students %}
-                {% if loop.index == 1 %}
-                    <div id="accordion{{ loop.index }}" class="student" style="display: block">
-                {% else %}
-                    <div id="accordion{{ loop.index }}" class="student" style="display: none">
-                {% endif %}
-            {% for course in student.courses %}
-                <div class="card">
-                    <div class="card-header">
-                        <a class="card-link" data-toggle="collapse"
-                           href="#collapse{{ loop.index }}">
-                            {% set course_name = course.name.split(' - ') %}
-                            {{ course_name[0] }}: {{ course.grade }}
-                        </a>
-                    </div>
+        {% for course in student.courses %}
+            <div class="card">
+                <div class="card-header">
+                    <a class="card-link" data-toggle="collapse"
+                       href="#collapse{{ loop.index }}">
+                        {% set course_name = course.name.split(' - ') %}
+                        {{ course_name[0] }}: {{ course.grade }}
+                    </a>
+                </div>
 
-                    <div id="collapse{{ loop.index }}"
-                         class="collapse hide"
-                         data-parent="#accordion">
+                <div id="collapse{{ loop.index }}"
+                     class="collapse hide"
+                     data-parent="#accordion{{ student_number }}">
 
-                        <div class="card-body">
-                            <p>You earned a {{ course.grade }} because
-                                75%
+                    <div class="card-body">
+                        Your grade is: {{ course.grade }} because:
+                        <ul>
+                            <li><strong>75%</strong>
                                 of your
                                 Outcome Averages were above
-                                a {{ course.threshold }} and your
+                                a <strong>{{ course.threshold }}</strong></li>
+                            <li>Your
                                 Lowest
                                 Outcome
                                 Average was above
-                                a {{ course.min_score }}</p>
-                            <table class="table">
-                                <thead>
-                                <tr>
-                                    <th scope="col">Outcome</th>
-                                    <th scope="col">Score</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {% for outcome_average in course.outcomes %}
-                                    <tr>
-                                        {% if outcome_average.outcome.display_name %}
-                                            <td scope="row">{{ outcome_average.outcome.display_name }}</td>
-                                        {% else %}
-                                            <td scope="row">{{ outcome_average.outcome.title }}</td>
-                                        {% endif %}
-                                        <td>{{ outcome_average.outcome_avg }}</td>
-                                    </tr>
-                                {% endfor %}
-                                </tbody>
-                            </table>
+                                a <strong>{{ course.min_score }}</strong></li>
+                        </ul>
 
-                        </div>
+                        <table class="table">
+                            <thead>
+                            <tr>
+                                <th scope="col">Outcome</th>
+                                <th scope="col">Score</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for outcome_average in course.outcomes %}
+                                <tr>
+                                    {% if outcome_average.outcome.display_name %}
+                                        <td scope="row">{{ outcome_average.outcome.display_name }}</td>
+                                    {% else %}
+                                        <td scope="row">{{ outcome_average.outcome.title }}</td>
+                                    {% endif %}
+                                    <td>{{ outcome_average.outcome_avg }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+
                     </div>
                 </div>
-            {% endfor %}
             </div>
-            {% endfor %}
-        </form>
-    </div>
+        {% endfor %}
+        </div>
+        {% endfor %}
+        </div>
 
 {% endblock %}

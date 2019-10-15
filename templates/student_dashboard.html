@@ -25,13 +25,15 @@
             {% endif %}
         {% for course in student.courses %}
             <div class="card">
-                <div class="card-header">
-                    <a class="card-link" data-toggle="collapse"
-                       href="#collapse{{ loop.index }}">
+                <a class="card-link" data-toggle="collapse"
+                   href="#collapse{{ loop.index }}">
+                    <div class="card-header">
+
                         {% set course_name = course.name.split(' - ') %}
                         {{ course_name[0] }}: {{ course.grade }}
-                    </a>
-                </div>
+
+                    </div>
+                </a>
 
                 <div id="collapse{{ loop.index }}"
                      class="collapse hide"

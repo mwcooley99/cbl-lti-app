@@ -24,6 +24,7 @@ app.config.update(
     SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE='Strict',
+    PERMANENT_SESSION_LIFETIME=600,
 )
 
 db = SQLAlchemy(app)

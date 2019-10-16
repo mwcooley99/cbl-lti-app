@@ -63,12 +63,13 @@
                             <tbody>
                             {% for outcome_average in course.outcomes %}
                                 <tr>
+                                    {# Use display name if it's available #}
                                     {% if outcome_average.outcome.display_name %}
                                         <td scope="row">{{ outcome_average.outcome.display_name }}</td>
                                     {% else %}
                                         <td scope="row">{{ outcome_average.outcome.title }}</td>
                                     {% endif %}
-
+                                    {# Only display the outcome_avg if outcome's have been assessed. #}
                                     {% if outcome_average.outcome_avg > 0 %}
                                         <td>{{ outcome_average.outcome_avg }}</td>
                                     {% endif %}

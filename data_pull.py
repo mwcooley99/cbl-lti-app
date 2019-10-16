@@ -19,9 +19,7 @@ from sqlalchemy import create_engine, Integer, String, Table, Column, MetaData, 
     ForeignKey, DateTime, Float
 from sqlalchemy.dialects import postgresql
 
-config = configuration[os.getenv('CONFIG')]
-username = 'TheDoctor'
-db_pass = os.getenv('DB_PASSWORD')
+config = configuration[os.getenv('PULL_CONFIG')]
 
 Base = automap_base()
 
@@ -171,6 +169,45 @@ def get_courses(current_term):
     return courses
 
 
+def add_blank_outcome_average(course, user_id, record_id):
+    outcome_avg = dict(
+        user_id=int(user_id),
+        course_id=int(course['id']),
+        outcome_id=-1,
+        outcome_avg=-1,
+        record_id=record_id
+    )
+
+    return outcome_avg
+
+
+def parse_rollups(course, outcome_averages, outcome_rollups_list, outcomes,
+                  record):
+    for outcome_rollups in outcome_rollups_list:
+        for student_rollup in outcome_rollups['rollups']:
+            user_id = student_rollup['links']['user']
+            # Check if course has not assessed any outcomes
+            if len(student_rollup['scores']) == 0:
+                outcome_averages.append(add_blank_outcome_average(course, user_id, record.id))
+            else:
+                outcome_averages += [
+                    extract_outcome_avg_data(score, course, user_id, record.id)
+                    for score in student_rollup['scores']]
+
+        # create list of outcomes
+        outcomes += extract_outcomes(outcome_rollups['linked']['outcomes'])
+        outcomes = list(set(outcomes))
+    return outcome_averages, outcomes
+
+
+def create_record(current_term, session):
+    timestamp = datetime.utcnow()
+    record = Record(created_at=timestamp, term_id=current_term)
+    session.add(record)
+    session.commit()
+    return record
+
+
 def main():
     session = Session(engine)
     # Get current term(s) - todo search for all terms within a date. Will return a list if more than one term
@@ -204,7 +241,6 @@ def main():
         if len(outcome_averages):
             start = time.time()
             session.execute(OutcomeAverages.insert().values(outcome_averages))
-            # OutcomeAverage.insert().execute(outcome_averages)
             session.commit()
             end = time.time()
             print(end - start)
@@ -213,29 +249,6 @@ def main():
 
     # Add courses to the db
     upsert_outcomes(outcomes, session)
-
-
-def parse_rollups(course, outcome_averages, outcome_rollups_list, outcomes,
-                  record):
-    for outcome_rollups in outcome_rollups_list:
-        for student_rollup in outcome_rollups['rollups']:
-            user_id = student_rollup['links']['user']
-            outcome_averages += [
-                extract_outcome_avg_data(score, course, user_id, record.id)
-                for score in student_rollup['scores']]
-
-        # create list of outcomes
-        outcomes += extract_outcomes(outcome_rollups['linked']['outcomes'])
-        outcomes = list(set(outcomes))
-    return outcome_averages, outcomes
-
-
-def create_record(current_term, session):
-    timestamp = datetime.utcnow()
-    record = Record(created_at=timestamp, term_id=current_term)
-    session.add(record)
-    session.commit()
-    return record
 
 
 if __name__ == '__main__':

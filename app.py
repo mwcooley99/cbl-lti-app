@@ -23,7 +23,7 @@ app.config.from_object(settings.configClass)
 app.config.update(
     SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE='Strict',
+    SESSION_COOKIE_SAMESITE='Lax',
     PERMANENT_SESSION_LIFETIME=600,
 )
 
@@ -67,6 +67,30 @@ def get_student_outcome_averages(record, user_id):
         .filter_by(record_id=record.id, user_id=user_id) \
         .join(OutcomeAverage.course) \
         .order_by(Course.name, OutcomeAverage.outcome_avg.desc()).all()
+
+def get_student_outcome_averages_for_course(record, user_id, course_id):
+    return OutcomeAverage.query \
+        .filter_by(record_id=record.id, user_id=user_id, course_id=course_id) \
+        .join(OutcomeAverage.course) \
+        .order_by(Course.name, OutcomeAverage.outcome_avg.desc()).all()
+
+
+def get_students_in_course(course_id):
+    url = f"https://dtechhs.instructure.com/api/v1/courses/{course_id}/users"
+    querystring = {"sort": "email", "enrollment_type[]": "student",
+                   "per_page": "100"}
+    access_token = os.getenv('CANVAS_API_KEY')
+    headers = {'Authorization': f'Bearer {access_token}'}
+    response = requests.request("GET", url, headers=headers,
+                                params=querystring)
+    users = response.json()
+    # pagination (
+    while response.links.get('next'):
+        url = response.links['next']['url']
+        response = requests.request("GET", url, headers=headers,
+                                    params=querystring)
+        users += response.json()
+    return users
 
 
 # ============================================
@@ -163,21 +187,7 @@ def course_navigation(lti=lti):
     course_id = request.form.get('custom_canvas_course_id')
     if course_title.startswith('@dtech'):
         # Get all students of the class
-        url = f"https://dtechhs.instructure.com/api/v1/courses/{course_id}/users"
-        querystring = {"sort": "email", "enrollment_type[]": "student",
-                       "per_page": "100"}
-        access_token = os.getenv('CANVAS_API_KEY')
-        headers = {'Authorization': f'Bearer {access_token}'}
-        response = requests.request("GET", url, headers=headers,
-                                    params=querystring)
-        users = response.json()
-
-        # pagination (
-        while response.links.get('next'):
-            url = response.links['next']['url']
-            response = requests.request("GET", url, headers=headers,
-                                        params=querystring)
-            users += response.json()
+        users = get_students_in_course(course_id)
 
         record = Record.query.order_by(Record.id.desc()).first()
 
@@ -188,7 +198,7 @@ def course_navigation(lti=lti):
             outcome_averages = get_student_outcome_averages(record,
                                                             user['id'])
 
-            courses = [make_course_object(k, g) for k, g in
+            courses = [make_course_object(course_name, data) for course_name, data in
                        groupby(outcome_averages, lambda x: x.course.name)]
 
             students.append({**user, 'courses': courses})
@@ -197,6 +207,44 @@ def course_navigation(lti=lti):
                                students=students)
 
     return "Work in progess"
+
+
+@app.route('/course')
+def course(course_id=357):
+    record = Record.query.order_by(Record.id.desc()).first()
+
+    # users = get_students_in_course(course_id)
+    oa = OutcomeAverage.query.filter_by(record_id=record.id, course_id=course_id)
+
+    users = set([outcome.user_id for outcome in oa])
+    students = []
+    for user in users:
+        outcome_averages = get_student_outcome_averages_for_course(record,
+                                                        user, course_id)
+
+        outcomes = make_course_object(course_id, outcome_averages)
+        students.append({'student': user, **outcomes})
+
+    print(students[0])
+
+
+
+
+    students = [
+        {
+            'name': 'John Doe',
+            'grade': 'A',
+            'min_score': 2.3,
+            'threshold': 3.0
+        },
+        {
+            'name': 'Jane Doe',
+            'grade': 'B',
+            'min_score': 2.3,
+            'threshold': 3.0
+        },
+    ]
+    return render_template('course.html', record=record, students=students)
 
 
 # Home page

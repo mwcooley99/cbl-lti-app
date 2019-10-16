@@ -123,12 +123,13 @@ def calculate_final_grade(percents, min_score, scores):
 
 def calculate_traditional_grade(scores):
     # check if the outcome is assessed.
-    if len(scores) == 0:
+    if len(scores) == 0 or scores[0] == -1:
         return {
             'grade': 'n/a',
             'threshold': 'n/a',
             'min_score': 'n/a',
         }
+
 
     calculation_dictionaries = [
         {

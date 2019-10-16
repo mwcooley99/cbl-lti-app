@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block content %}
-    <div class="container-fluid">
+    <div class="container">
         <h2>dTech Student Outcome Summary</h2>
         <p>Data last updated: {{ record.created_at|strftime }}</p>
         {% if students|length > 1 %}
@@ -68,7 +68,10 @@
                                     {% else %}
                                         <td scope="row">{{ outcome_average.outcome.title }}</td>
                                     {% endif %}
-                                    <td>{{ outcome_average.outcome_avg }}</td>
+
+                                    {% if outcome_average.outcome_avg > 0 %}
+                                        <td>{{ outcome_average.outcome_avg }}</td>
+                                    {% endif %}
                                 </tr>
                             {% endfor %}
                             </tbody>

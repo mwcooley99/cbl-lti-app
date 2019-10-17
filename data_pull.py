@@ -16,7 +16,7 @@ url = 'https://dtechhs.instructure.com'
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, Integer, String, Table, Column, MetaData, \
-    ForeignKey, DateTime, Float, JSON
+    ForeignKey, DateTime, Float, JSON, desc
 from sqlalchemy.dialects import postgresql
 
 config = configuration[os.getenv('PULL_CONFIG')]
@@ -38,7 +38,7 @@ metadata.bind = engine
 
 print('meta')
 Records = Table('records', metadata,
-                # Column('id', Integer, primary_key=True),
+                Column('id', Integer, primary_key=True, autoincrement=True),
                 Column('created_at', DateTime),
                 Column('term_id', Integer),
 
@@ -92,19 +92,18 @@ def make_pdf(html, file_path="out/example_report.pdf",
 
 
 def get_outcome_rollups(course):
-
+    outcome_rollups = []
     url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/outcome_rollups"
     querystring = {"include[]": "outcomes", "per_page": "100"}
     response = requests.request("GET", url, headers=headers,
                                 params=querystring)
     # Pagination
-    outcome_rollups = response.json()
-    print(outcome_rollups)
+    outcome_rollups.append(response.json())
     while response.links.get('next'):
         url = response.links['next']['url']
         response = requests.request("GET", url, headers=headers,
                                     params=querystring)
-        outcome_rollups += response.json()
+        outcome_rollups.append(response.json())
 
     return outcome_rollups
 
@@ -166,8 +165,8 @@ def create_record(current_term, session):
     values = {'created_at': timestamp, 'term_id': current_term}
 
     record = session.execute(Records.insert().values(values))
-    # session.add(insert_stmt)
     session.commit()
+    record = session.query(Records).order_by(desc(Records.c.id)).first()
     return record
 
 

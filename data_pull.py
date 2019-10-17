@@ -16,25 +16,27 @@ url = 'https://dtechhs.instructure.com'
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, Integer, String, Table, Column, MetaData, \
-    ForeignKey, DateTime, Float
+    ForeignKey, DateTime, Float, JSON
 from sqlalchemy.dialects import postgresql
 
 config = configuration[os.getenv('PULL_CONFIG')]
+print(config.SQLALCHEMY_DATABASE_URI)
 
 Base = automap_base()
 
 engine = create_engine(
     config.SQLALCHEMY_DATABASE_URI)
-
+print(111)
 # reflect the tables
-Base.prepare(engine, reflect=True)
-
+# Base.prepare(engine, reflect=True)
+print(222)
 # mapped classes
-Record = Base.classes.records
+# Record = Base.classes.records
 
 metadata = MetaData()
 metadata.bind = engine
 
+print('meta')
 Records = Table('records', metadata,
                 # Column('id', Integer, primary_key=True),
                 Column('created_at', DateTime),
@@ -61,6 +63,14 @@ Outcomes = Table('outcomes', metadata,
                  Column('title', String),
                  Column('display_name', String))
 
+Grades = Table('grades', metadata,
+               Column('id', Integer, primary_key=True),
+               Column('record_id', Integer),
+               Column('course_id', Integer),
+               Column('user_id', Integer),
+               Column('grade', String),
+               Column('outcomes', JSON)),
+
 
 def find_outcome(outcomes, outcome_id):
     for outcome in outcomes:
@@ -82,18 +92,19 @@ def make_pdf(html, file_path="out/example_report.pdf",
 
 
 def get_outcome_rollups(course):
-    outcome_rollups = []
+
     url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/outcome_rollups"
     querystring = {"include[]": "outcomes", "per_page": "100"}
     response = requests.request("GET", url, headers=headers,
                                 params=querystring)
     # Pagination
-    outcome_rollups.append(response.json())
+    outcome_rollups = response.json()
+    print(outcome_rollups)
     while response.links.get('next'):
         url = response.links['next']['url']
         response = requests.request("GET", url, headers=headers,
                                     params=querystring)
-        outcome_rollups.append(response.json())
+        outcome_rollups += response.json()
 
     return outcome_rollups
 
@@ -104,7 +115,6 @@ def extract_outcome_avg_data(score, course, user_id, record_id):
         course_id=int(course['id']),
         outcome_id=int(score['links']['outcome']),
         outcome_avg=score['score'],
-        record_id=record_id
     )
 
     return outcome_avg
@@ -151,6 +161,16 @@ def upsert_courses(courses, session):
     session.commit()
 
 
+def create_record(current_term, session):
+    timestamp = datetime.utcnow()
+    values = {'created_at': timestamp, 'term_id': current_term}
+
+    record = session.execute(Records.insert().values(values))
+    # session.add(insert_stmt)
+    session.commit()
+    return record
+
+
 def get_courses(current_term):
     url = "https://dtechhs.instructure.com/api/v1/accounts/1/courses"
     querystring = {'enrollment_term_id': current_term, 'published': True,
@@ -181,35 +201,30 @@ def add_blank_outcome_average(course, user_id, record_id):
     return outcome_avg
 
 
-def parse_rollups(course, outcome_averages, outcome_rollups_list, outcomes,
+def parse_rollups(course, outcome_averages, outcome_rollups, outcomes,
                   record):
-    for outcome_rollups in outcome_rollups_list:
-        for student_rollup in outcome_rollups['rollups']:
-            user_id = student_rollup['links']['user']
-            # Check if course has not assessed any outcomes
-            if len(student_rollup['scores']) == 0:
-                outcome_averages.append(add_blank_outcome_average(course, user_id, record.id))
-            else:
-                outcome_averages += [
-                    extract_outcome_avg_data(score, course, user_id, record.id)
-                    for score in student_rollup['scores']]
+    for student_rollup in outcome_rollups['rollups']:
+        user_id = student_rollup['links']['user']
+        # Check if course has not assessed any outcomes
+        if len(student_rollup['scores']) == 0:
+            outcome_averages.append(
+                add_blank_outcome_average(course, user_id, record.id))
+        else:
+            outcome_averages += [
+                extract_outcome_avg_data(score, course, user_id, record.id)
+                for score in student_rollup['scores']]
 
-        # create list of outcomes
-        outcomes += extract_outcomes(outcome_rollups['linked']['outcomes'])
-        outcomes = list(set(outcomes))
+    # create list of outcomes
+    outcomes += extract_outcomes(outcome_rollups['linked']['outcomes'])
+    outcomes = list(set(outcomes))
+
     return outcome_averages, outcomes
 
 
-def create_record(current_term, session):
-    timestamp = datetime.utcnow()
-    record = Record(created_at=timestamp, term_id=current_term)
-    session.add(record)
-    session.commit()
-    return record
-
-
 def main():
+    print('start')
     session = Session(engine)
+    print("session")
     # Get current term(s) - todo search for all terms within a date. Will return a list if more than one term
     current_term = 10
 
@@ -229,6 +244,7 @@ def main():
         print(course['name'])
         if re.search(pattern, course['name']):
             continue
+
         # Get the outcome_rollups for the current class
         outcome_rollups_list = get_outcome_rollups(course)
 

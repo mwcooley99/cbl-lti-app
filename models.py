@@ -56,3 +56,6 @@ class Grade(db.Model):
     user_id = db.Column(db.Integer)
     grade = db.Column(db.String)
     outcomes = db.Column(db.JSON)
+
+    def __repr__(self):
+        return str(self.__dict__)

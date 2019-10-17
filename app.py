@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 
 from pylti.flask import lti, LTI
+from pylti.common import LTI_SESSION_KEY
 
 import settings
 import logging
@@ -19,17 +20,17 @@ from logging.handlers import RotatingFileHandler
 app = Flask(__name__)
 app.secret_key = settings.secret_key
 app.config.from_object(settings.configClass)
-# todo - figure out the samesite cookie setting. Getting warning in Chrome
-app.config.update(
-    SESSION_COOKIE_SECURE=True,
-    SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE='Lax',
-    PERMANENT_SESSION_LIFETIME=600,
-)
+# # todo - figure out the samesite cookie setting. Getting warning in Chrome
+# app.config.update(
+#     SESSION_COOKIE_SECURE=True,
+#     SESSION_COOKIE_HTTPONLY=True,
+#     SESSION_COOKIE_SAMESITE='Lax',
+#     PERMANENT_SESSION_LIFETIME=600,
+# )
 
 db = SQLAlchemy(app)
 
-from models import Record, OutcomeAverage, Outcome, Course
+from models import Record, OutcomeAverage, Outcome, Course, Grade
 
 # csrf = CSRFProtect(app)
 bootstrap = Bootstrap(app)
@@ -67,6 +68,7 @@ def get_student_outcome_averages(record, user_id):
         .filter_by(record_id=record.id, user_id=user_id) \
         .join(OutcomeAverage.course) \
         .order_by(Course.name, OutcomeAverage.outcome_avg.desc()).all()
+
 
 def get_student_outcome_averages_for_course(record, user_id, course_id):
     return OutcomeAverage.query \
@@ -120,6 +122,9 @@ def launch(lti=lti):
     Returns the launch page
     request.form will contain all the lti params
     """
+    print(session.get(LTI_SESSION_KEY))
+    session['u'] = True
+    print('u' in session)
 
     # store some of the user data in the session
     user_id = request.form.get('custom_canvas_user_id')
@@ -198,7 +203,8 @@ def course_navigation(lti=lti):
             outcome_averages = get_student_outcome_averages(record,
                                                             user['id'])
 
-            courses = [make_course_object(course_name, data) for course_name, data in
+            courses = [make_course_object(course_name, data) for
+                       course_name, data in
                        groupby(outcome_averages, lambda x: x.course.name)]
 
             students.append({**user, 'courses': courses})
@@ -214,21 +220,20 @@ def course(course_id=357):
     record = Record.query.order_by(Record.id.desc()).first()
 
     # users = get_students_in_course(course_id)
-    oa = OutcomeAverage.query.filter_by(record_id=record.id, course_id=course_id)
+    oa = OutcomeAverage.query.filter_by(record_id=record.id,
+                                        course_id=course_id)
 
     users = set([outcome.user_id for outcome in oa])
     students = []
     for user in users:
         outcome_averages = get_student_outcome_averages_for_course(record,
-                                                        user, course_id)
+                                                                   user,
+                                                                   course_id)
 
         outcomes = make_course_object(course_id, outcome_averages)
         students.append({'student': user, **outcomes})
 
     print(students[0])
-
-
-
 
     students = [
         {
@@ -249,8 +254,24 @@ def course(course_id=357):
 
 # Home page
 @app.route('/', methods=['GET'])
+@lti(error=error, request='any', app=app)
 def index(lti=lti):
     return render_template('index.html')
+
+
+@app.route('/data/<user_id>', methods=['GET', 'POST'])
+@lti(error=error, request='session', app=app)
+def data(user_id, lti=lti):
+    print('u' in session)
+    print(session.get(LTI_SESSION_KEY))
+    print(session['u'])
+
+    url = f'https://dtechhs.test.instructure.com/api/v1/users/{user_id}'
+    access_token = os.getenv('CANVAS_API_KEY')
+    headers = {'Authorization': f'Bearer {access_token}'}
+    response = requests.request("GET", url, headers=headers)
+    print(response.json())
+    return jsonify(response.json())
 
 
 # LTI XML Configuration
@@ -271,7 +292,7 @@ def xml():
 
 
 @app.route("/dashboard/")
-# @lti(error=error, request='initial', role='any', app=app)
+@lti(error=error, request='initial', role='any', app=app)
 def dashboard():
     return jsonify({'key:': "hello"})
 
@@ -284,7 +305,7 @@ def datetimeformat(value, format='%m-%d-%Y'):
 @app.shell_context_processor
 def make_shell_context():
     return dict(db=db, Outcome=Outcome, OutcomeAverage=OutcomeAverage,
-                Course=Course, Record=Record)
+                Course=Course, Record=Record, Grade=Grade)
 
 
 if __name__ == '__main__':

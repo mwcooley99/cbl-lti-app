@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
     <div class="container">
+        {#        <a href="{{ url_for('data') }}">Hello there</a>#}
         <h2>dTech Student Outcome Summary</h2>
         <p>Data last updated: {{ record.created_at|strftime }}</p>
         {% if students|length > 1 %}
@@ -85,5 +86,37 @@
         </div>
         {% endfor %}
         </div>
+        <script>
+            async function getAllUrls(urls) {
+                try {
+                    var data = await Promise.all(
+                        urls.map(
+                            url =>
+                                fetch(url).then(
+                                    (response) => response.json()
+                                )));
+
+                    return (data)
+
+                } catch (error) {
+                    console.log(error);
+
+                    throw (error)
+                }
+            }
+
+            var user_id = '601';
+            var urls = [`http://127.0.0.1:5000/data/${user_id}`,
+            `http://127.0.0.1:5000/data/${user_id}`,
+            `http://127.0.0.1:5000/data/${user_id}`,
+            `http://127.0.0.1:5000/data/${user_id}`];
+
+            getAllUrls(urls).then(data => console.log(data));
+
+            {#console.log(url);#}
+            {#fetch(url)#}
+            {#    .then(response => response.json())#}
+            {#    .then(json => console.log(json))#}
+        </script>
 
 {% endblock %}

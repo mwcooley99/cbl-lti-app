@@ -47,3 +47,12 @@ class Outcome(db.Model):
 
     def __repr__(self):
         return str(self.__dict__)
+
+
+class Grade(db.Model):
+    __tablename__ = 'grades'
+    id = db.Column(db.Integer, primary_key=True)
+    course_id = db.Column(db.Integer)
+    user_id = db.Column(db.Integer)
+    grade = db.Column(db.String)
+    outcomes = db.Column(db.JSON)

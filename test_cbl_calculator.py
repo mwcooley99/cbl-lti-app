@@ -1,5 +1,6 @@
 from cbl_calculator import calculate_traditional_grade
 
+# todo - add to db or as a json file
 calculation_dictionaries = {
     'A': {
         'grade': 'A',

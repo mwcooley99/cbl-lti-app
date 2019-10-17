@@ -201,22 +201,24 @@ def add_blank_outcome_average(course, user_id, record_id):
     return outcome_avg
 
 
-def parse_rollups(course, outcome_averages, outcome_rollups, outcomes,
+def parse_rollups(course, outcome_averages, outcome_rollups_list, outcomes,
                   record):
-    for student_rollup in outcome_rollups['rollups']:
-        user_id = student_rollup['links']['user']
-        # Check if course has not assessed any outcomes
-        if len(student_rollup['scores']) == 0:
-            outcome_averages.append(
-                add_blank_outcome_average(course, user_id, record.id))
-        else:
-            outcome_averages += [
-                extract_outcome_avg_data(score, course, user_id, record.id)
-                for score in student_rollup['scores']]
 
-    # create list of outcomes
-    outcomes += extract_outcomes(outcome_rollups['linked']['outcomes'])
-    outcomes = list(set(outcomes))
+    for outcome_rollups in outcome_rollups_list:
+        for student_rollup in outcome_rollups['rollups']:
+            user_id = student_rollup['links']['user']
+            # Check if course has not assessed any outcomes
+            if len(student_rollup['scores']) == 0:
+                outcome_averages.append(
+                    add_blank_outcome_average(course, user_id, record.id))
+            else:
+                outcome_averages += [
+                    extract_outcome_avg_data(score, course, user_id, record.id)
+                    for score in student_rollup['scores']]
+
+        # create list of outcomes
+        outcomes += extract_outcomes(outcome_rollups['linked']['outcomes'])
+        outcomes = list(set(outcomes))
 
     return outcome_averages, outcomes
 

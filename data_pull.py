@@ -108,17 +108,6 @@ def get_outcome_rollups(course):
     return outcome_rollups
 
 
-def extract_outcome_avg_data(score, course, user_id, record_id):
-    outcome_avg = dict(
-        user_id=int(user_id),
-        course_id=int(course['id']),
-        outcome_id=int(score['links']['outcome']),
-        outcome_avg=score['score'],
-    )
-
-    return outcome_avg
-
-
 def extract_outcomes(outcomes):
     '''
     Filtering the data that in need for the Outcomes Table
@@ -200,26 +189,66 @@ def add_blank_outcome_average(course, user_id, record_id):
     return outcome_avg
 
 
+def extract_outcome_avg_data(score, course, outcomes):
+    outcome_info = find_outcome(outcomes, int(score['links']['outcome']))
+    for outcome in outcomes:
+        outcome_avg = dict(
+            course_id=int(course['id']),
+            outcome_id=int(score['links']['outcome']),
+            outcome_avg=score['score'],
+            title=outcome_info['title'],
+            display_name=outcome_info['display_name'],
+        )
+
+    return outcome_avg
+
+
+def make_grade_object(student_rollup, course, outcomes):
+    user_id = student_rollup['links']['user']
+    print(user_id)
+    outcome_averages = []
+    for rollup in student_rollup['scores']:
+        outcome_averages.append(extract_outcome_avg_data(rollup, course, outcomes))
+
+    # calculate grade using cbl algorithm
+
+    # store in a dict
+
+    # Return dict
+    print(outcome_averages)
+
+    # outcome_averages = [
+    #     extract_outcome_avg_data(score, course, user_id, record.id)
+    #     for score in student_rollup['scores']]
+    # scores = []
+
+    return "Hello"
+
+
 def parse_rollups(course, outcome_averages, outcome_rollups_list, outcomes,
                   record):
-
+    grades = []
     for outcome_rollups in outcome_rollups_list:
+        # print(outcome_rollups['linked']['outcomes'])
+        outcomes = outcome_rollups['linked']['outcomes']
+
         for student_rollup in outcome_rollups['rollups']:
-            user_id = student_rollup['links']['user']
-            # Check if course has not assessed any outcomes
-            if len(student_rollup['scores']) == 0:
-                outcome_averages.append(
-                    add_blank_outcome_average(course, user_id, record.id))
-            else:
-                outcome_averages += [
-                    extract_outcome_avg_data(score, course, user_id, record.id)
-                    for score in student_rollup['scores']]
+            grade = make_grade_object(student_rollup, course, record, outcomes)
+            # user_id = student_rollup['links']['user']
+            # # Check if course has not assessed any outcomes
+            # if len(student_rollup['scores']) == 0:
+            #     outcome_averages.append(
+            #         add_blank_outcome_average(course, user_id, record.id))
+            # else:
+            #     outcome_averages += [
+            #         extract_outcome_avg_data(score, course, user_id, record.id)
+            #         for score in student_rollup['scores']]
 
         # create list of outcomes
-        outcomes += extract_outcomes(outcome_rollups['linked']['outcomes'])
-        outcomes = list(set(outcomes))
+        # outcomes += extract_outcomes(outcome_rollups['linked']['outcomes'])
+        # outcomes = list(set(outcomes))
 
-    return outcome_averages, outcomes
+    return grades, outcomes
 
 
 def main():
@@ -274,3 +303,5 @@ if __name__ == '__main__':
     # get_outcomes()
     end = time.time()
     print(end - start)
+
+

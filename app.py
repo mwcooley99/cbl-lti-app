@@ -159,7 +159,9 @@ def launch(lti=lti):
         for observee in response.json():
             # Get all student outcome averages from that record
             grades = Grade.query.filter_by(record_id=record.id,
-                                           user_id=observee['id']).all()
+                                           user_id=observee['id']).join(Course) \
+                .filter(~Course.name.contains('@dtech')).order_by(
+                Course.name).all()
             # Only add if not empty
             if grades:
                 students.append(grades)
@@ -190,10 +192,6 @@ def course_navigation(lti=lti):
         join(User).order_by(User.name).all()
 
     if course_title.startswith('@dtech'):
-        # Get all students of the class
-        # users = get_students_in_course(course_id)
-
-
         # Create student objects
         students = []
         for user in users:

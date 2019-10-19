@@ -123,14 +123,11 @@ def launch(lti=lti):
     Returns the launch page
     request.form will contain all the lti params
     """
-    print(session.get(LTI_SESSION_KEY))
-    session['u'] = True
-    print('u' in session)
 
     # store some of the user data in the session
     user_id = request.form.get('custom_canvas_user_id')
 
-    print(json.dumps(request.form, indent=2))
+
 
     # Check if they are a student
     # TODO - exclude Teachers
@@ -162,6 +159,7 @@ def launch(lti=lti):
                                            user_id=observee['id']).join(Course) \
                 .filter(~Course.name.contains('@dtech')).order_by(
                 Course.name).all()
+
             # Only add if not empty
             if grades:
                 students.append(grades)
@@ -173,6 +171,7 @@ def launch(lti=lti):
 
     app.logger.info(json.dumps(request.form, indent=2))
 
+    # TODO - make a template
     return "You are not a student of any course"
 
 
@@ -209,63 +208,11 @@ def course_navigation(lti=lti):
     return "Work in progess"
 
 
-@app.route('/course')
-def course(course_id=357):
-    record = Record.query.order_by(Record.id.desc()).first()
-
-    # users = get_students_in_course(course_id)
-    oa = OutcomeAverage.query.filter_by(record_id=record.id,
-                                        course_id=course_id)
-
-    users = set([outcome.user_id for outcome in oa])
-    students = []
-    for user in users:
-        outcome_averages = get_student_outcome_averages_for_course(record,
-                                                                   user,
-                                                                   course_id)
-
-        outcomes = make_course_object(course_id, outcome_averages)
-        students.append({'student': user, **outcomes})
-
-    print(students[0])
-
-    students = [
-        {
-            'name': 'John Doe',
-            'grade': 'A',
-            'min_score': 2.3,
-            'threshold': 3.0
-        },
-        {
-            'name': 'Jane Doe',
-            'grade': 'B',
-            'min_score': 2.3,
-            'threshold': 3.0
-        },
-    ]
-    return render_template('course.html', record=record, students=students)
-
-
 # Home page
 @app.route('/', methods=['GET'])
 @lti(error=error, request='any', app=app)
 def index(lti=lti):
     return render_template('index.html')
-
-
-@app.route('/data/<user_id>', methods=['GET', 'POST'])
-@lti(error=error, request='session', app=app)
-def data(user_id, lti=lti):
-    print('u' in session)
-    print(session.get(LTI_SESSION_KEY))
-    print(session['u'])
-
-    url = f'https://dtechhs.test.instructure.com/api/v1/users/{user_id}'
-    access_token = os.getenv('CANVAS_API_KEY')
-    headers = {'Authorization': f'Bearer {access_token}'}
-    response = requests.request("GET", url, headers=headers)
-    print(response.json())
-    return jsonify(response.json())
 
 
 # LTI XML Configuration

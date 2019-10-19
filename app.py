@@ -143,7 +143,7 @@ def launch(lti=lti):
                                        user_id=user_id).all()
         if grades:
             return render_template('student_dashboard.html', record=record,
-                                   students=[grades, grades])
+                                   students=[grades])
 
     # Otherwise they must be an observer
     else:

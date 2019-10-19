@@ -8,6 +8,7 @@ class Record(db.Model):
     term_id = db.Column(db.Integer)
 
     outcome_averages = db.relationship('OutcomeAverage', backref='record')
+    grades = db.relationship('Grade', backref='record')
 
     def __repr__(self):
         return str(self.id)
@@ -20,6 +21,7 @@ class Course(db.Model):
     enrollment_term_id = db.Column(db.Integer)
 
     outcome_averages = db.relationship('OutcomeAverage', backref='course')
+    grades = db.relationship('Grade', backref='course')
 
     def __repr__(self):
         return str(self.name)
@@ -52,10 +54,26 @@ class Outcome(db.Model):
 class Grade(db.Model):
     __tablename__ = 'grades'
     id = db.Column(db.Integer, primary_key=True)
-    course_id = db.Column(db.Integer)
-    user_id = db.Column(db.Integer)
+    course_id = db.Column(db.Integer, db.ForeignKey('courses.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     grade = db.Column(db.String)
     outcomes = db.Column(db.JSON)
+    record_id = db.Column(db.Integer, db.ForeignKey('records.id'))
+    threshold = db.Column(db.Numeric)
+    min_score = db.Column(db.Numeric)
 
     def __repr__(self):
         return str(self.__dict__)
+
+
+class User(db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    sis_user_id = db.Column(db.String)
+    login_id = db.Column(db.String)
+
+    grades = db.relationship('Grade', backref='user')
+
+    def __repr__(self):
+        return f'Name: {self.name}'

@@ -30,7 +30,7 @@ app.config.from_object(settings.configClass)
 
 db = SQLAlchemy(app)
 
-from models import Record, OutcomeAverage, Outcome, Course, Grade
+from models import Record, OutcomeAverage, Outcome, Course, Grade, User
 
 # csrf = CSRFProtect(app)
 bootstrap = Bootstrap(app)
@@ -305,7 +305,7 @@ def datetimeformat(value, format='%m-%d-%Y'):
 @app.shell_context_processor
 def make_shell_context():
     return dict(db=db, Outcome=Outcome, OutcomeAverage=OutcomeAverage,
-                Course=Course, Record=Record, Grade=Grade)
+                Course=Course, Record=Record, Grade=Grade, User=User)
 
 
 if __name__ == '__main__':

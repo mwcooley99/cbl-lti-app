@@ -152,6 +152,7 @@ def upsert_users(users, session):
     session.execute(update_stmt)
     session.commit()
 
+
 def get_users():
     url = "https://dtechhs.instructure.com/api/v1/accounts/1/users"
 
@@ -170,10 +171,12 @@ def get_users():
 
     return users
 
+
 def commit_users():
     session = Session(engine)
     users = get_users()
     upsert_users(users, session)
+
 
 def upsert_courses(courses, session):
     keys = ['id', 'name', 'enrollment_term_id']
@@ -259,7 +262,8 @@ def make_grade_object(student_rollup, course, outcomes, record_id):
     outcome_averages = []
 
     # Iterate through desc sorted outcome averages to extract data we want
-    for rollup in sorted(student_rollup['scores'], key=lambda x: x['score'], reverse=True):
+    for rollup in sorted(student_rollup['scores'], key=lambda x: x['score'],
+                         reverse=True):
         outcome_averages.append(
             extract_outcome_avg_data(rollup, course, outcomes))
 
@@ -281,15 +285,14 @@ def make_grade_object(student_rollup, course, outcomes, record_id):
     return grade
 
 
-def parse_rollups(course, outcome_rollups_list, record):
+def parse_rollups(course, outcome_rollups, record):
     grades = []
-    for outcome_rollups in outcome_rollups_list:
-        outcomes = outcome_rollups['linked']['outcomes']
 
-        grades = []
-        for student_rollup in outcome_rollups['rollups']:
-            grade = make_grade_object(student_rollup, course, outcomes, record)
-            grades.append(grade)
+    outcomes = outcome_rollups['linked']['outcomes']
+
+    for student_rollup in outcome_rollups['rollups']:
+        grade = make_grade_object(student_rollup, course, outcomes, record)
+        grades.append(grade)
 
     return grades
 
@@ -320,25 +323,26 @@ def main():
         # Get the outcome_rollups for the current class
         outcome_rollups_list = get_outcome_rollups(course)
 
-        # Make the student Objects
-        grades = parse_rollups(course,
-                               outcome_rollups_list,
-                               record)
+        # Loop through pages of outcome_rollups and make grades for students
+        for outcome_rollups in outcome_rollups_list:
+            grades = parse_rollups(course,
+                                   outcome_rollups,
+                                   record)
 
-        if len(grades):
-            start = time.time()
-            session.execute(Grades.insert().values(grades))
-            session.commit()
-            end = time.time()
-            print(end - start)
-            print('******')
-            print()
+            if len(grades):
+                start = time.time()
+                session.execute(Grades.insert().values(grades))
+                session.commit()
+                end = time.time()
+                print(end - start)
+                print('******')
+                print()
 
 
 if __name__ == '__main__':
     start = time.time()
-    # main()
-    commit_users()
+    main()
+    # commit_users()
     # get_outcomes()
     end = time.time()
     print(end - start)

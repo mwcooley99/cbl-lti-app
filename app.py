@@ -2,6 +2,7 @@ from flask import Flask, render_template, session, request, Response, jsonify
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
+from sqlalchemy.sql import or_
 
 from pylti.flask import lti, LTI
 from pylti.common import LTI_SESSION_KEY
@@ -183,19 +184,23 @@ def student_dashboard():
 def course_navigation(lti=lti):
     course_title = request.form.get('context_title')
     course_id = request.form.get('custom_canvas_course_id')
+    record = Record.query.order_by(Record.id.desc()).first()
+
+    users = Grade.query.filter_by(record_id=record.id, course_id=course_id).\
+        join(User).order_by(User.name).all()
 
     if course_title.startswith('@dtech'):
         # Get all students of the class
-        users = get_students_in_course(course_id)
+        # users = get_students_in_course(course_id)
 
-        record = Record.query.order_by(Record.id.desc()).first()
 
         # Create student objects
         students = []
         for user in users:
             # Get all student outcome averages from that record
             grades = Grade.query.filter_by(record_id=record.id,
-                                           user_id=user['id']).all()
+                                           user_id=user.user.id).join(Course)\
+                .filter(~Course.name.contains('@dtech')).order_by(Course.name).all()
 
             if grades:
                 students.append(grades)

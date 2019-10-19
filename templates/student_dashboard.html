@@ -67,7 +67,7 @@
                             <tbody>
                             {% for outcome_average in grade.outcomes %}
                                 <tr>
-                                     Use display name if it's available
+{# Use display name if it's available #}
                                     {% if outcome_average.display_name %}
                                         <td scope="row">{{ outcome_average.display_name }}</td>
                                     {% else %}

@@ -305,7 +305,7 @@ def main():
     # Create a new record
     record = create_record(current_term, session)
 
-    # get all active courses
+    # get all courses for current term
     courses = get_courses(current_term)
 
     # add courses to database
@@ -313,11 +313,13 @@ def main():
 
     # get outcome result rollups for each course and list of outcomes
     outcomes = []
-    pattern = '@dtech|Innovation Diploma FIT'
+    # pattern = '@dtech|Innovation Diploma FIT'
+    pattern = 'Teacher Assistant|LAB Day|FIT|Innovation Diploma FIT'
+
     for course in courses:
         print(course['name'])
         # Check if it's a non-graded course
-        if re.search(pattern, course['name']):
+        if re.match(pattern, course['name']):
             continue
 
         # Get the outcome_rollups for the current class

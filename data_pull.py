@@ -120,6 +120,7 @@ def extract_outcomes(outcomes):
             outcome in outcomes]
 
 
+# todo - deprecated - delete
 def upsert_outcomes(outcomes, session):
     keys = ['id', 'title', 'display_name']
     values = [dict(zip(keys, outcome)) for outcome in outcomes]
@@ -135,6 +136,44 @@ def upsert_outcomes(outcomes, session):
     session.execute(update_stmt)
     session.commit()
 
+
+def upsert_users(users, session):
+    keys = ['id', 'name', 'sis_user_id', 'login_id']
+    values = [{key: user[key] for key in keys} for user in users]
+    insert_stmt = postgresql.insert(Users).values(values)
+    update_stmt = insert_stmt.on_conflict_do_update(
+        index_elements=['id'],
+        set_={
+            'name': insert_stmt.excluded.name,
+            'sis_user_id': insert_stmt.excluded.sis_user_id,
+            'login_id': insert_stmt.excluded.login_id
+        }
+    )
+    session.execute(update_stmt)
+    session.commit()
+
+def get_users():
+    url = "https://dtechhs.instructure.com/api/v1/accounts/1/users"
+
+    querystring = {"enrollment_type": "student", "per_page": "100"}
+    response = requests.request("GET", url, headers=headers,
+                                params=querystring)
+
+    users = response.json()
+
+    # pagination
+    while response.links.get('next'):
+        url = response.links['next']['url']
+        response = requests.request("GET", url, headers=headers,
+                                    params=querystring)
+        users += response.json()
+
+    return users
+
+def commit_users():
+    session = Session(engine)
+    users = get_users()
+    upsert_users(users, session)
 
 def upsert_courses(courses, session):
     keys = ['id', 'name', 'enrollment_term_id']
@@ -218,11 +257,14 @@ def extract_outcome_avg_data(score, course, outcomes):
 def make_grade_object(student_rollup, course, outcomes, record_id):
     user_id = student_rollup['links']['user']
     outcome_averages = []
-    for rollup in student_rollup['scores']:
+
+    # Iterate through desc sorted outcome averages to extract data we want
+    for rollup in sorted(student_rollup['scores'], key=lambda x: x['score'], reverse=True):
         outcome_averages.append(
             extract_outcome_avg_data(rollup, course, outcomes))
 
     # calculate grade using cbl algorithm
+
     scores = list(map(lambda x: x['outcome_avg'], outcome_averages))
     grade_rollup = calculate_traditional_grade(scores)
     # store in a dict
@@ -292,13 +334,11 @@ def main():
             print('******')
             print()
 
-    # Add courses to the db
-    # upsert_outcomes(outcomes, session)
-
 
 if __name__ == '__main__':
     start = time.time()
-    main()
+    # main()
+    commit_users()
     # get_outcomes()
     end = time.time()
     print(end - start)

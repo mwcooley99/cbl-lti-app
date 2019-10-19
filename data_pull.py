@@ -343,8 +343,9 @@ def main():
 
 if __name__ == '__main__':
     start = time.time()
+    commit_users()
     main()
-    # commit_users()
+
     # get_outcomes()
     end = time.time()
     print(end - start)

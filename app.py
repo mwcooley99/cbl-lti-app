@@ -33,7 +33,7 @@ db = SQLAlchemy(app)
 from models import Record, OutcomeAverage, Outcome, Course, Grade, User
 
 # csrf = CSRFProtect(app)
-bootstrap = Bootstrap(app)
+# bootstrap = Bootstrap(app)
 
 # ============================================
 # Logging
@@ -133,28 +133,21 @@ def launch(lti=lti):
 
     # Check if they are a student
     # TODO - exclude Teachers
+    # Check if it's a student (or teacher currently)
     if 'lis_person_sourcedid' in request.form.keys():
         # get most recent record
         record = Record.query.order_by(Record.id.desc()).first()
 
-        # Get all student outcome averages from that record
-        outcome_averages = get_student_outcome_averages(record,
-                                                        user_id)
+        grades = Grade.query.filter_by(record_id=record.id,
+                                       user_id=user_id).all()
+        if grades:
+            return render_template('student_dashboard.html', record=record,
+                                   students=[grades, grades])
 
-        courses = [make_course_object(k, g) for k, g in
-                   groupby(outcome_averages, lambda x: x.course.name)]
-
-        student = dict(
-            user_id=user_id,
-            courses=courses,
-        )
-
-        return render_template('student_dashboard.html', record=record,
-                               students=[student])
     # Otherwise they must be an observer
     else:
         record = Record.query.order_by(Record.id.desc()).first()
-
+        # Get observees
         url = f"https://dtechhs.test.instructure.com/api/v1/users/{user_id}/observees"
         access_token = os.getenv('CANVAS_API_KEY')
         headers = {'Authorization': f'Bearer {access_token}'}
@@ -164,16 +157,16 @@ def launch(lti=lti):
         students = []
         for observee in response.json():
             # Get all student outcome averages from that record
-            outcome_averages = get_student_outcome_averages(record,
-                                                            observee['id'])
+            grades = Grade.query.filter_by(record_id=record.id,
+                                           user_id=observee['id']).all()
+            # Only add if not empty
+            if grades:
+                students.append(grades)
 
-            courses = [make_course_object(k, g) for k, g in
-                       groupby(outcome_averages, lambda x: x.course.name)]
-
-            students.append({**observee, 'courses': courses})
-
-        return render_template('student_dashboard.html', record=record,
-                               students=students)
+        # Only return if there are grades to display
+        if students:
+            return render_template('student_dashboard.html', record=record,
+                                   students=students)
 
     app.logger.info(json.dumps(request.form, indent=2))
 
@@ -190,6 +183,7 @@ def student_dashboard():
 def course_navigation(lti=lti):
     course_title = request.form.get('context_title')
     course_id = request.form.get('custom_canvas_course_id')
+
     if course_title.startswith('@dtech'):
         # Get all students of the class
         users = get_students_in_course(course_id)
@@ -200,17 +194,14 @@ def course_navigation(lti=lti):
         students = []
         for user in users:
             # Get all student outcome averages from that record
-            outcome_averages = get_student_outcome_averages(record,
-                                                            user['id'])
+            grades = Grade.query.filter_by(record_id=record.id,
+                                           user_id=user['id']).all()
 
-            courses = [make_course_object(course_name, data) for
-                       course_name, data in
-                       groupby(outcome_averages, lambda x: x.course.name)]
-
-            students.append({**user, 'courses': courses})
-
-        return render_template('student_dashboard.html', record=record,
-                               students=students)
+            if grades:
+                students.append(grades)
+        if students:
+            return render_template('student_dashboard.html', record=record,
+                                   students=students)
 
     return "Work in progess"
 

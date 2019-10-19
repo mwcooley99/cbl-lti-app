@@ -1,7 +1,6 @@
 {% extends 'base.html' %}
 {% block content %}
     <div class="container">
-        {#        <a href="{{ url_for('data') }}">Hello there</a>#}
         <h2>dTech Student Outcome Summary</h2>
         <p>Data last updated: {{ record.created_at|strftime }}</p>
         {% if students|length > 1 %}
@@ -10,11 +9,15 @@
                 <select class="form-control" id="sel"
                         onchange="showHide()">
                     {% for student in students %}
-                        <option value="{{ loop.index }}">{{ student.name }}</option>
+                        <option value="{{ loop.index }}">{{ student[0].user.name }}</option>
                     {% endfor %}
                 </select>
             </div>
+        {% else %}
+{#  Get the single students name   #}
+            <h3>{{ students[0][0].user.name }}</h3>
         {% endif %}
+{# Hide the all but the first students records #}
         {% for student in students %}
             {% set student_number = loop.index %}
             {% if loop.index == 1 %}
@@ -24,14 +27,14 @@
                 <div id="accordion{{ loop.index }}" class="student"
                      style="display: none">
             {% endif %}
-        {% for course in student.courses %}
+        {% for grade in student %}
             <div class="card">
                 <a class="card-link" data-toggle="collapse"
                    href="#collapse{{ loop.index }}">
                     <div class="card-header">
 
-                        {% set course_name = course.name.split(' - ') %}
-                        {{ course_name[0] }}: {{ course.grade }}
+                        {% set course_name = grade.course.name.split(' - ') %}
+                        {{ course_name[0] }}: {{ grade.grade }}
 
                     </div>
                 </a>
@@ -41,17 +44,17 @@
                      data-parent="#accordion{{ student_number }}">
 
                     <div class="card-body">
-                        Your grade is: {{ course.grade }} because:
+                        Your grade is: {{ grade.grade }} because:
                         <ul>
                             <li><strong>75%</strong>
                                 of your
                                 Outcome Averages were above
-                                a <strong>{{ course.threshold }}</strong></li>
+                                a <strong>{{ grade.threshold }}</strong></li>
                             <li>Your
                                 Lowest
                                 Outcome
                                 Average was above
-                                a <strong>{{ course.min_score }}</strong></li>
+                                a <strong>{{ grade.min_score }}</strong></li>
                         </ul>
 
                         <table class="table">
@@ -62,15 +65,15 @@
                             </tr>
                             </thead>
                             <tbody>
-                            {% for outcome_average in course.outcomes %}
+                            {% for outcome_average in grade.outcomes %}
                                 <tr>
-                                    {# Use display name if it's available #}
-                                    {% if outcome_average.outcome.display_name %}
-                                        <td scope="row">{{ outcome_average.outcome.display_name }}</td>
+                                     Use display name if it's available
+                                    {% if outcome_average.display_name %}
+                                        <td scope="row">{{ outcome_average.display_name }}</td>
                                     {% else %}
-                                        <td scope="row">{{ outcome_average.outcome.title }}</td>
+                                        <td scope="row">{{ outcome_average.title }}</td>
                                     {% endif %}
-                                    {# Only display the outcome_avg if outcome's have been assessed. #}
+                                     Only display the outcome_avg if outcome's have been assessed.
                                     {% if outcome_average.outcome_avg > 0 %}
                                         <td>{{ outcome_average.outcome_avg }}</td>
                                     {% endif %}
@@ -86,37 +89,37 @@
         </div>
         {% endfor %}
         </div>
-        <script>
-            async function getAllUrls(urls) {
-                try {
-                    var data = await Promise.all(
-                        urls.map(
-                            url =>
-                                fetch(url).then(
-                                    (response) => response.json()
-                                )));
-
-                    return (data)
-
-                } catch (error) {
-                    console.log(error);
-
-                    throw (error)
-                }
-            }
-
-            var user_id = '601';
-            var urls = [`http://127.0.0.1:5000/data/${user_id}`,
-            `http://127.0.0.1:5000/data/${user_id}`,
-            `http://127.0.0.1:5000/data/${user_id}`,
-            `http://127.0.0.1:5000/data/${user_id}`];
-
-            getAllUrls(urls).then(data => console.log(data));
-
+{#        <script>#}
+{#            async function getAllUrls(urls) {#}
+{#                try {#}
+{#                    var data = await Promise.all(#}
+{#                        urls.map(#}
+{#                            url =>#}
+{#                                fetch(url).then(#}
+{#                                    (response) => response.json()#}
+{#                                )));#}
+{##}
+{#                    return (data)#}
+{##}
+{#                } catch (error) {#}
+{#                    console.log(error);#}
+{##}
+{#                    throw (error)#}
+{#                }#}
+{#            }#}
+{##}
+{#            var user_id = '601';#}
+{#            var urls = [`http://127.0.0.1:5000/data/${user_id}`,#}
+{#            `http://127.0.0.1:5000/data/${user_id}`,#}
+{#            `http://127.0.0.1:5000/data/${user_id}`,#}
+{#            `http://127.0.0.1:5000/data/${user_id}`];#}
+{##}
+{#            getAllUrls(urls).then(data => console.log(data));#}
+{##}
             {#console.log(url);#}
             {#fetch(url)#}
             {#    .then(response => response.json())#}
             {#    .then(json => console.log(json))#}
-        </script>
+{#        </script>#}
 
 {% endblock %}

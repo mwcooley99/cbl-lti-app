@@ -5,8 +5,8 @@ def calculate_traditional_grade(scores):
     if len(scores) == 0 or scores[0] == -1:
         return {
             'grade': 'n/a',
-            'threshold': 'n/a',
-            'min_score': 'n/a',
+            'threshold': None,
+            'min_score': None,
         }
 
 

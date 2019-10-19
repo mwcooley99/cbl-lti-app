@@ -6,6 +6,7 @@ from datetime import datetime
 import time
 
 from config import configuration
+from cbl_calculator import calculate_traditional_grade
 
 access_token = os.getenv('CANVAS_API_KEY')
 
@@ -20,28 +21,20 @@ from sqlalchemy import create_engine, Integer, String, Table, Column, MetaData, 
 from sqlalchemy.dialects import postgresql
 
 config = configuration[os.getenv('PULL_CONFIG')]
-print(config.SQLALCHEMY_DATABASE_URI)
 
 Base = automap_base()
 
 engine = create_engine(
     config.SQLALCHEMY_DATABASE_URI)
-print(111)
-# reflect the tables
-# Base.prepare(engine, reflect=True)
-print(222)
-# mapped classes
-# Record = Base.classes.records
 
+# reflect the tables
 metadata = MetaData()
 metadata.bind = engine
 
-print('meta')
 Records = Table('records', metadata,
                 Column('id', Integer, primary_key=True, autoincrement=True),
                 Column('created_at', DateTime),
                 Column('term_id', Integer),
-
                 )
 
 OutcomeAverages = Table('outcome_averages', metadata,
@@ -64,12 +57,21 @@ Outcomes = Table('outcomes', metadata,
                  Column('display_name', String))
 
 Grades = Table('grades', metadata,
-               Column('id', Integer, primary_key=True),
-               Column('record_id', Integer),
-               Column('course_id', Integer),
+               Column('id', Integer, primary_key=True, autoincrement=True),
                Column('user_id', Integer),
+               Column('course_id', Integer),
                Column('grade', String),
-               Column('outcomes', JSON)),
+               Column('outcomes', JSON),
+               Column('record_id', Integer),
+               Column('threshold', Float),
+               Column('min_score', Float),
+               )
+
+Users = Table('users', metadata,
+              Column('id', Integer, primary_key=True),
+              Column('name', String),
+              Column('sis_user_id', String),
+              Column('login_id', String))
 
 
 def find_outcome(outcomes, outcome_id):
@@ -150,13 +152,22 @@ def upsert_courses(courses, session):
 
 
 def create_record(current_term, session):
+    '''
+    Creates new record
+    :param current_term:
+    :param session:
+    :return: record_id for newly created record
+    '''
     timestamp = datetime.utcnow()
     values = {'created_at': timestamp, 'term_id': current_term}
 
-    record = session.execute(Records.insert().values(values))
+    # Make new record
+    session.execute(Records.insert().values(values))
     session.commit()
+
+    # Grab record to use id later
     record = session.query(Records).order_by(desc(Records.c.id)).first()
-    return record
+    return record[0]
 
 
 def get_courses(current_term):
@@ -177,6 +188,7 @@ def get_courses(current_term):
     return courses
 
 
+# TODO - deprecated - delete
 def add_blank_outcome_average(course, user_id, record_id):
     outcome_avg = dict(
         user_id=int(user_id),
@@ -191,70 +203,57 @@ def add_blank_outcome_average(course, user_id, record_id):
 
 def extract_outcome_avg_data(score, course, outcomes):
     outcome_info = find_outcome(outcomes, int(score['links']['outcome']))
-    for outcome in outcomes:
-        outcome_avg = dict(
-            course_id=int(course['id']),
-            outcome_id=int(score['links']['outcome']),
-            outcome_avg=score['score'],
-            title=outcome_info['title'],
-            display_name=outcome_info['display_name'],
-        )
+
+    outcome_avg = dict(
+        course_id=int(course['id']),  # todo - probably not needed
+        outcome_id=int(score['links']['outcome']),
+        outcome_avg=score['score'],
+        title=outcome_info['title'],
+        display_name=outcome_info['display_name'],
+    )
 
     return outcome_avg
 
 
-def make_grade_object(student_rollup, course, outcomes):
+def make_grade_object(student_rollup, course, outcomes, record_id):
     user_id = student_rollup['links']['user']
-    print(user_id)
     outcome_averages = []
     for rollup in student_rollup['scores']:
-        outcome_averages.append(extract_outcome_avg_data(rollup, course, outcomes))
+        outcome_averages.append(
+            extract_outcome_avg_data(rollup, course, outcomes))
 
     # calculate grade using cbl algorithm
-
+    scores = list(map(lambda x: x['outcome_avg'], outcome_averages))
+    grade_rollup = calculate_traditional_grade(scores)
     # store in a dict
+    grade = dict(
+        user_id=user_id,
+        course_id=course['id'],
+        grade=grade_rollup['grade'],
+        threshold=grade_rollup['threshold'],
+        min_score=grade_rollup['min_score'],
+        record_id=record_id,
+        outcomes=outcome_averages
+    )
 
-    # Return dict
-    print(outcome_averages)
-
-    # outcome_averages = [
-    #     extract_outcome_avg_data(score, course, user_id, record.id)
-    #     for score in student_rollup['scores']]
-    # scores = []
-
-    return "Hello"
+    return grade
 
 
-def parse_rollups(course, outcome_averages, outcome_rollups_list, outcomes,
-                  record):
+def parse_rollups(course, outcome_rollups_list, record):
     grades = []
     for outcome_rollups in outcome_rollups_list:
-        # print(outcome_rollups['linked']['outcomes'])
         outcomes = outcome_rollups['linked']['outcomes']
 
+        grades = []
         for student_rollup in outcome_rollups['rollups']:
-            grade = make_grade_object(student_rollup, course, record, outcomes)
-            # user_id = student_rollup['links']['user']
-            # # Check if course has not assessed any outcomes
-            # if len(student_rollup['scores']) == 0:
-            #     outcome_averages.append(
-            #         add_blank_outcome_average(course, user_id, record.id))
-            # else:
-            #     outcome_averages += [
-            #         extract_outcome_avg_data(score, course, user_id, record.id)
-            #         for score in student_rollup['scores']]
+            grade = make_grade_object(student_rollup, course, outcomes, record)
+            grades.append(grade)
 
-        # create list of outcomes
-        # outcomes += extract_outcomes(outcome_rollups['linked']['outcomes'])
-        # outcomes = list(set(outcomes))
-
-    return grades, outcomes
+    return grades
 
 
 def main():
-    print('start')
     session = Session(engine)
-    print("session")
     # Get current term(s) - todo search for all terms within a date. Will return a list if more than one term
     current_term = 10
 
@@ -272,6 +271,7 @@ def main():
     pattern = '@dtech|Innovation Diploma FIT'
     for course in courses:
         print(course['name'])
+        # Check if it's a non-graded course
         if re.search(pattern, course['name']):
             continue
 
@@ -279,14 +279,13 @@ def main():
         outcome_rollups_list = get_outcome_rollups(course)
 
         # Make the student Objects
-        outcome_averages = []
-        outcome_averages, outcomes = parse_rollups(course, outcome_averages,
-                                                   outcome_rollups_list,
-                                                   outcomes, record)
+        grades = parse_rollups(course,
+                               outcome_rollups_list,
+                               record)
 
-        if len(outcome_averages):
+        if len(grades):
             start = time.time()
-            session.execute(OutcomeAverages.insert().values(outcome_averages))
+            session.execute(Grades.insert().values(grades))
             session.commit()
             end = time.time()
             print(end - start)
@@ -294,7 +293,7 @@ def main():
             print()
 
     # Add courses to the db
-    upsert_outcomes(outcomes, session)
+    # upsert_outcomes(outcomes, session)
 
 
 if __name__ == '__main__':
@@ -303,5 +302,3 @@ if __name__ == '__main__':
     # get_outcomes()
     end = time.time()
     print(end - start)
-
-

@@ -82,8 +82,6 @@ def launch(lti=lti):
     # store some of the user data in the session
     user_id = request.form.get('custom_canvas_user_id')
 
-
-
     # Check if they are a student
     # TODO - exclude Teachers
     # Check if it's a student (or teacher currently)
@@ -91,8 +89,12 @@ def launch(lti=lti):
         # get most recent record
         record = Record.query.order_by(Record.id.desc()).first()
 
-        grades = Grade.query.filter_by(record_id=record.id,
-                                       user_id=user_id).all()
+        grades = Grade.query\
+            .filter_by(record_id=record.id, user_id=user_id)\
+            .join(Course)\
+            .filter(~Course.name.contains('@dtech'))\
+            .order_by(Course.name).all()
+
         if grades:
             return render_template('student_dashboard.html', record=record,
                                    students=[grades])
@@ -142,7 +144,7 @@ def course_navigation(lti=lti):
     course_id = request.form.get('custom_canvas_course_id')
     record = Record.query.order_by(Record.id.desc()).first()
 
-    users = Grade.query.filter_by(record_id=record.id, course_id=course_id).\
+    users = Grade.query.filter_by(record_id=record.id, course_id=course_id). \
         join(User).order_by(User.name).all()
 
     if course_title.startswith('@dtech'):
@@ -151,8 +153,9 @@ def course_navigation(lti=lti):
         for user in users:
             # Get all student outcome averages from that record
             grades = Grade.query.filter_by(record_id=record.id,
-                                           user_id=user.user.id).join(Course)\
-                .filter(~Course.name.contains('@dtech')).order_by(Course.name).all()
+                                           user_id=user.user.id).join(Course) \
+                .filter(~Course.name.contains('@dtech')).order_by(
+                Course.name).all()
 
             if grades:
                 students.append(grades)

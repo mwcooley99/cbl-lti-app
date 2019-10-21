@@ -172,7 +172,7 @@ def get_users():
     return users
 
 
-def commit_users():
+def update_users():
     session = Session(engine)
     users = get_users()
     upsert_users(users, session)
@@ -297,10 +297,8 @@ def parse_rollups(course, outcome_rollups, record):
     return grades
 
 
-def main():
+def preform_grade_pull(current_term=10):
     session = Session(engine)
-    # Get current term(s) - todo search for all terms within a date. Will return a list if more than one term
-    current_term = 10
 
     # Create a new record
     record = create_record(current_term, session)
@@ -312,8 +310,6 @@ def main():
     upsert_courses(courses, session)
 
     # get outcome result rollups for each course and list of outcomes
-    outcomes = []
-    # pattern = '@dtech|Innovation Diploma FIT'
     pattern = 'Teacher Assistant|LAB Day|FIT|Innovation Diploma FIT'
 
     for course in courses:
@@ -343,9 +339,9 @@ def main():
 
 if __name__ == '__main__':
     start = time.time()
-    commit_users()
-    main()
 
-    # get_outcomes()
+    update_users()
+    preform_grade_pull()
+
     end = time.time()
     print(end - start)

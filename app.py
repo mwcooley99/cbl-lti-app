@@ -52,51 +52,6 @@ app.logger.addHandler(handler)
 
 
 # ============================================
-# Helper Functions
-# ============================================
-def make_course_object(k, g):
-    course = dict(
-        name=k,
-        outcomes=list(g),
-    )
-    scores = [outcome.outcome_avg for outcome in course['outcomes']]
-
-    return {**course, **calculate_traditional_grade(scores)}
-
-
-def get_student_outcome_averages(record, user_id):
-    return OutcomeAverage.query \
-        .filter_by(record_id=record.id, user_id=user_id) \
-        .join(OutcomeAverage.course) \
-        .order_by(Course.name, OutcomeAverage.outcome_avg.desc()).all()
-
-
-def get_student_outcome_averages_for_course(record, user_id, course_id):
-    return OutcomeAverage.query \
-        .filter_by(record_id=record.id, user_id=user_id, course_id=course_id) \
-        .join(OutcomeAverage.course) \
-        .order_by(Course.name, OutcomeAverage.outcome_avg.desc()).all()
-
-
-def get_students_in_course(course_id):
-    url = f"https://dtechhs.instructure.com/api/v1/courses/{course_id}/users"
-    querystring = {"sort": "email", "enrollment_type[]": "student",
-                   "per_page": "100"}
-    access_token = os.getenv('CANVAS_API_KEY')
-    headers = {'Authorization': f'Bearer {access_token}'}
-    response = requests.request("GET", url, headers=headers,
-                                params=querystring)
-    users = response.json()
-    # pagination (
-    while response.links.get('next'):
-        url = response.links['next']['url']
-        response = requests.request("GET", url, headers=headers,
-                                    params=querystring)
-        users += response.json()
-    return users
-
-
-# ============================================
 # Utility Functions
 # ============================================
 

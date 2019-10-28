@@ -1,15 +1,17 @@
-import schedule
-import time
+from pytz import utc
+from apscheduler.schedulers.blocking import BlockingScheduler
+
+sched = BlockingScheduler(timezone=utc)
+
+
+@sched.scheduled_job('cron', day_of_week="mon", hour='23', minute=47)
+def timed_job():
+    # update_users()
+    print("users updated")
+    # preform_grade_pull()
+    print("grades pulled")
+
 
 from data_pull import update_users, preform_grade_pull
 
-
-def job():
-    print("Hello World")
-
-
-schedule.every().monday.at("3:47").do(job)
-
-while True:
-    schedule.run_pending()
-    time.sleep(1)
+sched.start()

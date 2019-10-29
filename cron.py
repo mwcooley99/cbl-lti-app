@@ -5,7 +5,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 sched = BlockingScheduler(timezone=utc)
 
 
-@sched.scheduled_job('cron', day_of_week="tues", hour='6', minute=00)
+@sched.scheduled_job('cron', day_of_week="tues", hour='22', minute=00)
 def timed_job():
     update_users()
     print(f"users updated at {datetime.now()}")

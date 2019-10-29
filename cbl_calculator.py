@@ -13,33 +13,33 @@ def calculate_traditional_grade(scores):
     calculation_dictionaries = [
         {
             'grade': 'A',
-            'threshold': 3.5,
+            'threshold': 3.3,
             'min_score': 3
         },
         {
             'grade': 'A-',
-            'threshold': 3.5,
+            'threshold': 3.3,
             'min_score': 2.5
         },
         {
             'grade': 'B+',
-            'threshold': 3,
+            'threshold': 2.6,
             'min_score': 2.5
         },
         {
             'grade': 'B',
-            'threshold': 3,
+            'threshold': 2.6,
             'min_score': 2.25
         },
         {
             'grade': 'B-',
-            'threshold': 3,
+            'threshold': 2.6,
             'min_score': 2
         },
         {
             'grade': 'C',
-            'threshold': 2.5,
-            'min_score': 2
+            'threshold': 2.2,
+            'min_score': 0
         },
         {
             'grade': 'I',

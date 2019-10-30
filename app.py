@@ -1,4 +1,4 @@
-from flask import Flask, render_template, session, request, Response, jsonify
+from flask import Flask, render_template, session, request, Response, jsonify, url_for, redirect
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
@@ -80,7 +80,7 @@ def launch(lti=lti):
     """
 
     # store some of the user data in the session
-    user_id = request.form.get('custom_canvas_user_id')
+    session['user_id'] = request.form.get('custom_canvas_user_id')
 
     # Check if they are a student
     # TODO - exclude Teachers
@@ -89,21 +89,24 @@ def launch(lti=lti):
         # get most recent record
         record = Record.query.order_by(Record.id.desc()).first()
 
-        grades = Grade.query\
-            .filter_by(record_id=record.id, user_id=user_id)\
-            .join(Course)\
-            .filter(~Course.name.contains('@dtech'))\
+        grades = Grade.query \
+            .filter_by(record_id=record.id, user_id=session['user_id']) \
+            .join(Course) \
+            .filter(~Course.name.contains('@dtech')) \
             .order_by(Course.name).all()
 
         if grades:
             return render_template('student_dashboard.html', record=record,
                                    students=[grades])
+            # return render_template('new_dashboard.html', record=record,
+            #                        students=[grades])
 
     # Otherwise they must be an observer
     else:
+        # todo - Redirect to observer_route
         record = Record.query.order_by(Record.id.desc()).first()
         # Get observees
-        url = f"https://dtechhs.test.instructure.com/api/v1/users/{user_id}/observees"
+        url = f"https://dtechhs.test.instructure.com/api/v1/users/{session['user_id']}/observees"
         access_token = os.getenv('CANVAS_API_KEY')
         headers = {'Authorization': f'Bearer {access_token}'}
         response = requests.request("GET", url, headers=headers)
@@ -133,35 +136,58 @@ def launch(lti=lti):
 
 
 @app.route('/student_dashboard', methods=['GET'])
-def student_dashboard():
-    return render_template('student_dashboard.html')
+@app.route('/student_dashboard/<user_id>', methods=['GET'])
+def student_dashboard(user_id=None):
+    record = Record.query.order_by(Record.id.desc()).first()
+    if user_id:
+        grades = Grade.query.filter_by(record_id=record.id,
+                                       user_id=user_id).join(Course) \
+            .filter(~Course.name.contains('@dtech')).order_by(
+            Course.name).all()
+
+        # if grades:
+        #     students.append(grades)
+        # if students:
+        return render_template('student_dashboard.html', record=record,
+                               students=session['users'], grades=grades)
+
+    return str(session['course_id'])
+    # return render_template('student_dashboard.html')
 
 
 @app.route('/course_navigation', methods=['POST', 'GET'])
 @lti(error=error, request='initial', role='instructor', app=app)
 def course_navigation(lti=lti):
+
+    print(json.dumps(request.form, indent=2))
+    session['dash_type'] = 'course'
     course_title = request.form.get('context_title')
-    course_id = request.form.get('custom_canvas_course_id')
+    session['course_id'] = request.form.get('custom_canvas_course_id')
     record = Record.query.order_by(Record.id.desc()).first()
 
-    users = Grade.query.filter_by(record_id=record.id, course_id=course_id). \
-        join(User).order_by(User.name).all()
+    session['users'] = Grade.query.filter_by(record_id=record.id,
+                                  course_id=session['course_id']). \
+        join(User).order_by(User.name).with_entities(Grade.user_id, User.name).all()
+    print(session['users'])
+
+    user = session['users'][0]
 
     if course_title.startswith('@dtech'):
         # Create student objects
         students = []
-        for user in users:
+        # for user in users:
             # Get all student outcome averages from that record
-            grades = Grade.query.filter_by(record_id=record.id,
-                                           user_id=user.user.id).join(Course) \
-                .filter(~Course.name.contains('@dtech')).order_by(
-                Course.name).all()
+        redirect(url_for('student_dashboard', user_id=user[0]))
+        grades = Grade.query.filter_by(record_id=record.id,
+                                       user_id=user[0]).join(Course) \
+            .filter(~Course.name.contains('@dtech')).order_by(
+            Course.name).all()
 
-            if grades:
-                students.append(grades)
-        if students:
-            return render_template('student_dashboard.html', record=record,
-                                   students=students)
+        # if grades:
+        #     students.append(grades)
+        # if students:
+        return render_template('student_dashboard.html', record=record,
+                                   students=session['users'], grades=grades)
 
     return "Work in progess"
 

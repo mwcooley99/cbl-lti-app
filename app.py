@@ -156,15 +156,13 @@ def student_dashboard(user_id=None):
             .filter(~Course.name.contains('@dtech')).order_by(
             Course.name).all()
 
-        # if grades:
-        #     students.append(grades)
-        # if students:
-        return render_template('student_dashboard.html', record=record,
-                               students=session['users'], grades=grades,
-                               calculation_dict=calculation_dictionaries)
+        if grades:
+            return render_template('student_dashboard.html', record=record,
+                                   students=session['users'], grades=grades,
+                                   calculation_dict=calculation_dictionaries)
 
-    return "Error"
-    # return render_template('student_dashboard.html')
+    return "You currently don't have any grades!"
+
 
 
 @app.route('/course_navigation', methods=['POST', 'GET'])

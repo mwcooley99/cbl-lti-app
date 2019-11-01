@@ -87,17 +87,18 @@ def launch(lti=lti):
     # Check if it's a student (or teacher currently)
     if 'lis_person_sourcedid' in request.form.keys():
         # get most recent record
-        record = Record.query.order_by(Record.id.desc()).first()
-
-        grades = Grade.query \
-            .filter_by(record_id=record.id, user_id=session['user_id']) \
-            .join(Course) \
-            .filter(~Course.name.contains('@dtech')) \
-            .order_by(Course.name).all()
-
-        if grades:
-            return render_template('student_dashboard.html', record=record,
-                                   students=[grades])
+        # record = Record.query.order_by(Record.id.desc()).first()
+        session['users'] = User.query.filter(User.id==session['user_id']).with_entities(User.id, User.name).all()
+        return redirect(url_for('student_dashboard', user_id=session['user_id']))
+        # grades = Grade.query \
+        #     .filter_by(record_id=record.id, user_id=session['user_id']) \
+        #     .join(Course) \
+        #     .filter(~Course.name.contains('@dtech')) \
+        #     .order_by(Course.name).all()
+        #
+        # if grades:
+        #     return render_template('student_dashboard.html', record=record,
+        #                            students=[grades])
             # return render_template('new_dashboard.html', record=record,
             #                        students=[grades])
 
@@ -111,23 +112,27 @@ def launch(lti=lti):
         headers = {'Authorization': f'Bearer {access_token}'}
         response = requests.request("GET", url, headers=headers)
 
-        # TODO - Check that they have a student.
-        students = []
-        for observee in response.json():
-            # Get all student outcome averages from that record
-            grades = Grade.query.filter_by(record_id=record.id,
-                                           user_id=observee['id']).join(Course) \
-                .filter(~Course.name.contains('@dtech')).order_by(
-                Course.name).all()
+        session['users'] = [(obs['id'], obs['name']) for obs in response.json()]
+        user_id = session['users'][0][0]
+        return redirect(url_for('student_dashboard', user_id=user_id))
 
-            # Only add if not empty
-            if grades:
-                students.append(grades)
-
-        # Only return if there are grades to display
-        if students:
-            return render_template('student_dashboard.html', record=record,
-                                   students=students)
+        # # TODO - Check that they have a student.
+        # students = []
+        # for observee in response.json():
+        #     # Get all student outcome averages from that record
+        #     grades = Grade.query.filter_by(record_id=record.id,
+        #                                    user_id=observee['id']).join(Course) \
+        #         .filter(~Course.name.contains('@dtech')).order_by(
+        #         Course.name).all()
+        #
+        #     # Only add if not empty
+        #     if grades:
+        #         students.append(grades)
+        #
+        # # Only return if there are grades to display
+        # if students:
+        #     return render_template('student_dashboard.html', record=record,
+        #                            students=students)
 
     app.logger.info(json.dumps(request.form, indent=2))
 
@@ -151,7 +156,7 @@ def student_dashboard(user_id=None):
         return render_template('student_dashboard.html', record=record,
                                students=session['users'], grades=grades)
 
-    return str(session['course_id'])
+    return "Error"
     # return render_template('student_dashboard.html')
 
 
@@ -177,19 +182,18 @@ def course_navigation(lti=lti):
         students = []
         # for user in users:
             # Get all student outcome averages from that record
-        redirect(url_for('student_dashboard', user_id=user[0]))
-        grades = Grade.query.filter_by(record_id=record.id,
-                                       user_id=user[0]).join(Course) \
-            .filter(~Course.name.contains('@dtech')).order_by(
-            Course.name).all()
+        return redirect(url_for('student_dashboard', user_id=user[0]))
+        # grades = Grade.query.filter_by(record_id=record.id,
+        #                                user_id=user[0]).join(Course) \
+        #     .filter(~Course.name.contains('@dtech')).order_by(
+        #     Course.name).all()
+        #
+        # # if grades:
+        # #     students.append(grades)
+        # # if students:
+        # return redirect(url_for('student_dashboard'), user_id=user[0])
 
-        # if grades:
-        #     students.append(grades)
-        # if students:
-        return render_template('student_dashboard.html', record=record,
-                                   students=session['users'], grades=grades)
-
-    return "Work in progess"
+    return "Work in progress"
 
 
 # Home page
@@ -217,9 +221,9 @@ def xml():
 
 
 @app.route("/dashboard/")
-@lti(error=error, request='initial', role='any', app=app)
+# @lti(error=error, request='initial', role='any', app=app)
 def dashboard():
-    return jsonify({'key:': "hello"})
+    return render_template('new_dashboard.html')
 
 
 @app.template_filter('strftime')

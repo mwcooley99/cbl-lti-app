@@ -1,37 +1,31 @@
 {% extends 'base.html' %}
 {% block content %}
-    <div class="container">
-        <h2>dTech Student Outcome Summary</h2>
-        <h2><h3>{{ grades[0].user.name }}</h3></h2>
-        <p>Data last updated: {{ record.created_at|strftime }}</p>
-        {% if students|length > 1 %}
-            {#            <div class="form-group">#}
-            {#                <label for="sel">Current Student</label>#}
-            {#                <select class="form-control" id="sel"#}
-            {#                        onchange="showHide()">#}
-            {#                    {% for student in students %}#}
-            {#                        <option value="{{ loop.index }}">{{ student[0].user.name }}</option>#}
-            {#                    {% endfor %}#}
-            {#                </select>#}
-            {#            </div>#}
+    <nav class="navbar navbar-light bg-light">
+            <span class="navbar-brand mb-0 h1">dTech Student Outcome Summary</span>
+    {% if students|length > 1 %}
+
             <div class="dropdown">
                 <button class="btn btn-secondary dropdown-toggle" type="button"
                         id="dropdownMenuButton" data-toggle="dropdown"
                         aria-haspopup="true" aria-expanded="false">
-                    Dropdown button
+                    Select Student
                 </button>
-                <div class="dropdown-menu"
+                <div class="dropdown-menu dropdown-menu-lg-right scrollable-menu"
                      aria-labelledby="dropdownMenuButton">
                     {% for student in students %}
-                        {{ student[0] }}
                         <a class="dropdown-item" href="{{ url_for('student_dashboard', user_id=student[0]) }}">{{ student[1] }}</a>
                     {% endfor %}
                 </div>
             </div>
-{#        {% else %}#}
-            {#  Get the single students name   #}
 
         {% endif %}
+        </nav>
+    <div class="container-fluid">
+{#        <h2>dTech Student Outcome Summary</h2>#}
+
+        <h2><h3>{{ grades[0].user.name }}</h3></h2>
+        <p>Data last updated: {{ record.created_at|strftime }}</p>
+
         {# Hide the all but the first students records #}
 {#        {% for student in students %}#}
 {#            {% set student_number = loop.index %}#}

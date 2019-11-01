@@ -74,19 +74,19 @@
                                 <div class="col-4"><h3 class="card-title">
                                     Grade: {{ grade.grade }}
                                 </h3></div>
-                                <div class="col-8">
-                                    <div class="row">
-                                        <div class="col">
-                                            <strong> Criteria 1 - 75% of Outcome Averages are
-                                            Above:</strong> {{ grade.threshold }}
-                                        </div>
-                                    </div>
-                                    <div class="row mt-2">
-                                        <div class="col"><strong>Criteria 2 - Lowest Outcome
-                                            Average:</strong> {{ grade.min_score }}
-                                        </div>
-                                    </div>
-                                </div>
+{#                                <div class="col-8">#}
+{#                                    <div class="row">#}
+{#                                        <div class="col">#}
+{#                                            <strong> Criteria 1 - 75% of Outcome Averages are#}
+{#                                            Above:</strong> {{ grade.threshold }}#}
+{#                                        </div>#}
+{#                                    </div>#}
+{#                                    <div class="row mt-2">#}
+{#                                        <div class="col"><strong>Criteria 2 - Lowest Outcome#}
+{#                                            Average:</strong> {{ grade.min_score }}#}
+{#                                        </div>#}
+{#                                    </div>#}
+{#                                </div>#}
                             </div>
                         </div>
 
@@ -109,9 +109,9 @@
                                     Please note that both Criteria 1 and 2 must
                                     be met to earn that letter Grade.
                                 </p>
-                                <table class="table table-bordered table-sm">
+                                <table class="table table-bordered grade-table">
                                     <tr>
-                                        <th>Letter Grade</th>
+                                        <th class="text-center">Letter Grade</th>
                                         <th class="text-center">Criteria 1 <br>
 
                                             <div class="font-weight-light">75% of Outcome Averages Equal to or
@@ -130,10 +130,15 @@
                                             <tr>
                                         {% endif %}
                                     <td>{{ level.grade }}</td>
-                                    <td>{{ level.threshold }}</td>
-                                    <td>{{ level.min_score }}</td>
+                                    <td class="text-center">{{ level.threshold }}</td>
+                                    <td class="text-center">{{ level.min_score }}</td>
                                     </tr>
                                     {% endfor %}
+                                    <tr class="your-results">
+                                        <th>Your results</th>
+                                        <td class="text-center"><strong>{{ grade.threshold }}</strong></td>
+                                        <td class="text-center"><strong>{{ grade.min_score }}</strong></td>
+                                    </tr>
 
                                 </table>
                             </div>

@@ -1,19 +1,15 @@
-from flask import Flask, render_template, session, request, Response, jsonify, \
+from flask import Flask, render_template, session, request, Response, \
     url_for, redirect
-from flask_bootstrap import Bootstrap
+
 from flask_sqlalchemy import SQLAlchemy
-from flask_wtf.csrf import CSRFProtect
-from sqlalchemy.sql import or_
 
 from pylti.flask import lti, LTI
-from pylti.common import LTI_SESSION_KEY
 
 import settings
 import logging
 import json
 import os, time
 import requests
-from itertools import groupby
 
 from cbl_calculator import calculation_dictionaries
 
@@ -33,9 +29,6 @@ app.config.from_object(settings.configClass)
 db = SQLAlchemy(app)
 
 from models import Record, OutcomeAverage, Outcome, Course, Grade, User
-
-# csrf = CSRFProtect(app)
-# bootstrap = Bootstrap(app)
 
 # ============================================
 # Logging
@@ -107,7 +100,6 @@ def launch(lti=lti):
                             response.json()]
         user_id = session['users'][0][0]
         return redirect(url_for('student_dashboard', user_id=user_id))
-
 
     # TODO - make a template
     return "You are not a student of any course"

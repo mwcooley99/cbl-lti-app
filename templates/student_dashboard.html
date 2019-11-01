@@ -2,11 +2,11 @@
 {% block content %}
 
     <nav class="navbar navbar-light bg-light sticky-top">
-        <span class="navbar-brand mb-0 h1">{{ grades[0].user.name }}</span>
+        <span class="navbar-brand mb-0 h1">{{ grades[0].user.name }} </span>
         {% if students|length > 1 %}
 
             <div class="dropdown">
-                <button class="btn btn-secondary dropdown-toggle" type="button"
+                <button class="btn btn-primary dropdown-toggle" type="button"
                         id="dropdownMenuButton" data-toggle="dropdown"
                         aria-haspopup="true" aria-expanded="false">
                     Select Student
@@ -24,8 +24,6 @@
     </nav>
 
     <div class="container">
-
-        {#        <h2 class="mt-3">{{ grades[0].user.name }}</h2>#}
         <p class="mt-2"><small>Data last
             updated: {{ record.created_at|strftime }}</small></p>
 
@@ -137,13 +135,11 @@
                         <div class="card-body">
                             <div class="card-title"><h5>Outcome
                                 Averages</h5></div>
-
-
-                            <table class="table">
+                            <table class="table table-fixed">
                                 <thead>
                                 <tr>
-                                    <th scope="col">Outcome</th>
-                                    <th scope="col">Score</th>
+                                    <th scope="col" class="col-9">Outcome</th>
+                                    <th scope="col" class="col-3">Outcome Average</th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -151,18 +147,19 @@
                                     <tr>
                                         {# Use display name if it's available #}
                                         {% if outcome_average.display_name %}
-                                            <td scope="row">{{ outcome_average.display_name }}</td>
+                                            <td scope="row" class="col-9">{{ outcome_average.display_name }}</td>
                                         {% else %}
-                                            <td scope="row">{{ outcome_average.title }}</td>
+                                            <td scope="row" class="col-9">{{ outcome_average.title }}</td>
                                         {% endif %}
                                         {#                                     Only display the outcome_avg if outcome's have been assessed.#}
                                         {% if outcome_average.outcome_avg > 0 %}
-                                            <td>{{ outcome_average.outcome_avg }}</td>
+                                            <td class="col-3 text-center">{{ outcome_average.outcome_avg }}</td>
                                         {% endif %}
                                     </tr>
                                 {% endfor %}
                                 </tbody>
                             </table>
+
                         </div>
                     </div>
                     </div>

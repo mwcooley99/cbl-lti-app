@@ -76,10 +76,15 @@
                                 </h3></div>
                                 <div class="col-8">
                                     <div class="row">
-                                        <div class="col"><strong>75% of Outcome Averages are Above:</strong> {{ grade.threshold }}</div>
+                                        <div class="col">
+                                            <strong> Criteria 1 - 75% of Outcome Averages are
+                                            Above:</strong> {{ grade.threshold }}
+                                        </div>
                                     </div>
                                     <div class="row mt-2">
-                                        <div class="col"><strong>Lowest Outcome Average:</strong> {{ grade.min_score }}</div>
+                                        <div class="col"><strong>Criteria 2 - Lowest Outcome
+                                            Average:</strong> {{ grade.min_score }}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -90,28 +95,32 @@
                                data-toggle="collapse"
                                data-target="#collapseExample-{{ loop.index }}"
                                aria-expanded="false"
-                               aria-controls="collapseExample-{{ loop.index }}">Explanation of
+                               aria-controls="collapseExample-{{ loop.index }}">Explanation
+                                of
                                 Grades</a>
                         </div>
-                        <div class="collapse" id="collapseExample-{{ loop.index }}">
+                        <div class="collapse"
+                             id="collapseExample-{{ loop.index }}">
                             <div class="card-body p-3">
                                 <p>The following table is how your outcome
                                     Averages are converted into a Letter Grade.
+                                </p>
+                                <p class="font-weight-light">
                                     Please note that both Criteria 1 and 2 must
-                                    be met to earn that letter Grade.</p>
+                                    be met to earn that letter Grade.
+                                </p>
                                 <table class="table table-bordered table-sm">
                                     <tr>
                                         <th>Letter Grade</th>
-                                        <th><span
-                                                class="emphasize">Criteria 1</span>
+                                        <th class="text-center">Criteria 1 <br>
 
-                                            75% of Outcome Averages Equal to or
-                                            Above:
+                                            <div class="font-weight-light">75% of Outcome Averages Equal to or
+                                            Above:</div>
                                         </th>
-                                        <th><span
-                                                class="emphasize">Criteria 2</span>
+                                        <th class="text-center">
+                                            Criteria 2 <br>
 
-                                            No Outcome Average Below:
+                                            <div class="font-weight-light">No Outcome Average Below:</div>
                                         </th>
                                     </tr>
                                     {% for level in calculation_dict %}
@@ -139,7 +148,9 @@
                                 <thead>
                                 <tr>
                                     <th scope="col" class="col-9">Outcome</th>
-                                    <th scope="col" class="col-3">Outcome Average</th>
+                                    <th scope="col" class="col-3">Outcome
+                                        Average
+                                    </th>
                                 </tr>
                                 </thead>
                                 <tbody>
@@ -147,9 +158,11 @@
                                     <tr>
                                         {# Use display name if it's available #}
                                         {% if outcome_average.display_name %}
-                                            <td scope="row" class="col-9">{{ outcome_average.display_name }}</td>
+                                            <td scope="row"
+                                                class="col-9">{{ outcome_average.display_name }}</td>
                                         {% else %}
-                                            <td scope="row" class="col-9">{{ outcome_average.title }}</td>
+                                            <td scope="row"
+                                                class="col-9">{{ outcome_average.title }}</td>
                                         {% endif %}
                                         {#                                     Only display the outcome_avg if outcome's have been assessed.#}
                                         {% if outcome_average.outcome_avg > 0 %}

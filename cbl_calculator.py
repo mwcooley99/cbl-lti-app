@@ -1,5 +1,44 @@
 import math
 
+calculation_dictionaries = [
+    {
+        'grade': 'A',
+        'threshold': 3.3,
+        'min_score': 3
+    },
+    {
+        'grade': 'A-',
+        'threshold': 3.3,
+        'min_score': 2.5
+    },
+    {
+        'grade': 'B+',
+        'threshold': 2.6,
+        'min_score': 2.5
+    },
+    {
+        'grade': 'B',
+        'threshold': 2.6,
+        'min_score': 2.25
+    },
+    {
+        'grade': 'B-',
+        'threshold': 2.6,
+        'min_score': 2
+    },
+    {
+        'grade': 'C',
+        'threshold': 2.2,
+        'min_score': 0
+    },
+    {
+        'grade': 'I',
+        'threshold': 0,
+        'min_score': 0
+    }
+]
+
+
 def calculate_traditional_grade(scores):
     # check if the outcome is assessed.
     if len(scores) == 0 or scores[0] == -1:
@@ -9,48 +48,8 @@ def calculate_traditional_grade(scores):
             'min_score': None,
         }
 
-
-    calculation_dictionaries = [
-        {
-            'grade': 'A',
-            'threshold': 3.3,
-            'min_score': 3
-        },
-        {
-            'grade': 'A-',
-            'threshold': 3.3,
-            'min_score': 2.5
-        },
-        {
-            'grade': 'B+',
-            'threshold': 2.6,
-            'min_score': 2.5
-        },
-        {
-            'grade': 'B',
-            'threshold': 2.6,
-            'min_score': 2.25
-        },
-        {
-            'grade': 'B-',
-            'threshold': 2.6,
-            'min_score': 2
-        },
-        {
-            'grade': 'C',
-            'threshold': 2.2,
-            'min_score': 0
-        },
-        {
-            'grade': 'I',
-            'threshold': 0,
-            'min_score': 0
-        }
-    ]
-
     scores_sorted = sorted(scores, reverse=True)
     threshold_index = math.ceil(0.75 * len(scores_sorted)) - 1
-
 
     threshold_score = scores_sorted[threshold_index]
     min_score = scores_sorted[-1]
@@ -66,7 +65,3 @@ def calculate_traditional_grade(scores):
             return traditional_grade
 
     return calculation_dictionaries[-1]
-
-
-
-

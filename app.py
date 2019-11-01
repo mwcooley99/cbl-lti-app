@@ -1,4 +1,5 @@
-from flask import Flask, render_template, session, request, Response, jsonify, url_for, redirect
+from flask import Flask, render_template, session, request, Response, jsonify, \
+    url_for, redirect
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
@@ -14,7 +15,8 @@ import os, time
 import requests
 from itertools import groupby
 
-from cbl_calculator import calculate_traditional_grade
+from cbl_calculator import calculate_traditional_grade, \
+    calculation_dictionaries
 
 from logging.handlers import RotatingFileHandler
 
@@ -88,8 +90,11 @@ def launch(lti=lti):
     if 'lis_person_sourcedid' in request.form.keys():
         # get most recent record
         # record = Record.query.order_by(Record.id.desc()).first()
-        session['users'] = User.query.filter(User.id==session['user_id']).with_entities(User.id, User.name).all()
-        return redirect(url_for('student_dashboard', user_id=session['user_id']))
+        session['users'] = User.query.filter(
+            User.id == session['user_id']).with_entities(User.id,
+                                                         User.name).all()
+        return redirect(
+            url_for('student_dashboard', user_id=session['user_id']))
         # grades = Grade.query \
         #     .filter_by(record_id=record.id, user_id=session['user_id']) \
         #     .join(Course) \
@@ -99,8 +104,8 @@ def launch(lti=lti):
         # if grades:
         #     return render_template('student_dashboard.html', record=record,
         #                            students=[grades])
-            # return render_template('new_dashboard.html', record=record,
-            #                        students=[grades])
+        # return render_template('new_dashboard.html', record=record,
+        #                        students=[grades])
 
     # Otherwise they must be an observer
     else:
@@ -112,7 +117,8 @@ def launch(lti=lti):
         headers = {'Authorization': f'Bearer {access_token}'}
         response = requests.request("GET", url, headers=headers)
 
-        session['users'] = [(obs['id'], obs['name']) for obs in response.json()]
+        session['users'] = [(obs['id'], obs['name']) for obs in
+                            response.json()]
         user_id = session['users'][0][0]
         return redirect(url_for('student_dashboard', user_id=user_id))
 
@@ -154,7 +160,8 @@ def student_dashboard(user_id=None):
         #     students.append(grades)
         # if students:
         return render_template('student_dashboard.html', record=record,
-                               students=session['users'], grades=grades)
+                               students=session['users'], grades=grades,
+                               calculation_dict=calculation_dictionaries)
 
     return "Error"
     # return render_template('student_dashboard.html')
@@ -163,7 +170,6 @@ def student_dashboard(user_id=None):
 @app.route('/course_navigation', methods=['POST', 'GET'])
 @lti(error=error, request='initial', role='instructor', app=app)
 def course_navigation(lti=lti):
-
     print(json.dumps(request.form, indent=2))
     session['dash_type'] = 'course'
     course_title = request.form.get('context_title')
@@ -171,8 +177,9 @@ def course_navigation(lti=lti):
     record = Record.query.order_by(Record.id.desc()).first()
 
     session['users'] = Grade.query.filter_by(record_id=record.id,
-                                  course_id=session['course_id']). \
-        join(User).order_by(User.name).with_entities(Grade.user_id, User.name).all()
+                                             course_id=session['course_id']). \
+        join(User).order_by(User.name).with_entities(Grade.user_id,
+                                                     User.name).all()
     print(session['users'])
 
     user = session['users'][0]
@@ -181,7 +188,7 @@ def course_navigation(lti=lti):
         # Create student objects
         students = []
         # for user in users:
-            # Get all student outcome averages from that record
+        # Get all student outcome averages from that record
         return redirect(url_for('student_dashboard', user_id=user[0]))
         # grades = Grade.query.filter_by(record_id=record.id,
         #                                user_id=user[0]).join(Course) \

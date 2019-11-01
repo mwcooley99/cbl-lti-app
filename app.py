@@ -15,8 +15,7 @@ import os, time
 import requests
 from itertools import groupby
 
-from cbl_calculator import calculate_traditional_grade, \
-    calculation_dictionaries
+from cbl_calculator import calculation_dictionaries
 
 from logging.handlers import RotatingFileHandler
 
@@ -88,29 +87,16 @@ def launch(lti=lti):
     # TODO - exclude Teachers
     # Check if it's a student (or teacher currently)
     if 'lis_person_sourcedid' in request.form.keys():
-        # get most recent record
-        # record = Record.query.order_by(Record.id.desc()).first()
+
         session['users'] = User.query.filter(
             User.id == session['user_id']).with_entities(User.id,
                                                          User.name).all()
         return redirect(
             url_for('student_dashboard', user_id=session['user_id']))
-        # grades = Grade.query \
-        #     .filter_by(record_id=record.id, user_id=session['user_id']) \
-        #     .join(Course) \
-        #     .filter(~Course.name.contains('@dtech')) \
-        #     .order_by(Course.name).all()
-        #
-        # if grades:
-        #     return render_template('student_dashboard.html', record=record,
-        #                            students=[grades])
-        # return render_template('new_dashboard.html', record=record,
-        #                        students=[grades])
+
 
     # Otherwise they must be an observer
     else:
-        # todo - Redirect to observer_route
-        record = Record.query.order_by(Record.id.desc()).first()
         # Get observees
         url = f"https://dtechhs.test.instructure.com/api/v1/users/{session['user_id']}/observees"
         access_token = os.getenv('CANVAS_API_KEY')
@@ -122,25 +108,6 @@ def launch(lti=lti):
         user_id = session['users'][0][0]
         return redirect(url_for('student_dashboard', user_id=user_id))
 
-        # # TODO - Check that they have a student.
-        # students = []
-        # for observee in response.json():
-        #     # Get all student outcome averages from that record
-        #     grades = Grade.query.filter_by(record_id=record.id,
-        #                                    user_id=observee['id']).join(Course) \
-        #         .filter(~Course.name.contains('@dtech')).order_by(
-        #         Course.name).all()
-        #
-        #     # Only add if not empty
-        #     if grades:
-        #         students.append(grades)
-        #
-        # # Only return if there are grades to display
-        # if students:
-        #     return render_template('student_dashboard.html', record=record,
-        #                            students=students)
-
-    app.logger.info(json.dumps(request.form, indent=2))
 
     # TODO - make a template
     return "You are not a student of any course"
@@ -164,7 +131,6 @@ def student_dashboard(user_id=None):
     return "You currently don't have any grades!"
 
 
-
 @app.route('/course_navigation', methods=['POST', 'GET'])
 @lti(error=error, request='initial', role='instructor', app=app)
 def course_navigation(lti=lti):
@@ -183,20 +149,7 @@ def course_navigation(lti=lti):
     user = session['users'][0]
 
     if course_title.startswith('@dtech'):
-        # Create student objects
-        students = []
-        # for user in users:
-        # Get all student outcome averages from that record
         return redirect(url_for('student_dashboard', user_id=user[0]))
-        # grades = Grade.query.filter_by(record_id=record.id,
-        #                                user_id=user[0]).join(Course) \
-        #     .filter(~Course.name.contains('@dtech')).order_by(
-        #     Course.name).all()
-        #
-        # # if grades:
-        # #     students.append(grades)
-        # # if students:
-        # return redirect(url_for('student_dashboard'), user_id=user[0])
 
     return "Work in progress"
 

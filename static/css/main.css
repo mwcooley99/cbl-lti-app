@@ -1,44 +1,43 @@
-.collapse-row.collapsed +tr {
-     display: none;
+.collapse-row.collapsed + tr {
+    display: none;
 }
 
 .scrollable-menu {
     height: auto;
-    max-height: 200px;
+    max-height: 300px;
     overflow-x: hidden;
 }
 
 /* Scrollable Table */
-.table-fixed tbody {
-    height: 300px;
-    overflow-y: auto;
-    width: 100%;
+.my-custom-scrollbar {
+    position: relative;
+    height: 00px;
+    overflow: auto;
 }
 
-.table-fixed thead,
-.table-fixed tbody,
-.table-fixed tr,
-.table-fixed td,
-.table-fixed th {
+.table-wrapper-scroll-y {
     display: block;
 }
 
-.table-fixed tbody td,
-.table-fixed tbody th,
-.table-fixed thead > tr > th {
-    float: left;
-    position: relative;
-
-    &::after {
-        content: '';
-        clear: both;
-        display: block;
-    }
-}
 
 .your-results {
-    outline: thick solid black;
+    outline: 2px solid black;
 }
 
 
 
+.navbar-fixed-left {
+    width: auto;
+  position: fixed;
+  border-radius: 0;
+  height: 100%;
+}
+
+.navbar-fixed-left .navbar-nav > li {
+  float: none;  /* Cancel default li float: left */
+  width: 139px;
+}
+
+.navbar-fixed-left + .container {
+  padding-left: 160px;
+}

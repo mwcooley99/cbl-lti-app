@@ -1,60 +1,90 @@
 {% extends 'base.html' %}
 {% block content %}
 
-    <nav class="navbar navbar-light bg-light sticky-top">
-        <span class="navbar-brand mb-0 h1">{{ grades[0].user.name }} </span>
-        {% if students|length > 1 %}
+    {#    <nav class="navbar navbar-light bg-light sticky-top">#}
+    {#        <span class="navbar-brand mb-0 h1">{{ grades[0].user.name }}#}
+    {#        <br><small>Data last#}
+    {#            updated: {{ record.created_at|strftime }}</small></span>#}
+    {#        {% if students|length > 1 %}#}
+    {##}
+    {#            <div class="dropdown">#}
+    {#                <button class="btn btn-primary dropdown-toggle" type="button"#}
+    {#                        id="dropdownMenuButton" data-toggle="dropdown"#}
+    {#                        aria-haspopup="true" aria-expanded="false">#}
+    {#                    Select Student#}
+    {#                </button>#}
+    {#                <div class="dropdown-menu dropdown-menu-lg-right scrollable-menu"#}
+    {#                     aria-labelledby="dropdownMenuButton">#}
+    {#                    {% for student in students %}#}
+    {#                        <a class="dropdown-item"#}
+    {#                           href="{{ url_for('student_dashboard', user_id=student[0]) }}">{{ student[1] }}</a>#}
+    {#                    {% endfor %}#}
+    {#                </div>#}
+    {#            </div>#}
+    {##}
+    {#        {% endif %}#}
+    {#    </nav>#}
 
-            <div class="dropdown">
-                <button class="btn btn-primary dropdown-toggle" type="button"
-                        id="dropdownMenuButton" data-toggle="dropdown"
-                        aria-haspopup="true" aria-expanded="false">
-                    Select Student
-                </button>
-                <div class="dropdown-menu dropdown-menu-lg-right scrollable-menu"
-                     aria-labelledby="dropdownMenuButton">
-                    {% for student in students %}
-                        <a class="dropdown-item"
-                           href="{{ url_for('student_dashboard', user_id=student[0]) }}">{{ student[1] }}</a>
-                    {% endfor %}
+    <div class="container-fluid">
+        {#        <p class="mt-2"><small>Data last#}
+        {#            updated: {{ record.created_at|strftime }}</small></p>#}
+
+
+        <div class="row">
+            {#            <div class="col-3">#}
+            <div class="col-sm-3 px-1 bg-light">
+                <div class="py-2 sticky-top flex-grow-1">
+                    <div class="nav flex-column nav-pills" id="v-pills-tab"
+                         role="tablist" aria-orientation="vertical">
+                        {% for grade in grades %}
+                            {% set course_name = grade.course.name.split(' - ') %}
+                            {% if loop.first %}
+                                <a class="nav-link active"
+                                   id="v-pills-home-tab"
+                                   data-toggle="pill"
+                                   href="#v-pills-{{ loop.index }}" role="tab"
+                                   aria-controls="v-pills-{{ loop.index }}"
+                                   aria-selected="true">{{ course_name[0] }}: {{ grade.grade }}</a>
+                            {% else %}
+                                <a class="nav-link" id="v-pills-profile-tab"
+                                   data-toggle="pill"
+                                   href="#v-pills-{{ loop.index }}" role="tab"
+                                   aria-controls="v-pills-{{ loop.index }}"
+                                   aria-selected="false">{{ course_name[0] }}: {{ grade.grade }}</a>
+                            {% endif %}
+                        {% endfor %}
+
+                    </div>
                 </div>
             </div>
+            <div class="col">
+                <nav class="navbar navbar-light bg-light sticky-top">
+                    <span class="navbar-brand mb-0 h1">{{ grades[0].user.name }}
+                    <br><small>Data last
+                        updated: {{ record.created_at|strftime }}</small></span>
+                                {% if students|length > 1 %}
 
-        {% endif %}
-    </nav>
+                        <div class="dropdown">
+                            <button class="btn btn-primary dropdown-toggle"
+                                    type="button"
+                                    id="dropdownMenuButton"
+                                    data-toggle="dropdown"
+                                    aria-haspopup="true" aria-expanded="false">
+                                Select Student
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-lg-right scrollable-menu"
+                                 aria-labelledby="dropdownMenuButton">
+                                {% for student in students %}
+                                    <a class="dropdown-item"
+                                       href="{{ url_for('student_dashboard', user_id=student[0]) }}">{{ student[1] }}</a>
+                                {% endfor %}
+                            </div>
+                        </div>
 
-    <div class="container">
-        <p class="mt-2"><small>Data last
-            updated: {{ record.created_at|strftime }}</small></p>
+                    {% endif %}
 
-
-        <div class="row" display="flex">
-            <div class="col-3">
-                <div class="nav flex-column nav-pills" id="v-pills-tab"
-                     role="tablist"
-                     aria-orientation="vertical">
-                    {% for grade in grades %}
-                        {% set course_name = grade.course.name.split(' - ') %}
-                        {% if loop.first %}
-                            <a class="nav-link active" id="v-pills-home-tab"
-                               data-toggle="pill"
-                               href="#v-pills-{{ loop.index }}" role="tab"
-                               aria-controls="v-pills-{{ loop.index }}"
-                               aria-selected="true">{{ course_name[0] }}: {{ grade.grade }}</a>
-                        {% else %}
-                            <a class="nav-link" id="v-pills-profile-tab"
-                               data-toggle="pill"
-                               href="#v-pills-{{ loop.index }}" role="tab"
-                               aria-controls="v-pills-{{ loop.index }}"
-                               aria-selected="false">{{ course_name[0] }}: {{ grade.grade }}</a>
-                        {% endif %}
-                    {% endfor %}
-
-                </div>
-            </div>
-
-            <div class="col-9">
-                <div class="tab-content" id="v-pills-tabContent">
+                </nav>
+                <div class="tab-content mt-2" id="v-pills-tabContent">
                     {% for grade in grades %}
                         {% if loop.first %}
                             <div class="tab-pane fade show active"
@@ -69,28 +99,16 @@
                                  aria-labelledby="v-pills-{{ loop.index }}">
                         {% endif %}
                     <div class="card">
-                        <div class="card-body">
+                        <div class="card-header">
                             <div class="row">
-                                <div class="col-4"><h3 class="card-title">
+                                <div class="col-12"><h3 class="card-title">
                                     Grade: {{ grade.grade }}
                                 </h3></div>
-{#                                <div class="col-8">#}
-{#                                    <div class="row">#}
-{#                                        <div class="col">#}
-{#                                            <strong> Criteria 1 - 75% of Outcome Averages are#}
-{#                                            Above:</strong> {{ grade.threshold }}#}
-{#                                        </div>#}
-{#                                    </div>#}
-{#                                    <div class="row mt-2">#}
-{#                                        <div class="col"><strong>Criteria 2 - Lowest Outcome#}
-{#                                            Average:</strong> {{ grade.min_score }}#}
-{#                                        </div>#}
-{#                                    </div>#}
-{#                                </div>#}
+
                             </div>
                         </div>
 
-                        <div class="card-footer">
+                        <div class="card-body">
                             <a href="#" class="card-link"
                                data-toggle="collapse"
                                data-target="#collapseExample-{{ loop.index }}"
@@ -109,20 +127,26 @@
                                     Please note that both Criteria 1 and 2 must
                                     be met to earn that letter Grade.
                                 </p>
-                                <table class="table table-bordered grade-table">
+                                <table class="table table-bordered table-sm grade-table">
+                                    <thead class="text-center align-text-top">
                                     <tr>
-                                        <th class="text-center">Letter Grade</th>
-                                        <th class="text-center">Criteria 1 <br>
-
-                                            <div class="font-weight-light">75% of Outcome Averages Equal to or
-                                            Above:</div>
+                                        <th>Letter Grade</th>
+                                        <th>
+                                            Criteria 1 <br>
+                                            <div class="font-weight-light">75%
+                                                of Outcome Averages Equal to or
+                                                Above:
+                                            </div>
                                         </th>
-                                        <th class="text-center">
+                                        <th>
                                             Criteria 2 <br>
-
-                                            <div class="font-weight-light">No Outcome Average Below:</div>
+                                            <div class="font-weight-light">No
+                                                Outcome Average Below:
+                                            </div>
                                         </th>
                                     </tr>
+                                    </thead>
+                                    <tbody class="text-center">
                                     {% for level in calculation_dict %}
                                         {% if level.grade == grade.grade %}
                                             <tr class="table-success">
@@ -130,56 +154,69 @@
                                             <tr>
                                         {% endif %}
                                     <td>{{ level.grade }}</td>
-                                    <td class="text-center">{{ level.threshold }}</td>
-                                    <td class="text-center">{{ level.min_score }}</td>
+                                    <td>{{ level.threshold }}</td>
+                                    <td>{{ level.min_score }}</td>
                                     </tr>
                                     {% endfor %}
                                     <tr class="your-results">
                                         <th>Your results</th>
-                                        <td class="text-center"><strong>{{ grade.threshold }}</strong></td>
-                                        <td class="text-center"><strong>{{ grade.min_score }}</strong></td>
+                                        <td>
+                                            <strong>{{ grade.threshold }}</strong>
+                                        </td>
+                                        <td>
+                                            <strong>{{ grade.min_score }}</strong>
+                                        </td>
                                     </tr>
-
+                                    </tbody>
                                 </table>
                             </div>
                         </div>
                     </div>
                     <div class="card mt-3">
-
+                        <div class="card-header"><h4>Outcome
+                            Averages</h4></div>
                         <div class="card-body">
-                            <div class="card-title"><h5>Outcome
-                                Averages</h5></div>
-                            <table class="table table-fixed">
-                                <thead>
-                                <tr>
-                                    <th scope="col" class="col-9">Outcome</th>
-                                    <th scope="col" class="col-3">Outcome
-                                        Average
-                                    </th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {% for outcome_average in grade.outcomes %}
-                                    <tr>
-                                        {# Use display name if it's available #}
-                                        {% if outcome_average.display_name %}
-                                            <td scope="row"
-                                                class="col-9">{{ outcome_average.display_name }}</td>
-                                        {% else %}
-                                            <td scope="row"
-                                                class="col-9">{{ outcome_average.title }}</td>
-                                        {% endif %}
-                                        {#                                     Only display the outcome_avg if outcome's have been assessed.#}
-                                        {% if outcome_average.outcome_avg > 0 %}
-                                            <td class="col-3 text-center">{{ outcome_average.outcome_avg }}</td>
-                                        {% endif %}
-                                    </tr>
-                                {% endfor %}
-                                </tbody>
-                            </table>
 
+                            <div>
+
+                                <table class="table table-responsive w-auto">
+                                    <thead>
+                                    <tr class="d-flex">
+                                        <th class="col-8">Outcome</th>
+                                        <th class="text-center col-4">Outcome
+                                            Average
+                                        </th>
+                                    </tr>
+                                    </thead>
+
+                                    <tbody>
+                                    {% for outcome_average in grade.outcomes %}
+                                        <tr class="d-flex">
+                                            {# Use display name if it's available #}
+                                            {% if outcome_average.display_name %}
+                                                <td scope="row" class="col-8">
+                                                    {{ outcome_average.display_name }}
+                                                </td>
+                                            {% else %}
+                                                <td scope="row" class="col-8">
+                                                    {{ outcome_average.title }}
+                                                </td>
+                                            {% endif %}
+                                            {#                                     Only display the outcome_avg if outcome's have been assessed.#}
+                                            {% if outcome_average.outcome_avg > 0 %}
+                                                <td class="text-center col-4">
+                                                    {{ outcome_average.outcome_avg }}
+                                                </td>
+                                            {% endif %}
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+
+                                </table>
+                            </div>
                         </div>
                     </div>
+
                     </div>
                     {% endfor %}
                     </div>

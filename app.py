@@ -126,7 +126,7 @@ def student_dashboard(user_id=None):
 @app.route('/course_navigation', methods=['POST', 'GET'])
 @lti(error=error, request='initial', role='instructor', app=app)
 def course_navigation(lti=lti):
-    print(json.dumps(request.form, indent=2))
+
     session['dash_type'] = 'course'
     course_title = request.form.get('context_title')
     session['course_id'] = request.form.get('custom_canvas_course_id')
@@ -136,7 +136,6 @@ def course_navigation(lti=lti):
                                              course_id=session['course_id']). \
         join(User).order_by(User.name).with_entities(Grade.user_id,
                                                      User.name).all()
-    print(session['users'])
 
     user = session['users'][0]
 

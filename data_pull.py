@@ -313,7 +313,7 @@ def preform_grade_pull(current_term=10):
     pattern = 'Teacher Assistant|LAB Day|FIT|Innovation Diploma FIT'
 
     for course in courses:
-        print(course['name'])
+
         # Check if it's a non-graded course
         if re.match(pattern, course['name']):
             continue

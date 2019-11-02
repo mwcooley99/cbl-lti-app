@@ -58,14 +58,43 @@
                 </div>
             </div>
             <div class="col">
-                <nav class="navbar navbar-light bg-light sticky-top">
-                    <span class="navbar-brand mb-0 h1">{{ grades[0].user.name }}
-                    <br><small>Data last
-                        updated: {{ record.created_at|strftime }}</small></span>
-                                {% if students|length > 1 %}
+{#            Old navbar #}
+{#                <nav class="navbar navbar-light bg-light sticky-top">#}
+{#                    <span class="navbar-brand mb-0 h1">{{ grades[0].user.name }}#}
+{#                    <br><small>Data last#}
+{#                        updated: {{ record.created_at|strftime }}</small></span>#}
+{#                    {% if students|length > 1 %}#}
+{##}
+{#                        <div class="dropdown">#}
+{#                            <button class="btn btn-primary dropdown-toggle"#}
+{#                                    type="button"#}
+{#                                    id="dropdownMenuButton"#}
+{#                                    data-toggle="dropdown"#}
+{#                                    aria-haspopup="true" aria-expanded="false">#}
+{#                                Select Student#}
+{#                            </button>#}
+{#                            <div class="dropdown-menu dropdown-menu-lg-right scrollable-menu"#}
+{#                                 aria-labelledby="dropdownMenuButton">#}
+{#                                {% for student in students %}#}
+{#                                    <a class="dropdown-item"#}
+{#                                       href="{{ url_for('student_dashboard', user_id=student[0]) }}">{{ student[1] }}</a>#}
+{#                                {% endfor %}#}
+{#                            </div>#}
+{#                        </div>#}
+{##}
+{#                    {% endif %}#}
+{##}
+{#                </nav>#}
+
+                <div class="jumbotron text-center p-2 bg-light sticky-top">
+                    <h3>{{ grades[0].user.name }}</h3>
+                    <p><small>Data last
+                        updated: {{ record.created_at|strftime }}</small>
+                    </p>
+                    {% if students|length > 1 %}
 
                         <div class="dropdown">
-                            <button class="btn btn-primary dropdown-toggle"
+                            <button class="btn btn-primary btn-sm dropdown-toggle"
                                     type="button"
                                     id="dropdownMenuButton"
                                     data-toggle="dropdown"
@@ -82,9 +111,10 @@
                         </div>
 
                     {% endif %}
+                </div>
 
-                </nav>
-                <div class="tab-content mt-2" id="v-pills-tabContent">
+
+                <div class="tab-content" id="v-pills-tabContent">
                     {% for grade in grades %}
                         {% if loop.first %}
                             <div class="tab-pane fade show active"
@@ -101,9 +131,9 @@
                     <div class="card">
                         <div class="card-header">
                             <div class="row">
-                                <div class="col-12"><h3 class="card-title">
-                                    Grade: {{ grade.grade }}
-                                </h3></div>
+                                <div class="col-12"><h4 class="card-title">
+                                    Letter Grade: {{ grade.grade }}
+                                </h4></div>
 
                             </div>
                         </div>
@@ -176,10 +206,8 @@
                         <div class="card-header"><h4>Outcome
                             Averages</h4></div>
                         <div class="card-body">
-
                             <div>
-
-                                <table class="table table-responsive w-auto">
+                                <table class="table table-responsive">
                                     <thead>
                                     <tr class="d-flex">
                                         <th class="col-8">Outcome</th>

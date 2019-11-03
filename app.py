@@ -2,6 +2,7 @@ from flask import Flask, render_template, session, request, Response, \
     url_for, redirect
 
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import and_
 
 from pylti.flask import lti, LTI
 
@@ -169,10 +170,29 @@ def xml():
             please contact support.''')
 
 
-@app.route("/dashboard/")
+@app.route("/course_dashboard/")
 # @lti(error=error, request='initial', role='any', app=app)
-def dashboard():
-    return render_template('new_dashboard.html')
+def course_dashboard():
+    # Todo - remove after testing
+    record = Record.query.order_by(Record.id.desc()).first()
+    session['course_id'] = 357
+    session['users'] = Grade.query.filter_by(record_id=record.id,
+                                             course_id=session['course_id']). \
+        join(User).order_by(User.name).with_entities(Grade.user_id,
+                                                     User.name).all()
+    user_ids = [user[0] for user in session['users']]
+
+    # TODO - rewrite to grab all users in user_ids and order by user name
+    grades = Grade.query.filter(Grade.user_id.in_(user_ids))\
+        .filter(Grade.record_id == record.id).join(Course) \
+        .filter(~Course.name.contains('@dtech'))\
+        .filter(Course.id == session['course_id']).join(User).order_by(
+        User.name).all()
+    print(grades)
+
+    # grades = db.session.query(Grade).filter(record_id=record.id, Grade.user_id.in_(user_ids))
+
+    return render_template('course_dash.html', students=grades, calculation_dict=calculation_dictionaries)
 
 
 @app.template_filter('strftime')

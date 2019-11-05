@@ -88,12 +88,12 @@
 
                 <div class="jumbotron text-center p-2 bg-light sticky-top">
                     <h3>{{ grades[0].user.name }}</h3>
-                    <p><small>Data last
+                    <small>Data last
                         updated: {{ record.created_at|strftime }}</small>
-                    </p>
+{#                    </p>#}
                     {% if students|length > 1 %}
 
-                        <div class="dropdown">
+                        <div class="dropdown m-2">
                             <button class="btn btn-primary btn-sm dropdown-toggle"
                                     type="button"
                                     id="dropdownMenuButton"
@@ -139,13 +139,13 @@
                         </div>
 
                         <div class="card-body">
-                            <a href="#" class="card-link"
+                            <button href="#" class="btn btn-secondary dropdown-toggle"
                                data-toggle="collapse"
                                data-target="#collapseExample-{{ loop.index }}"
                                aria-expanded="false"
                                aria-controls="collapseExample-{{ loop.index }}">Explanation
                                 of
-                                Grades</a>
+                                Grades</button>
                         </div>
                         <div class="collapse"
                              id="collapseExample-{{ loop.index }}">
@@ -207,7 +207,7 @@
                             Averages</h4></div>
                         <div class="card-body">
                             <div>
-                                <table class="table table-responsive">
+                                <table class="table">
                                     <thead>
                                     <tr class="d-flex">
                                         <th class="col-8">Outcome</th>

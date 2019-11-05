@@ -127,7 +127,6 @@ def student_dashboard(user_id=None):
 @app.route('/course_navigation', methods=['POST', 'GET'])
 @lti(error=error, request='initial', role='instructor', app=app)
 def course_navigation(lti=lti):
-
     session['dash_type'] = 'course'
     course_title = request.form.get('context_title')
     session['course_id'] = request.form.get('custom_canvas_course_id')
@@ -143,7 +142,7 @@ def course_navigation(lti=lti):
     if course_title.startswith('@dtech'):
         return redirect(url_for('student_dashboard', user_id=user[0]))
 
-    return "Work in progress"
+    return redirect(url_for('course_dashboard'))
 
 
 # Home page
@@ -171,28 +170,30 @@ def xml():
 
 
 @app.route("/course_dashboard/")
-# @lti(error=error, request='initial', role='any', app=app)
-def course_dashboard():
+@lti(error=error, request='session', role='instructor', app=app)
+def course_dashboard(lti=lti):
     # Todo - remove after testing
     record = Record.query.order_by(Record.id.desc()).first()
-    session['course_id'] = 357
-    session['users'] = Grade.query.filter_by(record_id=record.id,
-                                             course_id=session['course_id']). \
-        join(User).order_by(User.name).with_entities(Grade.user_id,
-                                                     User.name).all()
+    # session['course_id'] = 357
+    # session['users'] = Grade.query.filter_by(record_id=record.id,
+    #                                          course_id=session['course_id']). \
+    #     join(User).order_by(User.name).with_entities(Grade.user_id,
+    #                                                  User.name).all()
+
     user_ids = [user[0] for user in session['users']]
 
     # TODO - rewrite to grab all users in user_ids and order by user name
-    grades = Grade.query.filter(Grade.user_id.in_(user_ids))\
+    grades = Grade.query.filter(Grade.user_id.in_(user_ids)) \
         .filter(Grade.record_id == record.id).join(Course) \
-        .filter(~Course.name.contains('@dtech'))\
+        .filter(~Course.name.contains('@dtech')) \
         .filter(Course.id == session['course_id']).join(User).order_by(
         User.name).all()
     print(grades)
 
     # grades = db.session.query(Grade).filter(record_id=record.id, Grade.user_id.in_(user_ids))
 
-    return render_template('course_dash.html', students=grades, calculation_dict=calculation_dictionaries)
+    return render_template('course_dash.html', students=grades,
+                           calculation_dict=calculation_dictionaries, record=record)
 
 
 @app.template_filter('strftime')

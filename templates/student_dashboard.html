@@ -4,21 +4,50 @@
     <div class="container-fluid">
 
         <div class="row">
-            <div class="col-sm-4 col-md-2 px-1 bg-light">
+            <div class="col-sm-4 col-md-3 px-1 bg-light">
                 <div class="py-2 sticky-top flex-grow-1">
+                    <div class=" text-center p-2 bg-light">
+
+
+                    {% if students|length > 1 %}
+
+                        <div class="dropdown">
+                            <button class="btn btn-outline-primary dropdown-toggle"
+                                    type="button"
+                                    id="dropdownMenuButton"
+                                    data-toggle="dropdown"
+                                    aria-haspopup="true" aria-expanded="false">
+                                {{ grades[0].user.name }}
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-lg-right scrollable-menu"
+                                 aria-labelledby="dropdownMenuButton">
+                                {% for student in students %}
+                                    <a class="dropdown-item"
+                                       href="{{ url_for('student_dashboard', user_id=student[0]) }}">{{ student[1] }}</a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <h5>{{ grades[0].user.name }}</h5>
+
+                    {% endif %}
+                    <small>Data last
+                        updated: <br>{{ record.created_at|strftime }}</small>
+                </div>
+                <hr>
                     <div class="nav flex-column nav-pills" id="v-pills-tab"
                          role="tablist" aria-orientation="vertical">
                         {% for grade in grades %}
                             {% set course_name = grade.course.name.split(' - ') %}
                             {% if loop.first %}
-                                <a class="nav-link active"
+                                <a class="nav-link text-sm-center active"
                                    id="v-pills-home-tab"
                                    data-toggle="pill"
                                    href="#v-pills-{{ loop.index }}" role="tab"
                                    aria-controls="v-pills-{{ loop.index }}"
                                    aria-selected="true">{{ course_name[0] }}: {{ grade.grade }}</a>
                             {% else %}
-                                <a class="nav-link" id="v-pills-profile-tab"
+                                <a class="nav-link text-sm-center" id="v-pills-profile-tab"
                                    data-toggle="pill"
                                    href="#v-pills-{{ loop.index }}" role="tab"
                                    aria-controls="v-pills-{{ loop.index }}"
@@ -31,32 +60,6 @@
             </div>
             <div class="col">
 
-                <div class="jumbotron text-center p-2 bg-light sticky-top">
-                    <h3>{{ grades[0].user.name }}</h3>
-                    <small>Data last
-                        updated: {{ record.created_at|strftime }}</small>
-
-                    {% if students|length > 1 %}
-
-                        <div class="dropdown m-2">
-                            <button class="btn btn-primary btn-sm dropdown-toggle"
-                                    type="button"
-                                    id="dropdownMenuButton"
-                                    data-toggle="dropdown"
-                                    aria-haspopup="true" aria-expanded="false">
-                                Select Student
-                            </button>
-                            <div class="dropdown-menu dropdown-menu-lg-right scrollable-menu"
-                                 aria-labelledby="dropdownMenuButton">
-                                {% for student in students %}
-                                    <a class="dropdown-item"
-                                       href="{{ url_for('student_dashboard', user_id=student[0]) }}">{{ student[1] }}</a>
-                                {% endfor %}
-                            </div>
-                        </div>
-
-                    {% endif %}
-                </div>
 
 
                 <div class="tab-content" id="v-pills-tabContent">
@@ -76,23 +79,21 @@
                     <div class="card">
                         <div class="card-header">
                             <div class="row">
-                                <div class="col-12"><h4 class="card-title">
+                                <div class="col-12"><h5 class="card-title">
                                     Letter Grade: {{ grade.grade }}
-                                </h4></div>
+                                </h5></div>
 
                             </div>
                         </div>
 
                         <div class="card-body">
                             <button href="#"
-                                    class="btn btn-secondary dropdown-toggle"
+                                    class="btn btn-secondary btn-sm dropdown-toggle"
                                     data-toggle="collapse"
                                     data-target="#collapseExample-{{ loop.index }}"
                                     aria-expanded="false"
                                     aria-controls="collapseExample-{{ loop.index }}">
-                                Explanation
-                                of
-                                Grades
+                                Explanation of Grades
                             </button>
                         </div>
                         <div class="collapse"
@@ -151,8 +152,9 @@
                         </div>
                     </div>
                     <div class="card mt-3">
-                        <div class="card-header"><h4>Outcome
-                            Averages</h4></div>
+                        <div class="card-header">
+                            <h5>Outcome Averages</h5>
+                        </div>
                         <div class="card-body">
                             <div>
                                 <table class="table">

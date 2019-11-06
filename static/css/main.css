@@ -25,7 +25,6 @@
 }
 
 
-
 .navbar-fixed-left {
     width: auto;
   position: fixed;
@@ -40,4 +39,9 @@
 
 .navbar-fixed-left + .container {
   padding-left: 160px;
+}
+
+.btn{
+white-space:normal !important;
+    /*max-width:200px;*/
 }

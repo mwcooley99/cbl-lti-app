@@ -172,13 +172,7 @@ def xml():
 @app.route("/course_dashboard/")
 @lti(error=error, request='session', role='instructor', app=app)
 def course_dashboard(lti=lti):
-    # Todo - remove after testing
     record = Record.query.order_by(Record.id.desc()).first()
-    # session['course_id'] = 357
-    # session['users'] = Grade.query.filter_by(record_id=record.id,
-    #                                          course_id=session['course_id']). \
-    #     join(User).order_by(User.name).with_entities(Grade.user_id,
-    #                                                  User.name).all()
 
     user_ids = [user[0] for user in session['users']]
 
@@ -188,12 +182,10 @@ def course_dashboard(lti=lti):
         .filter(~Course.name.contains('@dtech')) \
         .filter(Course.id == session['course_id']).join(User).order_by(
         User.name).all()
-    print(grades)
 
-    # grades = db.session.query(Grade).filter(record_id=record.id, Grade.user_id.in_(user_ids))
-
-    return render_template('course_dash.html', students=grades,
-                           calculation_dict=calculation_dictionaries, record=record)
+    return render_template('course_dashboard.html', students=grades,
+                           calculation_dict=calculation_dictionaries,
+                           record=record)
 
 
 @app.template_filter('strftime')

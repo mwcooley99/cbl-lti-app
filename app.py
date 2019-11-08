@@ -73,7 +73,7 @@ def launch(lti=lti):
     Returns the launch page
     request.form will contain all the lti params
     """
-
+    print(json.dumps(request.get_json(), indent=2))
     # store some of the user data in the session
     session['user_id'] = request.form.get('custom_canvas_user_id')
 
@@ -127,6 +127,7 @@ def student_dashboard(user_id=None):
 @app.route('/course_navigation', methods=['POST', 'GET'])
 @lti(error=error, request='initial', role='instructor', app=app)
 def course_navigation(lti=lti):
+    print(json.dumps(request.get_json(), indent=2))
     session['dash_type'] = 'course'
     course_title = request.form.get('context_title')
     session['course_id'] = request.form.get('custom_canvas_course_id')

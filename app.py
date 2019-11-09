@@ -73,7 +73,7 @@ def launch(lti=lti):
     Returns the launch page
     request.form will contain all the lti params
     """
-    print(json.dumps(request.get_json(), indent=2))
+
     # store some of the user data in the session
     session['user_id'] = request.form.get('custom_canvas_user_id')
 
@@ -85,9 +85,9 @@ def launch(lti=lti):
         session['users'] = User.query.filter(
             User.id == session['user_id']).with_entities(User.id,
                                                          User.name).all()
+
         return redirect(
             url_for('student_dashboard', user_id=session['user_id']))
-
 
     # Otherwise they must be an observer
     else:
@@ -110,7 +110,12 @@ def launch(lti=lti):
 @app.route('/student_dashboard/<user_id>', methods=['GET'])
 def student_dashboard(user_id=None):
     record = Record.query.order_by(Record.id.desc()).first()
-    if user_id:
+    if user_id:  # Todo - this probably isn't needed
+        # check user is NOT authorized to access this file
+        auth_users_id = [user[0] for user in session['users']]
+        if not (int(user_id) in auth_users_id):
+            return "You are not authorized to view this users information"
+
         grades = Grade.query.filter_by(record_id=record.id,
                                        user_id=user_id).join(Course) \
             .filter(~Course.name.contains('@dtech')).order_by(
@@ -127,7 +132,7 @@ def student_dashboard(user_id=None):
 @app.route('/course_navigation', methods=['POST', 'GET'])
 @lti(error=error, request='initial', role='instructor', app=app)
 def course_navigation(lti=lti):
-    print(json.dumps(request.get_json(), indent=2))
+
     session['dash_type'] = 'course'
     course_title = request.form.get('context_title')
     session['course_id'] = request.form.get('custom_canvas_course_id')
@@ -177,7 +182,6 @@ def course_dashboard(lti=lti):
 
     user_ids = [user[0] for user in session['users']]
 
-    # TODO - rewrite to grab all users in user_ids and order by user name
     grades = Grade.query.filter(Grade.user_id.in_(user_ids)) \
         .filter(Grade.record_id == record.id).join(Course) \
         .filter(~Course.name.contains('@dtech')) \

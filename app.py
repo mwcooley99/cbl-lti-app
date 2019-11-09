@@ -21,10 +21,10 @@ app.secret_key = settings.secret_key
 app.config.from_object(settings.configClass)
 # # todo - figure out the samesite cookie setting. Getting warning in Chrome
 # app.config.update(
-#     SESSION_COOKIE_SECURE=True,
-#     SESSION_COOKIE_HTTPONLY=True,
-#     SESSION_COOKIE_SAMESITE='Lax',
-#     PERMANENT_SESSION_LIFETIME=600,
+#     # SESSION_COOKIE_SECURE=True,
+#     # SESSION_COOKIE_HTTPONLY=True,
+#     # SESSION_COOKIE_SAMESITE='Lax',
+#     # PERMANENT_SESSION_LIFETIME=600,
 # )
 
 db = SQLAlchemy(app)
@@ -92,11 +92,11 @@ def launch(lti=lti):
     # Otherwise they must be an observer
     else:
         # Get observees
-        url = f"https://dtechhs.test.instructure.com/api/v1/users/{session['user_id']}/observees"
+        url = f"https://dtechhs.instructure.com/api/v1/users/{session['user_id']}/observees"
         access_token = os.getenv('CANVAS_API_KEY')
         headers = {'Authorization': f'Bearer {access_token}'}
         response = requests.request("GET", url, headers=headers)
-
+        print(json.dumps(response.json(), indent=2))
         session['users'] = [(obs['id'], obs['name']) for obs in
                             response.json()]
         user_id = session['users'][0][0]

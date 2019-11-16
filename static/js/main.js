@@ -9,3 +9,11 @@ function showHide(elem) {
     document.getElementById("accordion"+sel).style.display = 'block';
 }
 
+$(document).ready(function(){
+  $("#myInput").on("keyup", function() {
+    var value = $(this).val().toLowerCase();
+    $("#accordion tr").filter(function() {
+      $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+    });
+  });
+});

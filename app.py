@@ -20,12 +20,12 @@ app = Flask(__name__)
 app.secret_key = settings.secret_key
 app.config.from_object(settings.configClass)
 # # todo - figure out the samesite cookie setting. Getting warning in Chrome
-app.config.update(
-    SESSION_COOKIE_SECURE=True,
-    SESSION_COOKIE_HTTPONLY=True,
-    # SESSION_COOKIE_SAMESITE='Lax',
-    PERMANENT_SESSION_LIFETIME=600,
-)
+# app.config.update(
+#     SESSION_COOKIE_SECURE=True,
+#     SESSION_COOKIE_HTTPONLY=True,
+#     # SESSION_COOKIE_SAMESITE='Lax',
+#     PERMANENT_SESSION_LIFETIME=600,
+# )
 
 db = SQLAlchemy(app)
 
@@ -132,7 +132,6 @@ def student_dashboard(user_id=None):
 @app.route('/course_navigation', methods=['POST', 'GET'])
 @lti(error=error, request='initial', role='instructor', app=app)
 def course_navigation(lti=lti):
-
     session['dash_type'] = 'course'
     course_title = request.form.get('context_title')
     session['course_id'] = request.form.get('custom_canvas_course_id')
@@ -158,6 +157,23 @@ def index(lti=lti):
     return render_template('index.html')
 
 
+@app.route('/course_test')
+def course_test():
+    record = Record.query.order_by(Record.id.desc()).first()
+
+    user_ids = [524, 656, 678, 653, 670, 557, 720, 595, 662, 447, 466, 573, 393, 302, 560, 461, 621, 672, 204, 476, 463, 554, 298, 401, 438, 593, 523, 829, 613, 651, 539, 380, 617, 535, 437, 381, 731, 428, 636, 366, 496, 645, 669, 570, 620, 512, 481, 506, 534, 488, 404, 499, 234, 316, 451, 540, 266, 661, 528, 611, 210, 420, 567, 334, 399, 414, 646, 336, 494, 391, 491, 575, 384, 533, 530, 167, 475, 458, 432, 508, 441, 623, 665, 435, 564, 717, 169, 536, 233, 389, 634, 550, 387]
+
+    grades = Grade.query.filter(Grade.user_id.in_(user_ids)) \
+        .filter(Grade.record_id == record.id).join(Course) \
+        .filter(~Course.name.contains('@dtech')) \
+        .filter(Course.id == session['course_id']).join(User).order_by(
+        User.name).all()
+
+    return render_template('course_dashboard.html', students=grades,
+                           calculation_dict=calculation_dictionaries,
+                           record=record)
+
+
 # LTI XML Configuration
 @app.route("/xml/", methods=['GET'])
 def xml():
@@ -181,6 +197,7 @@ def course_dashboard(lti=lti):
     record = Record.query.order_by(Record.id.desc()).first()
 
     user_ids = [user[0] for user in session['users']]
+    print(user_ids)
 
     grades = Grade.query.filter(Grade.user_id.in_(user_ids)) \
         .filter(Grade.record_id == record.id).join(Course) \

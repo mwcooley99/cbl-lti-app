@@ -4,7 +4,7 @@
         <p>
             <small>Data last updated: {{ record.created_at|strftime }}</small>
         </p>
-        <input id="myInput" type="text" placeholder="Search..">
+        <input id="myInput" type="text"  placeholder="Search..">
         <div id="accordion">
             <div class="d-inline-flex flex-wrap justify-content-around">
 
@@ -13,7 +13,7 @@
                     <div class="card m-1 align-self-start"
                          style="width: 30rem;">
                         <div class="card-body">
-                            <h5 class="card-title">{{ grade.user.name }}: {{ grade.grade }}</h5>
+                            <h5 class="card-title"><span class="student-name">{{ grade.user.name }}</span>: {{ grade.grade }}</h5>
                             <a href="#explanation{{ loop.index }}"
                                class="card-link"
                                data-toggle="collapse">Grade Explanation</a>

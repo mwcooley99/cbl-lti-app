@@ -6,7 +6,23 @@
         </p>
         <div class="form-group row">
             <div class="col-6">
-                <input id="myInput" class="form-control" type="text"  placeholder="Search..">
+                <input id="myInput" class="form-control" type="text"
+                       placeholder="Search..">
+            </div>
+            <div class="col-6">
+                <div class="btn-group" role="group" aria-label="Basic example">
+                    <button type="button" class="btn btn-secondary" id="all">All
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="a">A
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="b">B
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="c">C
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="i">I
+                    </button>
+
+                </div>
             </div>
         </div>
         <div id="accordion">
@@ -17,7 +33,9 @@
                     <div class="card m-1 align-self-start"
                          style="width: 30rem;">
                         <div class="card-body">
-                            <h5 class="card-title"><span class="student-name">{{ grade.user.name }}</span>: {{ grade.grade }}</h5>
+                            <h5 class="card-title"><span
+                                    class="student-name">{{ grade.user.name }}</span>: {{ grade.grade }}
+                            </h5>
                             <a href="#explanation{{ loop.index }}"
                                class="card-link"
                                data-toggle="collapse">Grade Explanation</a>

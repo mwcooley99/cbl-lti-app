@@ -10,18 +10,29 @@
                        placeholder="Search..">
             </div>
             <div class="col-6">
-                <div class="btn-group" role="group" aria-label="Basic example">
-                    <button type="button" class="btn btn-secondary" id="all">All
-                    </button>
-                    <button type="button" class="btn btn-secondary" id="a">A
-                    </button>
-                    <button type="button" class="btn btn-secondary" id="b">B
-                    </button>
-                    <button type="button" class="btn btn-secondary" id="c">C
-                    </button>
-                    <button type="button" class="btn btn-secondary" id="i">I
-                    </button>
+                <div class="btn-toolbar mb-3 justify-content-center" role="toolbar"
+                     aria-label="Toolbar with button groups">
+                    <h4 class="mr-3">Filter by Grade: </h4>
+                    <div class="btn-group" role="group"
+                         aria-label="Basic example">
 
+                        <button type="button" class="btn btn-secondary"
+                                id="all">All
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="A">
+                            A
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="B">
+                            B
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="C">
+                            C
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="I">
+                            I
+                        </button>
+
+                    </div>
                 </div>
             </div>
         </div>
@@ -29,8 +40,7 @@
             <div class="d-inline-flex flex-wrap justify-content-around">
 
                 {% for grade in students %}
-
-                    <div class="card m-1 align-self-start"
+                    <div class="card m-1 align-self-start student-card {{ grade.grade[0] }}"
                          style="width: 30rem;">
                         <div class="card-body">
                             <h5 class="card-title"><span

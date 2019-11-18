@@ -18,13 +18,17 @@ $(document).ready(function () {
     });
 });
 
-var $btns = $('.btn').click(function () {
-    if (this.id == 'all') {
-        $('#parent > div').fadeIn(450);
-    } else {
-        var $el = $('.' + this.id).fadeIn(450);
-        $('#parent > div').not($el).hide();
-    }
-    $btns.removeClass('active');
-    $(this).addClass('active');
+$(document).ready(function () {
+    var $btns = $('.btn').click(function () {
+        console.log("Hello");
+        if (this.id == 'all') {
+            $('.student-card').show();
+        } else {
+            console.log(this.id);
+            var $el = $('.' + this.id).show();
+            $('.student-card').not($el).hide();
+        }
+        $btns.removeClass('active');
+        $(this).addClass('active');
+    });
 })

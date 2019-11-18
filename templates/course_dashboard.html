@@ -4,7 +4,11 @@
         <p>
             <small>Data last updated: {{ record.created_at|strftime }}</small>
         </p>
-        <input id="myInput" type="text"  placeholder="Search..">
+        <div class="form-group row">
+            <div class="col-6">
+                <input id="myInput" class="form-control" type="text"  placeholder="Search..">
+            </div>
+        </div>
         <div id="accordion">
             <div class="d-inline-flex flex-wrap justify-content-around">
 

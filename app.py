@@ -2,14 +2,12 @@ from flask import Flask, render_template, session, request, Response, \
     url_for, redirect
 
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import and_
 
-from pylti.flask import lti, LTI
+from pylti.flask import lti
 
 import settings
 import logging
-import json
-import os, time
+import os, json
 import requests
 
 from cbl_calculator import calculation_dictionaries
@@ -24,7 +22,8 @@ app.config.update(
     SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_HTTPONLY=True,
     # SESSION_COOKIE_SAMESITE='Lax',
-    PERMANENT_SESSION_LIFETIME=3600,
+    # PERMANENT_SESSION_LIFETIME=5,
+# SESSION_REFRESH_EACH_REQUEST=True
 )
 
 db = SQLAlchemy(app)
@@ -76,7 +75,7 @@ def launch(lti=lti):
 
     # store some of the user data in the session
     session['user_id'] = request.form.get('custom_canvas_user_id')
-
+    print(json.dumps(request.form, indent=2))
     # Check if they are a student
     # TODO - exclude Teachers
     # Check if it's a student (or teacher currently)
@@ -106,12 +105,13 @@ def launch(lti=lti):
     return "You are not a student of any course"
 
 
-@app.route('/student_dashboard', methods=['GET'])
 @app.route('/student_dashboard/<user_id>', methods=['GET'])
-def student_dashboard(user_id=None):
+@lti(error=error, request='session', role='any', app=app)
+def student_dashboard(lti=lti, user_id=None):
     record = Record.query.order_by(Record.id.desc()).first()
     if user_id:  # Todo - this probably isn't needed
         # check user is NOT authorized to access this file
+        print(json.dumps(request.form, indent=2))
         auth_users_id = [user[0] for user in session['users']]
         if not (int(user_id) in auth_users_id):
             return "You are not authorized to view this users information"

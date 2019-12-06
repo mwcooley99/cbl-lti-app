@@ -264,8 +264,12 @@ def filter_outcomes_grade_rollup(outcome_averages, include_filter=True):
                                  x['outcome_id'] not in outcomes_to_filter]
     filtered_scores = list(
         map(lambda x: x['outcome_avg'], filtered_outcome_averages))
-    filtered_grade_rollup, filtered_index = calculate_traditional_grade(
-        filtered_scores)
+    # print(filtered_scores)
+    try:
+        filtered_grade_rollup, filtered_index = calculate_traditional_grade(
+            filtered_scores)
+    except:
+        print(filtered_scores)
 
     # non-filtered scores
     scores = list(map(lambda x: x['outcome_avg'], outcome_averages))
@@ -287,7 +291,7 @@ def extract_outcome_averages(course, outcomes, student_rollup):
     return outcome_averages
 
 
-def make_grade_object(student_rollup, course, outcomes, record_id):
+def make_grade_object(student_rollup, course, outcomes, record_id, outcome_filter=True):
     '''
 
     :param student_rollup: canvas outcome_result_rollup
@@ -305,7 +309,7 @@ def make_grade_object(student_rollup, course, outcomes, record_id):
     # scores = list(map(lambda x: x['outcome_avg'], outcome_averages))
     # grade_rollup, index = calculate_traditional_grade(scores)
     grade_rollup, outcome_averages = filter_outcomes_grade_rollup(
-        outcome_averages)
+        outcome_averages, outcome_filter)
 
     # store in a dict
     grade = dict(
@@ -349,7 +353,7 @@ def preform_grade_pull(current_term=10):
     pattern = 'Teacher Assistant|LAB Day|FIT|Innovation Diploma FIT'
 
     for course in courses:
-
+        print(course['name'])
         # Check if it's a non-graded course
         if re.match(pattern, course['name']):
             continue
@@ -368,6 +372,7 @@ def preform_grade_pull(current_term=10):
                 session.execute(Grades.insert().values(grades))
                 session.commit()
                 end = time.time()
+
                 print(end - start)
                 print('******')
                 print()

@@ -46,10 +46,11 @@ def calculate_traditional_grade(scores):
             'grade': 'n/a',
             'threshold': None,
             'min_score': None,
-        }
+        }, 0
 
     scores_sorted = sorted(scores, reverse=True)
-    threshold_index = math.ceil(0.75 * len(scores_sorted)) - 1
+    # threshold_index = math.ceil(0.75 * len(scores_sorted)) - 1
+    threshold_index = math.floor(0.75 * len(scores_sorted)) - 1
 
     threshold_score = scores_sorted[threshold_index]
     min_score = scores_sorted[-1]

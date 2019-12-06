@@ -257,11 +257,24 @@ def extract_outcome_avg_data(score, course, outcomes):
     return outcome_avg
 
 
-def check_success_skills_grade(outcome_averages):
+def filter_outcomes_grade_rollup(outcome_averages, include_filter=True):
+    outcomes_to_filter = (2269, 2270)
+    # filtered_scores
+    filtered_outcome_averages = [x for x in outcome_averages if
+                                 x['outcome_id'] not in outcomes_to_filter]
+    filtered_scores = list(
+        map(lambda x: x['outcome_avg'], filtered_outcome_averages))
+    filtered_grade_rollup, filtered_index = calculate_traditional_grade(
+        filtered_scores)
+
+    # non-filtered scores
     scores = list(map(lambda x: x['outcome_avg'], outcome_averages))
     grade_rollup, index = calculate_traditional_grade(scores)
-    print(grade_rollup)
-    print()
+
+    if filtered_index < index and include_filter:
+        return filtered_grade_rollup, filtered_outcome_averages
+
+    return grade_rollup, outcome_averages
 
 
 def extract_outcome_averages(course, outcomes, student_rollup):
@@ -289,8 +302,11 @@ def make_grade_object(student_rollup, course, outcomes, record_id):
 
     # calculate grade using cbl algorithm
     # TODO  - Calculate the scores with and without the success skills
-    scores = list(map(lambda x: x['outcome_avg'], outcome_averages))
-    grade_rollup, index = calculate_traditional_grade(scores)
+    # scores = list(map(lambda x: x['outcome_avg'], outcome_averages))
+    # grade_rollup, index = calculate_traditional_grade(scores)
+    grade_rollup, outcome_averages = filter_outcomes_grade_rollup(
+        outcome_averages)
+
     # store in a dict
     grade = dict(
         user_id=user_id,

@@ -257,20 +257,40 @@ def extract_outcome_avg_data(score, course, outcomes):
     return outcome_avg
 
 
-def make_grade_object(student_rollup, course, outcomes, record_id):
-    user_id = student_rollup['links']['user']
-    outcome_averages = []
+def check_success_skills_grade(outcome_averages):
+    scores = list(map(lambda x: x['outcome_avg'], outcome_averages))
+    grade_rollup, index = calculate_traditional_grade(scores)
+    print(grade_rollup)
+    print()
 
+
+def extract_outcome_averages(course, outcomes, student_rollup):
+    outcome_averages = []
     # Iterate through desc sorted outcome averages to extract data we want
     for rollup in sorted(student_rollup['scores'], key=lambda x: x['score'],
                          reverse=True):
         outcome_averages.append(
             extract_outcome_avg_data(rollup, course, outcomes))
+    return outcome_averages
+
+
+def make_grade_object(student_rollup, course, outcomes, record_id):
+    '''
+
+    :param student_rollup: canvas outcome_result_rollup
+    :param course: canvas course object
+    :param outcomes: canvas outcome objects pulled from outcome_result_rollup
+    :param record_id: database record id
+    :return: grade dictionary
+    '''
+    user_id = student_rollup['links']['user']
+    outcome_averages = extract_outcome_averages(course, outcomes,
+                                                student_rollup)
 
     # calculate grade using cbl algorithm
-
+    # TODO  - Calculate the scores with and without the success skills
     scores = list(map(lambda x: x['outcome_avg'], outcome_averages))
-    grade_rollup = calculate_traditional_grade(scores)
+    grade_rollup, index = calculate_traditional_grade(scores)
     # store in a dict
     grade = dict(
         user_id=user_id,

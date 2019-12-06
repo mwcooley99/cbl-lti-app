@@ -58,10 +58,11 @@ def calculate_traditional_grade(scores):
         min_score=min_score
     )
 
-    for grade in calculation_dictionaries:
+    for _i in range(len(calculation_dictionaries)):
+        grade = calculation_dictionaries[_i]
         if threshold_score >= grade['threshold'] and min_score >= grade[
             'min_score']:
             traditional_grade['grade'] = grade['grade']
-            return traditional_grade
+            return traditional_grade, _i
 
     return calculation_dictionaries[-1]

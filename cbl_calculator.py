@@ -49,9 +49,11 @@ def calculate_traditional_grade(scores):
         }, 0
 
     scores_sorted = sorted(scores, reverse=True)
-    # threshold_index = math.ceil(0.75 * len(scores_sorted)) - 1
+
+    # Find the 75% threshold --> floored
     threshold_index = math.floor(0.75 * len(scores_sorted)) - 1
 
+    # Calculate the threshold scores to generate grade
     threshold_score = scores_sorted[threshold_index]
     min_score = scores_sorted[-1]
     traditional_grade = dict(

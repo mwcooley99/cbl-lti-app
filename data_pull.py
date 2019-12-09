@@ -264,12 +264,9 @@ def filter_outcomes_grade_rollup(outcome_averages, include_filter=True):
                                  x['outcome_id'] not in outcomes_to_filter]
     filtered_scores = list(
         map(lambda x: x['outcome_avg'], filtered_outcome_averages))
-    # print(filtered_scores)
-    try:
-        filtered_grade_rollup, filtered_index = calculate_traditional_grade(
-            filtered_scores)
-    except:
-        print(filtered_scores)
+
+    filtered_grade_rollup, filtered_index = calculate_traditional_grade(
+        filtered_scores)
 
     # non-filtered scores
     scores = list(map(lambda x: x['outcome_avg'], outcome_averages))
@@ -291,7 +288,8 @@ def extract_outcome_averages(course, outcomes, student_rollup):
     return outcome_averages
 
 
-def make_grade_object(student_rollup, course, outcomes, record_id, outcome_filter=True):
+def make_grade_object(student_rollup, course, outcomes, record_id,
+                      outcome_filter=True):
     '''
 
     :param student_rollup: canvas outcome_result_rollup

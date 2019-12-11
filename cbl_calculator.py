@@ -19,12 +19,12 @@ calculation_dictionaries = [
     {
         'grade': 'B',
         'threshold': 2.6,
-        'min_score': 2.25
+        'min_score': 0
     },
     {
         'grade': 'B-',
         'threshold': 2.6,
-        'min_score': 2
+        'min_score': 0
     },
     {
         'grade': 'C',

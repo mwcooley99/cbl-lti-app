@@ -1,12 +1,16 @@
 from pdf_reports import pug_to_html, write_report, preload_stylesheet
 
+import pandas as pd
+from pandas.io.json import json_normalize
+
 import os, re, requests
 from datetime import datetime
 
 import time
+import json
 
 from config import configuration
-from cbl_calculator import calculate_traditional_grade
+from cbl_calculator import calculate_traditional_grade, weighted_avg
 
 access_token = os.getenv('CANVAS_API_KEY')
 
@@ -97,6 +101,25 @@ def get_outcome_rollups(course):
     outcome_rollups = []
     url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/outcome_rollups"
     querystring = {"include[]": "outcomes", "per_page": "100"}
+    response = requests.request("GET", url, headers=headers,
+                                params=querystring)
+    # Pagination
+    outcome_rollups.append(response.json())
+    while response.links.get('next'):
+        url = response.links['next']['url']
+        response = requests.request("GET", url, headers=headers,
+                                    params=querystring)
+        outcome_rollups.append(response.json())
+
+    return outcome_rollups
+
+
+def get_outcome_results(course):
+    outcome_rollups = []
+    url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/outcome_results"
+    querystring = {
+        "include[]": ["alignments", "outcomes.alignments", "outcomes"],
+        "per_page": "100"}
     response = requests.request("GET", url, headers=headers,
                                 params=querystring)
     # Pagination
@@ -251,6 +274,7 @@ def extract_outcome_avg_data(score, course, outcomes):
         outcome_id=int(score['links']['outcome']),
         outcome_avg=score['score'],
         title=outcome_info['title'],
+        final_assignment=score['title'],
         display_name=outcome_info['display_name'],
     )
 
@@ -335,6 +359,43 @@ def parse_rollups(course, outcome_rollups, record):
     return grades
 
 
+####################################
+# CURRENT FUNCTIONS
+####################################
+
+def create_outcome_dataframes(course):
+    outcome_rollups = []
+    url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/outcome_results"
+    querystring = {
+        "include[]": ["alignments", "outcomes.alignments", "outcomes"],
+        "per_page": "100"}
+    response = requests.request("GET", url, headers=headers,
+                                params=querystring)
+    data = response.json()
+
+    outcome_results = json_normalize(data['outcome_results'])
+    alignments = json_normalize(data['linked']['alignments'])
+    outcomes = json_normalize(data['linked']['outcomes'])
+
+    # Pagination
+    outcome_rollups.append(response.json())
+    while response.links.get('next'):
+        url = response.links['next']['url']
+        response = requests.request("GET", url, headers=headers,
+                                    params=querystring)
+        data = response.json()
+        outcome_results = pd.concat(
+            [outcome_results, json_normalize(data['outcome_results'])])
+        alignments = pd.concat(
+            [alignments, json_normalize(data['linked']['alignments'])])
+        outcomes = pd.concat(
+            [outcomes, json_normalize(data['linked']['outcomes'])])
+        break
+    #         outcome_rollups.append(response.json())
+    outcome_results['course_id'] = course['id']
+    return outcome_results, alignments, outcomes
+
+
 def preform_grade_pull(current_term=10):
     session = Session(engine)
 
@@ -356,8 +417,50 @@ def preform_grade_pull(current_term=10):
         if re.match(pattern, course['name']):
             continue
 
-        # Get the outcome_rollups for the current class
-        outcome_rollups_list = get_outcome_rollups(course)
+        outcome_results, alignments, outcomes = create_outcome_dataframes(
+            course)
+
+        # Clean up the format
+        outcome_results['links.learning_outcome'] = outcome_results[
+            'links.learning_outcome'].astype('int')
+        outcome_results = outcome_results.dropna(subset=['score'])
+        outcomes['id'] = outcomes['id'].astype('int')
+
+        # merge outcome data and create decaying average meta column
+        out = outcomes[['id', 'calculation_int']].rename(
+            columns={'id': 'outcome_id'})
+        result_outcomes = pd.merge(outcome_results, out, how='left',
+                                   left_on='links.learning_outcome',
+                                   right_on='outcome_id')
+        result_outcomes['score_int'] = list(
+            zip(result_outcomes['score'], result_outcomes['calculation_int'],
+                result_outcomes['links.learning_outcome']))
+
+        # Calculate outcome averages
+        outcome_averages = result_outcomes.sort_values(
+            ['links.user', 'links.learning_outcome',
+             'submitted_or_assessed_at']) \
+            .groupby(['links.user', 'links.learning_outcome']).agg(
+            {'score': 'mean', 'score_int': weighted_avg})
+        outcome_averages = outcome_averages.reset_index()
+        outcome_averages['max_score'] = outcome_averages[
+            ['score', 'score_int']].max(axis=1)
+        # Outcomes with unwanted outcomes filtered out.
+        filtered_outcomes = (
+            2269, 2270)  # TODO - make a constant at the top of script
+        filtered_outcome_averages = outcome_averages.loc[
+            ~outcome_averages['links.learning_outcome'].isin(
+                filtered_outcomes)]
+
+        # Calculate grades
+        filtered_grades = filtered_outcome_averages.groupby('links.user').agg(
+            {'max_score': calculate_traditional_grade})
+        unfiltered_grades = outcome_averages.groupby('links.user').agg(
+            {'max_score': calculate_traditional_grade})
+        grades = pd.merge(filtered_grades, unfiltered_grades)
+
+        print(grades)
+        break
 
         # Loop through pages of outcome_rollups and make grades for students
         for outcome_rollups in outcome_rollups_list:

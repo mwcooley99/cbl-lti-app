@@ -1,4 +1,5 @@
 import math
+import pandas as pd
 
 calculation_dictionaries = [
     {
@@ -37,6 +38,14 @@ calculation_dictionaries = [
         'min_score': 0
     }
 ]
+
+def weighted_avg(scores):
+    s = scores.apply(pd.Series)
+    if len(s) == 1:
+        return s.iloc[0,0]
+    # need check that there's more than 1 outcome alignment
+    w_avg = ((100 - s.iloc[0, 1])/100) * s.iloc[:-1, 0].mean() + s.iloc[0, 1]/100 * s.iloc[-1, 0]
+    return w_avg
 
 
 def calculate_traditional_grade(scores):

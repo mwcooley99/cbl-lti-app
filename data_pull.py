@@ -2,6 +2,7 @@ from pdf_reports import pug_to_html, write_report, preload_stylesheet
 
 import pandas as pd
 from pandas.io.json import json_normalize
+import numpy as np
 
 import os, re, requests
 from datetime import datetime
@@ -377,23 +378,33 @@ def create_outcome_dataframes(course):
     alignments = json_normalize(data['linked']['alignments'])
     outcomes = json_normalize(data['linked']['outcomes'])
 
-    # Pagination
-    outcome_rollups.append(response.json())
-    while response.links.get('next'):
-        url = response.links['next']['url']
-        response = requests.request("GET", url, headers=headers,
-                                    params=querystring)
-        data = response.json()
-        outcome_results = pd.concat(
-            [outcome_results, json_normalize(data['outcome_results'])])
-        alignments = pd.concat(
-            [alignments, json_normalize(data['linked']['alignments'])])
-        outcomes = pd.concat(
-            [outcomes, json_normalize(data['linked']['outcomes'])])
-        break
-    #         outcome_rollups.append(response.json())
+    # # Pagination
+    # while response.links.get('next'):
+    #     url = response.links['next']['url']
+    #     response = requests.request("GET", url, headers=headers,
+    #                                 params=querystring)
+    #     data = response.json()
+    #     outcome_results = pd.concat(
+    #         [outcome_results, json_normalize(data['outcome_results'])])
+    #     alignments = pd.concat(
+    #         [alignments, json_normalize(data['linked']['alignments'])])
+    #     outcomes = pd.concat(
+    #         [outcomes, json_normalize(data['linked']['outcomes'])])
+    #     break  # TODO - remove me
+
     outcome_results['course_id'] = course['id']
     return outcome_results, alignments, outcomes
+
+
+def outcome_results_to_df_dict(df):
+    results = []
+    for k, v in df.groupby('links.user'):
+        temp_dict = dict(
+            user_id=k,
+            outcomes=v.to_dict('records')
+        )
+        results.append(temp_dict)
+    return pd.DataFrame(results)
 
 
 def preform_grade_pull(current_term=10):
@@ -420,46 +431,107 @@ def preform_grade_pull(current_term=10):
         outcome_results, alignments, outcomes = create_outcome_dataframes(
             course)
 
-        # Clean up the format
-        outcome_results['links.learning_outcome'] = outcome_results[
-            'links.learning_outcome'].astype('int')
-        outcome_results = outcome_results.dropna(subset=['score'])
+        outcome_results.to_csv('test_data/outcome_results_df.csv')
+
+        # Clean up the format of the outcome_results
+        new_col_names = {'links.learning_outcome': 'outcome_id',
+                         'score': 'outcome_avg'
+                         }
+        outcome_results.rename(columns=new_col_names, inplace=True)
+        outcome_results['outcome_id'] = outcome_results[
+            'outcome_id'].astype('int')
+        outcome_results = outcome_results.dropna(subset=['outcome_avg'])
+        outcome_results['course_id'] = course['id']
+
+        # clean up titles of the outcomes metadata
         outcomes['id'] = outcomes['id'].astype('int')
+        outcomes.rename(columns={'id': 'outcome_id'}, inplace=True)
 
         # merge outcome data and create decaying average meta column
-        out = outcomes[['id', 'calculation_int']].rename(
-            columns={'id': 'outcome_id'})
-        result_outcomes = pd.merge(outcome_results, out, how='left',
-                                   left_on='links.learning_outcome',
-                                   right_on='outcome_id')
+        result_outcomes = pd.merge(outcome_results, outcomes, how='left',
+                                   on='outcome_id')
         result_outcomes['score_int'] = list(
-            zip(result_outcomes['score'], result_outcomes['calculation_int'],
-                result_outcomes['links.learning_outcome']))
+            zip(result_outcomes['outcome_avg'], result_outcomes['calculation_int'],
+                result_outcomes['outcome_id']))
 
+        print(result_outcomes.columns)
         # Calculate outcome averages
+        group_cols = ['links.user', 'outcome_id', 'course_id',
+                      'title', 'display_name']
         outcome_averages = result_outcomes.sort_values(
-            ['links.user', 'links.learning_outcome',
+            ['links.user', 'outcome_id',
              'submitted_or_assessed_at']) \
-            .groupby(['links.user', 'links.learning_outcome']).agg(
-            {'score': 'mean', 'score_int': weighted_avg})
+            .groupby(group_cols).agg({'outcome_avg': 'mean', 'score_int': weighted_avg})
         outcome_averages = outcome_averages.reset_index()
         outcome_averages['max_score'] = outcome_averages[
-            ['score', 'score_int']].max(axis=1)
+            ['outcome_avg', 'score_int']].max(axis=1)
+
         # Outcomes with unwanted outcomes filtered out.
         filtered_outcomes = (
             2269, 2270)  # TODO - make a constant at the top of script
         filtered_outcome_averages = outcome_averages.loc[
-            ~outcome_averages['links.learning_outcome'].isin(
+            ~outcome_averages['outcome_id'].isin(
                 filtered_outcomes)]
 
-        # Calculate grades
-        filtered_grades = filtered_outcome_averages.groupby('links.user').agg(
-            {'max_score': calculate_traditional_grade})
-        unfiltered_grades = outcome_averages.groupby('links.user').agg(
-            {'max_score': calculate_traditional_grade})
-        grades = pd.merge(filtered_grades, unfiltered_grades)
+        # Create outcome_averages_dictionary dataframes
+        outcome_avg_dicts = outcome_results_to_df_dict(outcome_averages)
+        filtered_outcome_avg_dicts = outcome_results_to_df_dict(
+            filtered_outcome_averages)
+        outcome_dictionaries = pd.merge(outcome_avg_dicts,
+                                        filtered_outcome_avg_dicts,
+                                        on='user_id')
+        print(outcome_dictionaries.columns)
+        outcome_dictionaries.columns = ['user_id', 'unfiltered_outcomes',
+                                        'filtered_outcomes']
 
-        print(grades)
+        # Calculate grades
+        filtered_grades = filtered_outcome_averages.groupby(
+            ['links.user', 'course_id']).agg(
+            {'max_score': calculate_traditional_grade}).reset_index()
+        unfiltered_grades = outcome_averages.groupby(
+            ['links.user', 'course_id']).agg(
+            {'max_score': calculate_traditional_grade}).reset_index()
+        grades = pd.merge(filtered_grades, unfiltered_grades, on=['links.user',
+                                                                  'course_id'])
+        grades.rename(columns={'links.user': 'user_id'}, inplace=True)
+
+        # Merge outcome_results dictionaries with the grades
+        grades = pd.merge(grades, outcome_dictionaries, on='user_id')
+
+        # Split grade column into to columns
+        grades[['filtered_grades', 'filtered_idx']] = pd.DataFrame(
+            grades['max_score_x'].values.tolist(), index=grades.index)
+        grades[['unfiltered_grades', 'unfiltered_idx']] = pd.DataFrame(
+            grades['max_score_y'].values.tolist(), index=grades.index)
+
+        # pick the higher grade
+        grades['final_grade'] = np.where(
+            grades['filtered_idx'] < grades['unfiltered_idx'],
+            grades['filtered_grades'], grades['unfiltered_grades'])
+        # get outcomes from higher grade
+        grades['outcomes'] = np.where(
+            grades['filtered_idx'] < grades['unfiltered_idx'],
+            grades['filtered_outcomes'], grades['unfiltered_outcomes'])
+
+        grades['record_id'] = record
+        grades = pd.concat([grades, json_normalize(grades['final_grade'])],
+                           axis=1)
+        grades.to_csv('test_data/grades_audit.csv')
+
+        cols = ['user_id', 'course_id', 'grade', 'min_score', 'threshold',
+                'record_id', 'outcomes']
+        grades_dict = grades[cols].to_dict('records')
+
+        if len(grades_dict):
+            start = time.time()
+            session.execute(Grades.insert().values(grades_dict))
+            session.commit()
+            end = time.time()
+
+            print(end - start)
+            print('******')
+            print()
+
         break
 
         # Loop through pages of outcome_rollups and make grades for students

@@ -50,6 +50,7 @@ def weighted_avg(scores):
 
 def calculate_traditional_grade(scores):
     # check if the outcome is assessed.
+    scores = scores.to_list()
     if len(scores) == 0 or scores[0] == -1:
         return {
             'grade': 'n/a',

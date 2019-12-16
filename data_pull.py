@@ -378,22 +378,43 @@ def create_outcome_dataframes(course):
     alignments = json_normalize(data['linked']['alignments'])
     outcomes = json_normalize(data['linked']['outcomes'])
 
-    # # Pagination
-    # while response.links.get('next'):
-    #     url = response.links['next']['url']
-    #     response = requests.request("GET", url, headers=headers,
-    #                                 params=querystring)
-    #     data = response.json()
-    #     outcome_results = pd.concat(
-    #         [outcome_results, json_normalize(data['outcome_results'])])
-    #     alignments = pd.concat(
-    #         [alignments, json_normalize(data['linked']['alignments'])])
-    #     outcomes = pd.concat(
-    #         [outcomes, json_normalize(data['linked']['outcomes'])])
-    #     break  # TODO - remove me
+    # Pagination
+    while response.links.get('next'):
+        url = response.links['next']['url']
+        response = requests.request("GET", url, headers=headers,
+                                    params=querystring)
+        data = response.json()
+        outcome_results = pd.concat(
+            [outcome_results, json_normalize(data['outcome_results'])])
+        alignments = pd.concat(
+            [alignments, json_normalize(data['linked']['alignments'])])
+        outcomes = pd.concat(
+            [outcomes, json_normalize(data['linked']['outcomes'])])
+        # break  # TODO - remove me
 
     outcome_results['course_id'] = course['id']
     return outcome_results, alignments, outcomes
+
+
+def get_course_users(course):
+    students = []
+    url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/users"
+
+    querystring = {"enrollment_type[]": "student",
+                   "per_page": "100"}
+    response = requests.request("GET", url, headers=headers,
+                                params=querystring)
+    students = [user['id'] for user in response.json()]
+
+    # Pagination
+
+    while response.links.get('next'):
+        url = response.links['next']['url']
+        response = requests.request("GET", url, headers=headers,
+                                    params=querystring)
+        students += [user['id'] for user in response.json()]
+
+    return students
 
 
 def outcome_results_to_df_dict(df):
@@ -401,6 +422,7 @@ def outcome_results_to_df_dict(df):
     for k, v in df.groupby('links.user'):
         temp_dict = dict(
             user_id=k,
+            # TODO - sort by score
             outcomes=v.to_dict('records')
         )
         results.append(temp_dict)
@@ -422,7 +444,7 @@ def preform_grade_pull(current_term=10):
     # get outcome result rollups for each course and list of outcomes
     pattern = 'Teacher Assistant|LAB Day|FIT|Innovation Diploma FIT'
 
-    for course in courses:
+    for course in courses[1:]:
         print(course['name'])
         # Check if it's a non-graded course
         if re.match(pattern, course['name']):
@@ -447,21 +469,30 @@ def preform_grade_pull(current_term=10):
         outcomes['id'] = outcomes['id'].astype('int')
         outcomes.rename(columns={'id': 'outcome_id'}, inplace=True)
 
-        # merge outcome data and create decaying average meta column
+        # merge outcome data and create decaying average meta column - move to later
         result_outcomes = pd.merge(outcome_results, outcomes, how='left',
                                    on='outcome_id')
+
         result_outcomes['score_int'] = list(
-            zip(result_outcomes['outcome_avg'], result_outcomes['calculation_int'],
+            zip(result_outcomes['outcome_avg'],
+                result_outcomes['calculation_int'],
                 result_outcomes['outcome_id']))
 
-        print(result_outcomes.columns)
+        print(result_outcomes.memory_usage(index=True, deep=True).sum())
+
         # Calculate outcome averages
         group_cols = ['links.user', 'outcome_id', 'course_id',
-                      'title', 'display_name']
+                      'title']
+        result_outcomes.to_csv('test_data/result_outcomes.csv')
+
         outcome_averages = result_outcomes.sort_values(
             ['links.user', 'outcome_id',
              'submitted_or_assessed_at']) \
-            .groupby(group_cols).agg({'outcome_avg': 'mean', 'score_int': weighted_avg})
+            .groupby(group_cols).agg(
+            {'outcome_avg': 'mean', 'score_int': weighted_avg})
+
+        print('*************')
+        print(outcome_averages)
         outcome_averages = outcome_averages.reset_index()
         outcome_averages['max_score'] = outcome_averages[
             ['outcome_avg', 'score_int']].max(axis=1)
@@ -474,9 +505,13 @@ def preform_grade_pull(current_term=10):
                 filtered_outcomes)]
 
         # Create outcome_averages_dictionary dataframes
+        print("***********")
+        print(outcome_averages)
         outcome_avg_dicts = outcome_results_to_df_dict(outcome_averages)
         filtered_outcome_avg_dicts = outcome_results_to_df_dict(
             filtered_outcome_averages)
+        print(outcome_avg_dicts.columns)
+        print(filtered_outcome_avg_dicts.columns)
         outcome_dictionaries = pd.merge(outcome_avg_dicts,
                                         filtered_outcome_avg_dicts,
                                         on='user_id')
@@ -532,23 +567,23 @@ def preform_grade_pull(current_term=10):
             print('******')
             print()
 
-        break
+        # break
 
         # Loop through pages of outcome_rollups and make grades for students
-        for outcome_rollups in outcome_rollups_list:
-            grades = parse_rollups(course,
-                                   outcome_rollups,
-                                   record)
-
-            if len(grades):
-                start = time.time()
-                session.execute(Grades.insert().values(grades))
-                session.commit()
-                end = time.time()
-
-                print(end - start)
-                print('******')
-                print()
+        # for outcome_rollups in outcome_rollups_list:
+        #     grades = parse_rollups(course,
+        #                            outcome_rollups,
+        #                            record)
+        #
+        #     if len(grades):
+        #         start = time.time()
+        #         session.execute(Grades.insert().values(grades))
+        #         session.commit()
+        #         end = time.time()
+        #
+        #         print(end - start)
+        #         print('******')
+        #         print()
 
 
 if __name__ == '__main__':

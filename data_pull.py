@@ -400,15 +400,6 @@ def get_course_users(course):
 
 
 def outcome_results_to_df_dict(df):
-    results = []
-    # for k, v in df.groupby('links.user'):
-    #     temp_dict = dict(
-    #         user_id=k,
-    #         # TODO - sort by score
-    #         outcomes=v.to_dict('records')
-    #     )
-    #     results.append(temp_dict)
-    # return pd.DataFrame(results)
     return df.to_dict('records')
 
 
@@ -435,8 +426,10 @@ def preform_grade_pull(current_term=10):
     # get outcome result rollups for each course and list of outcomes
     pattern = 'Teacher Assistant|LAB Day|FIT|Innovation Diploma FIT'
 
-    for course in courses[3:]:
+    for idx, course in enumerate(courses):
         print(course['name'])
+        print(f'Course {idx + 1} our of {len(courses)}')
+        start_course = time.time()
         grades_list = []
 
         # Check if it's a non-graded course
@@ -458,6 +451,7 @@ def preform_grade_pull(current_term=10):
                 make_empty_grade(course, grades_list, record, student)
                 continue
 
+            # Drop blank scores
             outcome_results = outcome_results.dropna(subset=['score'])
 
             # Check if outcome_results are empty. If so make an empty grade object
@@ -492,7 +486,7 @@ def preform_grade_pull(current_term=10):
                 ['links.user', 'outcome_id',
                  'submitted_or_assessed_at']) \
                 .groupby(group_cols).agg(
-                {'outcome_avg': 'mean', 'score_int': weighted_avg})
+                {'outcome_avg': 'mean', 'score_int': weighted_avg}).round()
 
             outcome_averages = outcome_averages.reset_index()
             outcome_averages['max_score'] = outcome_averages[
@@ -513,10 +507,9 @@ def preform_grade_pull(current_term=10):
 
             # Create outcome_averages_dictionary dataframes
             cols = ['outcome_id', 'outcome_avg', 'title', 'display_name']
-            outcome_avg_dicts = outcome_results_to_df_dict(
-                outcome_averages[cols])
-            filtered_outcome_avg_dicts = outcome_results_to_df_dict(
-                filtered_outcome_averages[cols])
+            outcome_avg_dicts = outcome_averages[cols].round(2)
+            filtered_outcome_avg_dicts = filtered_outcome_averages[cols].round(2)
+
 
             # Calculate grades
             filtered_grade = calculate_traditional_grade(
@@ -539,16 +532,16 @@ def preform_grade_pull(current_term=10):
             grades_list.append(grade)
 
         if len(grades_list):
-            start = time.time()
+
             session.execute(Grades.insert().values(grades_list))
             session.commit()
-            end = time.time()
+            end_course = time.time()
 
-            print(end - start)
+            print(end_course - start_course)
             print('******')
             print()
 
-        break
+        # break
 
 
 if __name__ == '__main__':

@@ -438,8 +438,8 @@ def preform_grade_pull(current_term=10):
         grades_list = make_grades_list(course, record)
 
         if len(grades_list):
-            # session.execute(Grades.insert().values(grades_list))
-            # session.commit()
+            session.execute(Grades.insert().values(grades_list))
+            session.commit()
             end_course = time.time()
 
             print(end_course - start_course)

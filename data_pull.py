@@ -427,7 +427,7 @@ def preform_grade_pull(current_term=10):
     pattern = 'Teacher Assistant|LAB Day|FIT|Innovation Diploma FIT'
 
     for idx, course in enumerate(courses):
-        print(course['name'])
+        # print(course['name'])
         print(f'Course {idx + 1} our of {len(courses)}')
         start_course = time.time()
 
@@ -442,9 +442,9 @@ def preform_grade_pull(current_term=10):
             session.commit()
             end_course = time.time()
 
-            print(end_course - start_course)
-            print('******')
-            print()
+            # print(end_course - start_course)
+            # print('******')
+            # print()
 
         # break
 
@@ -578,4 +578,4 @@ if __name__ == '__main__':
     preform_grade_pull()
 
     end = time.time()
-    print(end - start)
+    print(f'pull took: {end - start} seconds')

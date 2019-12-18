@@ -372,7 +372,7 @@ def create_outcome_dataframes(course, user_ids=None):
             [alignments, json_normalize(data['linked']['alignments'])])
         outcomes = pd.concat(
             [outcomes, json_normalize(data['linked']['outcomes'])])
-        # break  # TODO - remove me
+
 
     outcome_results['course_id'] = course['id']
     return outcome_results, alignments, outcomes
@@ -452,8 +452,9 @@ def preform_grade_pull(current_term=10):
 def make_grades_list(course, record):
     grades_list = []
     students = get_course_users(course)
+
     for student_num, student in enumerate(students):
-        print(student)
+
         # If @dtech, fill with empty grades - Todo refactor
         if re.match('@dtech', course['name']):
             make_empty_grade(course, grades_list, record, student)
@@ -488,7 +489,7 @@ def make_grades_list(course, record):
         unfiltered_outcome_averages = calc_outcome_avgs(outcome_results,
                                                         outcomes)
 
-        unfiltered_outcome_averages.to_csv(f'out/student_{student}.csv')
+        # unfiltered_outcome_averages.to_csv(f'out/student_{student}.csv')
         # Outcomes with unwanted outcomes filtered out.
         filtered_outcomes = (
             2269, 2270)  # TODO - make a constant at the top of script
@@ -516,8 +517,8 @@ def make_grades_list(course, record):
             final_grade = unfiltered_grade[0]
             final_outcome_avg = unfiltered_outcome_avg_dicts
 
-        with open(f'out/grades_{student}.json', 'w+') as fp:
-            json.dump([filtered_grade, unfiltered_grade, final_grade], fp, indent=2)
+        # with open(f'out/grades_{student}.json', 'w+') as fp:
+        #     json.dump([filtered_grade, unfiltered_grade, final_grade], fp, indent=2)
 
         # create grade object
         grade = make_grade_object(final_grade, final_outcome_avg, record,

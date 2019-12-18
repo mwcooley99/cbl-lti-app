@@ -166,6 +166,10 @@
                         </div>
                         <div class="card-body">
                             <div>
+{#                            outcome averages table #}
+                            <div class="card border-0">
+
+                            </div>
                                 <table class="table">
                                     <thead>
                                     <tr class="d-flex">
@@ -178,7 +182,7 @@
 
                                     <tbody>
                                     {% for outcome_average in grade.outcomes %}
-                                        <tr class="d-flex">
+                                        <tr class="d-flex clickable" data-toggle="collapse" data-target="#accordion">
                                             {# Use display name if it's available #}
                                             {% if outcome_average.display_name %}
                                                 <td scope="row" class="col-8">
@@ -196,10 +200,18 @@
                                                 </td>
                                             {% endif %}
                                         </tr>
+                                        <tr>
+                                            <td colspan="2">
+                                                <div id="accordion" class="collapse">
+                                                    ldksjsdfk
+                                                </div>
+                                            </td>
+                                        </tr>
                                     {% endfor %}
                                     </tbody>
 
                                 </table>
+{#                            end outcome averages table    #}
                             </div>
                         </div>
                     </div>

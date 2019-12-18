@@ -452,7 +452,8 @@ def preform_grade_pull(current_term=10):
 def make_grades_list(course, record):
     grades_list = []
     students = get_course_users(course)
-
+    print(students)
+    return None
     for student_num, student in enumerate(students):
 
         # If @dtech, fill with empty grades - Todo refactor

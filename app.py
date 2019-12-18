@@ -67,7 +67,7 @@ def launch(lti=lti):
 
     # store some of the user data in the session
     session['user_id'] = request.form.get('custom_canvas_user_id')
-    print(json.dumps(request.form, indent=2))
+    # print(json.dumps(request.form, indent=2))
     # Check if they are a student
     # TODO - exclude Teachers
     # Check if it's a student (or teacher currently)
@@ -103,7 +103,7 @@ def student_dashboard(lti=lti, user_id=None):
     record = Record.query.order_by(Record.id.desc()).first()
     if user_id:  # Todo - this probably isn't needed
         # check user is NOT authorized to access this file
-        print(json.dumps(request.form, indent=2))
+        # print(json.dumps(request.form, indent=2))
         auth_users_id = [user[0] for user in session['users']]
         if not (int(user_id) in auth_users_id):
             return "You are not authorized to view this users information"
@@ -189,7 +189,7 @@ def course_dashboard(lti=lti):
     record = Record.query.order_by(Record.id.desc()).first()
 
     user_ids = [user[0] for user in session['users']]
-    print(user_ids)
+    # print(user_ids)
 
     grades = Grade.query.filter(Grade.user_id.in_(user_ids)) \
         .filter(Grade.record_id == record.id).join(Course) \

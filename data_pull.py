@@ -427,9 +427,8 @@ def preform_grade_pull(current_term=10):
     pattern = 'Teacher Assistant|LAB Day|FIT|Innovation Diploma FIT'
 
     for idx, course in enumerate(courses):
-        # print(course['name'])
-        print(f'Course {idx + 1} our of {len(courses)}')
-        start_course = time.time()
+        print(f'{course["name"]} is course {idx + 1} our of {len(courses)}')
+
 
         # Check if it's a non-graded course
         if re.match(pattern, course['name']):
@@ -452,8 +451,7 @@ def preform_grade_pull(current_term=10):
 def make_grades_list(course, record):
     grades_list = []
     students = get_course_users(course)
-    print(students)
-    return None
+
     for student_num, student in enumerate(students):
 
         # If @dtech, fill with empty grades - Todo refactor
@@ -500,9 +498,9 @@ def make_grades_list(course, record):
 
         # Create outcome_averages_dictionary dataframes
         cols = ['outcome_id', 'outcome_avg', 'title', 'display_name']
-        unfiltered_outcome_avg_dicts = unfiltered_outcome_averages[cols].round(2)
+        unfiltered_outcome_avg_dicts = unfiltered_outcome_averages[cols].round(2).to_dict('records')
         filtered_outcome_avg_dicts = filtered_outcome_averages[cols].round(
-            2)
+            2).to_dict('records')
 
         # Calculate grades
         filtered_grade = calculate_traditional_grade(

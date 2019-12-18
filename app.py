@@ -17,14 +17,6 @@ from logging.handlers import RotatingFileHandler
 app = Flask(__name__)
 app.secret_key = settings.secret_key
 app.config.from_object(settings.configClass)
-# # todo - figure out the samesite cookie setting. Getting warning in Chrome
-app.config.update(
-    # SESSION_COOKIE_SECURE=True,
-    # SESSION_COOKIE_HTTPONLY=True,
-    # SESSION_COOKIE_SAMESITE='Lax',
-    # PERMANENT_SESSION_LIFETIME=5,
-# SESSION_REFRESH_EACH_REQUEST=True
-)
 
 db = SQLAlchemy(app)
 

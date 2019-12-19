@@ -39,12 +39,16 @@ calculation_dictionaries = [
     }
 ]
 
+
 def weighted_avg(scores):
     s = scores.apply(pd.Series)
     if len(s) == 1:
-        return s.iloc[0,0]
+        return s.iloc[0, 0]
+
     # need check that there's more than 1 outcome alignment
-    w_avg = ((100 - s.iloc[0, 1])/100) * s.iloc[:-1, 0].mean() + s.iloc[0, 1]/100 * s.iloc[-1, 0]
+    first_weight = ((100 - s.iloc[0, 1]) / 100)
+    final_weight = s.iloc[0, 1] / 100
+    w_avg = first_weight * s.iloc[:-1, 0].mean() + final_weight * s.iloc[-1, 0]
     return w_avg
 
 
@@ -54,10 +58,10 @@ def calculate_traditional_grade(scores):
     # print(scores)
     if len(scores) == 0 or scores[0] == -1:
         return {
-            'grade': 'n/a',
-            'threshold': None,
-            'min_score': None,
-        }, 0
+                   'grade': 'n/a',
+                   'threshold': None,
+                   'min_score': None,
+               }, 0
 
     scores_sorted = sorted(scores, reverse=True)
 

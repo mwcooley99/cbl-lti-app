@@ -252,13 +252,15 @@
 {#                            </div>#}
 {#                        </div>#}
 {#                    </div>#}
+
+
                     {# testing #}
-                    <div class="card mt-3">
-                        <div class="card-header">
-                            <h5>Outcome Averages</h5>
-                        </div>
-                        <div class="card-body">
-                            <div>
+{#                    <div class="card mt-3">#}
+{#                        <div class="card-header">#}
+{#                            <h5>Outcome Averages</h5>#}
+{#                        </div>#}
+{#                        <div class="card-body">#}
+{#                            <div>#}
                                 {#                            outcome averages table #}
 
                                 <table id="table-{{ loop.index }}"
@@ -276,9 +278,9 @@
                                     </thead>
                                 </table>
                                 {#                            end outcome averages table    #}
-                            </div>
-                        </div>
-                    </div>
+{#                            </div>#}
+{#                        </div>#}
+{#                    </div>#}
                     {# end testing #}
                     </div>
                     {% endfor %}
@@ -297,11 +299,20 @@
         {#    console.log(data);#}
 
         var $table_1 = $('#table-1');
+
         $(function () {
             var data = {{ outcomes|tojson|safe }}
                 console.log(data[0]);
-            $table_1.bootstrapTable({data: data[0]})
-        })
+            data.forEach(makeTable);
+            {#$table_1.bootstrapTable({data: data[0]})#}
+        });
+
+        function makeTable(table, idx) {
+            let $table_el = $(`#table-${idx + 1}`);
+            console.log("$table");
+            $table_el.bootstrapTable({data: table});
+
+        }
 
     </script>
 

@@ -163,30 +163,40 @@
 
 
 {#                        Beginning of the card        #}
-                    <div class="card mt-3 border-0">
+{#                    <div class="card mt-3 border-0">#}
+{#                        <div class="card-body">#}
+{#                            <div class="row">#}
+{#                                <div class="col-9">#}
+{#                                    Outcomes#}
+{#                                </div>#}
+{#                                <div class="col-3">#}
+{#                                    Scores#}
+{#                                </div>#}
+{#                            </div>#}
+{#                        </div>#}
+                    </div>
+                        {% for outcome_average in grade.outcomes %}
+                    <div class="card mt-3">
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-9">
-                                    Outcomes
+                                    {% if outcome_average.display_name %}
+                                                <td scope="row" class="col-8">
+                                                    {{ outcome_average.display_name }}
+                                                </td>
+                                            {% else %}
+                                                <td scope="row" class="col-8">
+                                                    {{ outcome_average.title }}
+                                                </td>
+                                            {% endif %}
                                 </div>
                                 <div class="col-3">
-                                    Scores
+                                    {{ outcome_average.outcome_avg }}
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="card mb-3">
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-9">
-                                    Name of outcome
-                                </div>
-                                <div class="col-3">
-                                    3.4
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                            {% endfor %}
                     {#                end of new card        ----------------      #}
 
 

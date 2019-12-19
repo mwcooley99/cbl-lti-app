@@ -350,7 +350,6 @@ def create_outcome_dataframes(course, user_ids=None):
         "include[]": ["alignments", "outcomes.alignments", "outcomes"],
         "per_page": "100"}
     if user_ids:
-        print(user_ids)
         querystring['user_ids[]'] = user_ids
 
     response = requests.request("GET", url, headers=headers,
@@ -452,6 +451,7 @@ def make_grades_list(course, record):
     students = get_course_users(course)
 
     for student_num, student in enumerate(students):
+
         # If @dtech, fill with empty grades - Todo refactor
         if re.match('@dtech', course['name']):
             make_empty_grade(course, grades_list, record, student)
@@ -488,9 +488,9 @@ def make_grades_list(course, record):
                                                         outcomes).round(2)
 
         # TODO - REMOVE
-        # outcome_results.to_csv('out/outcome_results.csv')
-        # alignments.to_csv('out/alignments.csv')
-        # unfiltered_outcome_averages.to_csv('out/outcome_averages.csv')
+        outcome_results.to_csv('out/outcome_results.csv')
+        alignments.to_csv('out/alignments.csv')
+        unfiltered_outcome_averages.to_csv('out/outcome_averages.csv')
 
         # Outcomes with unwanted outcomes filtered out.
         filtered_outcomes = (
@@ -528,9 +528,13 @@ def make_grades_list(course, record):
         outcome_results = outcome_results.sort_values(['outcome_id', 'submitted_or_assessed_at'], ascending=False)
 
 
-        group_cols = ['outcome_id', 'outcome_avg', 'title', 'display_name']
+        group_cols = ['outcome_id', 'outcome_avg', 'title']
         cols = ['name', 'links.alignment', 'score', 'submitted_or_assessed_at']
         outcome_avg_dict = pd.DataFrame(outcome_results.groupby(group_cols)[cols].apply(lambda x: x.to_dict('records'))).reset_index()
+
+        outcomes_merge = outcomes[['outcome_id', 'display_name']]
+
+        outcome_avg_dict = pd.merge(outcome_avg_dict, outcomes_merge, how='left', on='outcome_id')
 
         outcome_avg_dict = outcome_avg_dict.rename(columns={0: "alignments"}).sort_values('outcome_avg', ascending=False).to_dict('records')
 

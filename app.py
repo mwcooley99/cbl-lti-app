@@ -1,7 +1,8 @@
 from flask import Flask, render_template, session, request, Response, \
-    url_for, redirect
+    url_for, redirect, jsonify
 
 from flask_sqlalchemy import SQLAlchemy
+from flask_marshmallow import Marshmallow
 
 from pylti.flask import lti
 
@@ -19,9 +20,13 @@ app.secret_key = settings.secret_key
 app.config.from_object(settings.configClass)
 
 db = SQLAlchemy(app)
+ma = Marshmallow(app)
 
 from models import Record, OutcomeAverage, Outcome, Course, Grade, User
-
+class UserSchema(ma.Schema):
+    class Meta:
+        # Fields to expose
+        fields = ("email", "date_created", "_links")
 # ============================================
 # Logging
 # ============================================
@@ -109,14 +114,18 @@ def student_dashboard(lti=lti, user_id=None):
             return "You are not authorized to view this users information"
 
         grades = Grade.query.filter_by(record_id=record.id,
-                                       user_id=user_id).join(Course) \
-            .filter(~Course.name.contains('@dtech')).order_by(
-            Course.name).all()
+                                       user_id=user_id).join(Course).filter(~Course.name.contains('@dtech')).order_by(Course.name).all()
+
+        outcome_details = [grade.__dict__['outcomes'] for grade in grades]
+        for course in outcome_details:
+            for outcome in course:
+                print(outcome)
 
         if grades:
             return render_template('student_dashboard.html', record=record,
                                    students=session['users'], grades=grades,
-                                   calculation_dict=calculation_dictionaries)
+                                   calculation_dict=calculation_dictionaries,
+                                   outcomes=outcome_details)
 
     return "You currently don't have any grades!"
 
@@ -200,6 +209,142 @@ def course_dashboard(lti=lti):
     return render_template('course_dashboard.html', students=grades,
                            calculation_dict=calculation_dictionaries,
                            record=record)
+
+@app.route("/table")
+def table():
+    return render_template('table.html')
+
+@app.route("/json")
+def serve_json():
+    data = [
+        {
+            "id": 0,
+            "name": "Item 0",
+            "price": "$0",
+            "amount": 3
+        },
+        {
+            "id": 1,
+            "name": "Item 1",
+            "price": "$1",
+            "amount": 4
+        },
+        {
+            "id": 2,
+            "name": "Item 2",
+            "price": "$2",
+            "amount": 8
+        },
+        {
+            "id": 3,
+            "name": "Item 3",
+            "price": "$3",
+            "amount": 2
+        },
+        {
+            "id": 4,
+            "name": "Item 4",
+            "price": "$4",
+            "amount": 90
+        },
+        {
+            "id": 5,
+            "name": "Item 5",
+            "price": "$5",
+            "amount": 2
+        },
+        {
+            "id": 6,
+            "name": "Item 6",
+            "price": "$6",
+            "amount": 3
+        },
+        {
+            "id": 7,
+            "name": "Item 7",
+            "price": "$7",
+            "amount": 7
+        },
+        {
+            "id": 8,
+            "name": "Item 8",
+            "price": "$8",
+            "amount": 39
+        },
+        {
+            "id": 9,
+            "name": "Item 9",
+            "price": "$9",
+            "amount": 78
+        },
+        {
+            "id": 10,
+            "name": "Item 10",
+            "price": "$10",
+            "amount": 30
+        },
+        {
+            "id": 11,
+            "name": "Item 11",
+            "price": "$11",
+            "amount": 32
+        },
+        {
+            "id": 12,
+            "name": "Item 12",
+            "price": "$12",
+            "amount": 12
+        },
+        {
+            "id": 13,
+            "name": "Item 13",
+            "price": "$13",
+            "amount": 76
+        },
+        {
+            "id": 14,
+            "name": "Item 14",
+            "price": "$14",
+            "amount": 10
+        },
+        {
+            "id": 15,
+            "name": "Item 15",
+            "price": "$15",
+            "amount": 9
+        },
+        {
+            "id": 16,
+            "name": "Item 16",
+            "price": "$16",
+            "amount": 8
+        },
+        {
+            "id": 17,
+            "name": "Item 17",
+            "price": "$17",
+            "amount": 1
+        },
+        {
+            "id": 18,
+            "name": "Item 18",
+            "price": "$18",
+            "amount": 99
+        },
+        {
+            "id": 19,
+            "name": "Item 19",
+            "price": "$19",
+            "amount": 100
+        },
+        {
+            "id": 20,
+            "name": "Item 20",
+            "price": "$20",
+            "amount": 109
+        }
+    ]
+    return jsonify(data)
 
 
 @app.template_filter('strftime')

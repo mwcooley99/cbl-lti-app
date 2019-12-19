@@ -350,7 +350,6 @@ def create_outcome_dataframes(course, user_ids=None):
         "include[]": ["alignments", "outcomes.alignments", "outcomes"],
         "per_page": "100"}
     if user_ids:
-        print(user_ids)
         querystring['user_ids[]'] = user_ids
 
     response = requests.request("GET", url, headers=headers,
@@ -438,13 +437,9 @@ def preform_grade_pull(current_term=10):
         if len(grades_list):
             session.execute(Grades.insert().values(grades_list))
             session.commit()
-            end_course = time.time()
 
-            # print(end_course - start_course)
-            # print('******')
-            # print()
 
-        # break
+
 
 
 def make_grades_list(course, record):
@@ -513,6 +508,7 @@ def make_grades_list(course, record):
         unfiltered_grade = calculate_traditional_grade(
             unfiltered_outcome_averages['outcome_avg'])
 
+
         # Pick the higher of the two
         if filtered_grade[1] < unfiltered_grade[1]:
             final_grade = filtered_grade[0]
@@ -528,13 +524,17 @@ def make_grades_list(course, record):
         outcome_results = outcome_results.sort_values(['outcome_id', 'submitted_or_assessed_at'], ascending=False)
 
 
-        group_cols = ['outcome_id', 'outcome_avg', 'title', 'display_name']
+        group_cols = ['outcome_id', 'outcome_avg', 'title']
         cols = ['name', 'links.alignment', 'score', 'submitted_or_assessed_at']
         outcome_avg_dict = pd.DataFrame(outcome_results.groupby(group_cols)[cols].apply(lambda x: x.to_dict('records'))).reset_index()
 
+        outcomes_merge = outcomes[['outcome_id', 'display_name']]
+
+        outcome_avg_dict = pd.merge(outcome_avg_dict, outcomes_merge, how='left', on='outcome_id')
+
         outcome_avg_dict = outcome_avg_dict.rename(columns={0: "alignments"}).sort_values('outcome_avg', ascending=False).to_dict('records')
 
-        print(json.dumps(outcome_avg_dict, indent=2))
+        # print(json.dumps(outcome_avg_dict, indent=2))
         # with open(f'out/grades_{student}.json', 'w+') as fp:
         #     json.dump([filtered_grade, unfiltered_grade, final_grade], fp, indent=2)
 
@@ -544,7 +544,6 @@ def make_grades_list(course, record):
 
         grades_list.append(grade)
 
-        break
     return grades_list
 
 

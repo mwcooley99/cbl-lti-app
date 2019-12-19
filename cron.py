@@ -9,6 +9,7 @@ print(datetime.now())
 
 @sched.scheduled_job('cron', day_of_week="mon-fri", hour=9)
 def timed_job():
+    print(f'job started at {datetime.now()}')
     update_users()
     print(f"users updated at {datetime.now()}")
     preform_grade_pull()

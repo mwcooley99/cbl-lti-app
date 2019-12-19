@@ -544,7 +544,6 @@ def make_grades_list(course, record):
 
         grades_list.append(grade)
 
-        break
     return grades_list
 
 

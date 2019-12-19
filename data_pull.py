@@ -532,9 +532,9 @@ def make_grades_list(course, record):
         cols = ['name', 'links.alignment', 'score', 'submitted_or_assessed_at']
         outcome_avg_dict = pd.DataFrame(outcome_results.groupby(group_cols)[cols].apply(lambda x: x.to_dict('records'))).reset_index()
 
-        outcome_avg_dict = outcome_avg_dict.rename(columns={0: "alignments"}).to_dict('records')
+        outcome_avg_dict = outcome_avg_dict.rename(columns={0: "alignments"}).sort_values('outcome_avg', ascending=False).to_dict('records')
 
-
+        print(json.dumps(outcome_avg_dict, indent=2))
         # with open(f'out/grades_{student}.json', 'w+') as fp:
         #     json.dump([filtered_grade, unfiltered_grade, final_grade], fp, indent=2)
 
@@ -544,7 +544,7 @@ def make_grades_list(course, record):
 
         grades_list.append(grade)
 
-
+        break
     return grades_list
 
 

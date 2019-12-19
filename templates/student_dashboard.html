@@ -4,12 +4,12 @@
     <div class="container-fluid">
 
         <div class="row">
-{#            begin sidebar           #}
+            {#            begin sidebar           #}
             <div class="col-sm-4 col-md-3 px-1 bg-light">
                 <div class="py-2 sticky-top flex-grow-1">
                     <div class=" text-center p-2 bg-light">
 
-{# Add a dropdown if user has access to multiple students  #}
+                        {# Add a dropdown if user has access to multiple students  #}
                         {% if students|length > 1 %}
 
                             <div class="dropdown">
@@ -33,13 +33,13 @@
                             <h5>{{ grades[0].user.name }}</h5>
 
                         {% endif %}
-{#                    End dropdown #}
+                        {#                    End dropdown #}
                         <small>Data last
                             updated: <br>{{ record.created_at|strftime }}
                         </small>
                     </div>
                     <hr>
-{#                Course navigation pills begin #}
+                    {#                Course navigation pills begin #}
                     <div class="nav flex-column nav-pills" id="v-pills-tab"
                          role="tablist" aria-orientation="vertical">
                         {% for grade in grades %}
@@ -62,16 +62,16 @@
                         {% endfor %}
 
                     </div>
-{#                course nav pills end #}
+                    {#                course nav pills end #}
                 </div>
             </div>
 
-{#        End sidebar   #}
+            {#        End sidebar   #}
 
-{#        start#}
+            {#        start#}
             <div class="col">
                 <div class="tab-content" id="v-pills-tabContent">
-{#                Filter though the courses (aka grades) #}
+                    {#                Filter though the courses (aka grades) #}
                     {% for grade in grades %}
                         {% if loop.first %}
                             <div class="tab-pane fade show active"
@@ -166,10 +166,8 @@
                         </div>
                         <div class="card-body">
                             <div>
-{#                            outcome averages table #}
-                            <div class="card border-0">
+                                {#                            outcome averages table #}
 
-                            </div>
                                 <table class="table">
                                     <thead>
                                     <tr class="d-flex">
@@ -182,7 +180,9 @@
 
                                     <tbody>
                                     {% for outcome_average in grade.outcomes %}
-                                        <tr class="d-flex clickable" data-toggle="collapse" data-target="#accordion">
+                                        <tr class="d-flex clickable"
+                                            data-toggle="collapse"
+                                            data-target="#accordion">
                                             {# Use display name if it's available #}
                                             {% if outcome_average.display_name %}
                                                 <td scope="row" class="col-8">
@@ -200,18 +200,12 @@
                                                 </td>
                                             {% endif %}
                                         </tr>
-                                        <tr>
-                                            <td colspan="2">
-                                                <div id="accordion" class="collapse">
-                                                    ldksjsdfk
-                                                </div>
-                                            </td>
-                                        </tr>
+
                                     {% endfor %}
                                     </tbody>
 
                                 </table>
-{#                            end outcome averages table    #}
+                                {#                            end outcome averages table    #}
                             </div>
                         </div>
                     </div>

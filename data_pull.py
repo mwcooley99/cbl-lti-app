@@ -437,13 +437,9 @@ def preform_grade_pull(current_term=10):
         if len(grades_list):
             session.execute(Grades.insert().values(grades_list))
             session.commit()
-            end_course = time.time()
 
-            # print(end_course - start_course)
-            # print('******')
-            # print()
 
-        # break
+
 
 
 def make_grades_list(course, record):
@@ -488,9 +484,9 @@ def make_grades_list(course, record):
                                                         outcomes).round(2)
 
         # TODO - REMOVE
-        outcome_results.to_csv('out/outcome_results.csv')
-        alignments.to_csv('out/alignments.csv')
-        unfiltered_outcome_averages.to_csv('out/outcome_averages.csv')
+        # outcome_results.to_csv('out/outcome_results.csv')
+        # alignments.to_csv('out/alignments.csv')
+        # unfiltered_outcome_averages.to_csv('out/outcome_averages.csv')
 
         # Outcomes with unwanted outcomes filtered out.
         filtered_outcomes = (

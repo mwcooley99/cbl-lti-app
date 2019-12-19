@@ -452,7 +452,6 @@ def make_grades_list(course, record):
     students = get_course_users(course)
 
     for student_num, student in enumerate(students):
-
         # If @dtech, fill with empty grades - Todo refactor
         if re.match('@dtech', course['name']):
             make_empty_grade(course, grades_list, record, student)
@@ -513,6 +512,7 @@ def make_grades_list(course, record):
         unfiltered_grade = calculate_traditional_grade(
             unfiltered_outcome_averages['outcome_avg'])
 
+
         # Pick the higher of the two
         if filtered_grade[1] < unfiltered_grade[1]:
             final_grade = filtered_grade[0]
@@ -534,7 +534,7 @@ def make_grades_list(course, record):
 
         outcome_avg_dict = outcome_avg_dict.rename(columns={0: "alignments"}).sort_values('outcome_avg', ascending=False).to_dict('records')
 
-        print(json.dumps(outcome_avg_dict, indent=2))
+        # print(json.dumps(outcome_avg_dict, indent=2))
         # with open(f'out/grades_{student}.json', 'w+') as fp:
         #     json.dump([filtered_grade, unfiltered_grade, final_grade], fp, indent=2)
 

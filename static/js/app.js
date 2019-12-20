@@ -1,5 +1,6 @@
-function makeTable(outcome, idx) {
+function makeTable(outcomes, idx) {
             let $table_el = $(`#table-${idx + 1}`);
+
 
             var columns = [
                 {
@@ -16,7 +17,7 @@ function makeTable(outcome, idx) {
 
             $table_el.bootstrapTable({
                 columns: columns,
-                data: outcome,
+                data: outcomes,
                 detailView: true,
                 onExpandRow: function(index, row, $detail) {
                     expandTable($detail, row)

@@ -2,7 +2,6 @@ from flask import Flask, render_template, session, request, Response, \
     url_for, redirect, jsonify
 
 from flask_sqlalchemy import SQLAlchemy
-from flask_marshmallow import Marshmallow
 
 from pylti.flask import lti
 
@@ -20,13 +19,9 @@ app.secret_key = settings.secret_key
 app.config.from_object(settings.configClass)
 
 db = SQLAlchemy(app)
-ma = Marshmallow(app)
 
 from models import Record, OutcomeAverage, Outcome, Course, Grade, User
-class UserSchema(ma.Schema):
-    class Meta:
-        # Fields to expose
-        fields = ("email", "date_created", "_links")
+
 # ============================================
 # Logging
 # ============================================
@@ -114,7 +109,8 @@ def student_dashboard(lti=lti, user_id=None):
             return "You are not authorized to view this users information"
 
         grades = Grade.query.filter_by(record_id=record.id,
-                                       user_id=user_id).join(Course).filter(~Course.name.contains('@dtech')).order_by(Course.name).all()
+                                       user_id=user_id).join(Course).filter(
+            ~Course.name.contains('@dtech')).order_by(Course.name).all()
 
         outcome_details = [grade.__dict__['outcomes'] for grade in grades]
         for course in outcome_details:
@@ -162,7 +158,14 @@ def index(lti=lti):
 def course_test():
     record = Record.query.order_by(Record.id.desc()).first()
 
-    user_ids = [524, 656, 678, 653, 670, 557, 720, 595, 662, 447, 466, 573, 393, 302, 560, 461, 621, 672, 204, 476, 463, 554, 298, 401, 438, 593, 523, 829, 613, 651, 539, 380, 617, 535, 437, 381, 731, 428, 636, 366, 496, 645, 669, 570, 620, 512, 481, 506, 534, 488, 404, 499, 234, 316, 451, 540, 266, 661, 528, 611, 210, 420, 567, 334, 399, 414, 646, 336, 494, 391, 491, 575, 384, 533, 530, 167, 475, 458, 432, 508, 441, 623, 665, 435, 564, 717, 169, 536, 233, 389, 634, 550, 387]
+    user_ids = [524, 656, 678, 653, 670, 557, 720, 595, 662, 447, 466, 573,
+                393, 302, 560, 461, 621, 672, 204, 476, 463, 554, 298, 401,
+                438, 593, 523, 829, 613, 651, 539, 380, 617, 535, 437, 381,
+                731, 428, 636, 366, 496, 645, 669, 570, 620, 512, 481, 506,
+                534, 488, 404, 499, 234, 316, 451, 540, 266, 661, 528, 611,
+                210, 420, 567, 334, 399, 414, 646, 336, 494, 391, 491, 575,
+                384, 533, 530, 167, 475, 458, 432, 508, 441, 623, 665, 435,
+                564, 717, 169, 536, 233, 389, 634, 550, 387]
 
     grades = Grade.query.filter(Grade.user_id.in_(user_ids)) \
         .filter(Grade.record_id == record.id).join(Course) \
@@ -210,9 +213,11 @@ def course_dashboard(lti=lti):
                            calculation_dict=calculation_dictionaries,
                            record=record)
 
+
 @app.route("/table")
 def table():
     return render_template('table.html')
+
 
 @app.route("/json")
 def serve_json():

@@ -203,84 +203,85 @@
 
 
 
-{#                    <div class="card mt-3">#}
-{#                        <div class="card-header">#}
-{#                            <h5>Outcome Averages</h5>#}
-{#                        </div>#}
-{#                        <div class="card-body">#}
-{#                            <div>#}
-                                {#                            outcome averages table #}
-{##}
-{#                                <table class="table">#}
-{#                                    <thead>#}
-{#                                    <tr class="d-flex">#}
-{#                                        <th class="col-8">Outcome</th>#}
-{#                                        <th class="text-center col-4">Outcome#}
-{#                                            Average#}
-{#                                        </th>#}
-{#                                    </tr>#}
-{#                                    </thead>#}
-{##}
-{#                                    <tbody>#}
-{#                                    {% for outcome_average in grade.outcomes %}#}
-{#                                        <tr class="d-flex clickable"#}
-{#                                            data-toggle="collapse"#}
-{#                                            data-target="#accordion">#}
-                                            {# Use display name if it's available #}
-{#                                            {% if outcome_average.display_name %}#}
-{#                                                <td scope="row" class="col-8">#}
-{#                                                    {{ outcome_average.display_name }}#}
-{#                                                </td>#}
-{#                                            {% else %}#}
-{#                                                <td scope="row" class="col-8">#}
-{#                                                    {{ outcome_average.title }}#}
-{#                                                </td>#}
-{#                                            {% endif %}#}
-                                            {#                                     Only display the outcome_avg if outcome's have been assessed.#}
-{#                                            {% if outcome_average.outcome_avg > 0 %}#}
-{#                                                <td class="text-center col-4">#}
-{#                                                    {{ outcome_average.outcome_avg }}#}
-{#                                                </td>#}
-{#                                            {% endif %}#}
-{#                                        </tr>#}
-{##}
-{#                                    {% endfor %}#}
-{#                                    </tbody>#}
-{##}
-{#                                </table>#}
-                                {#                            end outcome averages table    #}
-{#                            </div>#}
-{#                        </div>#}
-{#                    </div>#}
+                    {#                    <div class="card mt-3">#}
+                    {#                        <div class="card-header">#}
+                    {#                            <h5>Outcome Averages</h5>#}
+                    {#                        </div>#}
+                    {#                        <div class="card-body">#}
+                    {#                            <div>#}
+                    {#                            outcome averages table #}
+                    {##}
+                    {#                                <table class="table">#}
+                    {#                                    <thead>#}
+                    {#                                    <tr class="d-flex">#}
+                    {#                                        <th class="col-8">Outcome</th>#}
+                    {#                                        <th class="text-center col-4">Outcome#}
+                    {#                                            Average#}
+                    {#                                        </th>#}
+                    {#                                    </tr>#}
+                    {#                                    </thead>#}
+                    {##}
+                    {#                                    <tbody>#}
+                    {#                                    {% for outcome_average in grade.outcomes %}#}
+                    {#                                        <tr class="d-flex clickable"#}
+                    {#                                            data-toggle="collapse"#}
+                    {#                                            data-target="#accordion">#}
+                    {# Use display name if it's available #}
+                    {#                                            {% if outcome_average.display_name %}#}
+                    {#                                                <td scope="row" class="col-8">#}
+                    {#                                                    {{ outcome_average.display_name }}#}
+                    {#                                                </td>#}
+                    {#                                            {% else %}#}
+                    {#                                                <td scope="row" class="col-8">#}
+                    {#                                                    {{ outcome_average.title }}#}
+                    {#                                                </td>#}
+                    {#                                            {% endif %}#}
+                    {#                                     Only display the outcome_avg if outcome's have been assessed.#}
+                    {#                                            {% if outcome_average.outcome_avg > 0 %}#}
+                    {#                                                <td class="text-center col-4">#}
+                    {#                                                    {{ outcome_average.outcome_avg }}#}
+                    {#                                                </td>#}
+                    {#                                            {% endif %}#}
+                    {#                                        </tr>#}
+                    {##}
+                    {#                                    {% endfor %}#}
+                    {#                                    </tbody>#}
+                    {##}
+                    {#                                </table>#}
+                    {#                            end outcome averages table    #}
+                    {#                            </div>#}
+                    {#                        </div>#}
+                    {#                    </div>#}
 
 
                     {# testing #}
-{#                    <div class="card mt-3">#}
-{#                        <div class="card-header">#}
-{#                            <h5>Outcome Averages</h5>#}
-{#                        </div>#}
-{#                        <div class="card-body">#}
-{#                            <div>#}
-                                {#                            outcome averages table #}
+                    {#                    <div class="card mt-3">#}
+                    {#                        <div class="card-header">#}
+                    {#                            <h5>Outcome Averages</h5>#}
+                    {#                        </div>#}
+                    {#                        <div class="card-body">#}
+                    {#                            <div>#}
+                    {#                            outcome averages table #}
 
-                                <table id="table-{{ loop.index }}"
-                                       data-toolbar="#toolbar"
-                                       data-height="460"
-                                       data-detail-view="true"
-                                       data-detail-formatter="detailFormatter">
-                                    <thead>
-                                    <tr>
-                                        <th data-field="title">Outcome</th>
-                                        <th data-field="outcome_avg">Outcome
-                                            Average
-                                        </th>
-                                    </tr>
-                                    </thead>
-                                </table>
-                                {#                            end outcome averages table    #}
-{#                            </div>#}
-{#                        </div>#}
-{#                    </div>#}
+                    <table id="table-{{ loop.index }}"
+                           data-toolbar="#toolbar"
+                           data-height="460"
+                           data-detail-view="true"
+                            {#                           data-detail-formatter="detailFormatter"#}
+                    >
+                        <thead>
+                        <tr>
+                            <th data-field="title">Outcome</th>
+                            <th data-field="outcome_avg">Outcome
+                                Average
+                            </th>
+                        </tr>
+                        </thead>
+                    </table>
+                    {#                            end outcome averages table    #}
+                    {#                            </div>#}
+                    {#                        </div>#}
+                    {#                    </div>#}
                     {# end testing #}
                     </div>
                     {% endfor %}
@@ -291,29 +292,21 @@
 
         </div>
     </div>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script>
-        {% for outcome in outcomes %}
-            console.log({{loop.index}});
-        {% endfor %}
-        {#var data = {{ outcomes|tojson|safe }}#}
-        {#    console.log(data);#}
+        var data = {{ outcomes|tojson|safe }}
 
-        var $table_1 = $('#table-1');
+            $(function () {
+                var data = {{ outcomes|tojson|safe }};
+                data.forEach(makeTable);
 
-        $(function () {
-            var data = {{ outcomes|tojson|safe }}
-                console.log(data[0]);
-            data.forEach(makeTable);
-            {#$table_1.bootstrapTable({data: data[0]})#}
-        });
+            });
 
-        function makeTable(table, idx) {
-            let $table_el = $(`#table-${idx + 1}`);
-            console.log("$table");
-            $table_el.bootstrapTable({data: table});
 
-        }
+
+
 
     </script>
+
 
 {% endblock %}

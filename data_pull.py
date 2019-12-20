@@ -490,7 +490,7 @@ def make_grades_list(course, record):
 
         # Outcomes with unwanted outcomes filtered out.
         filtered_outcomes = (
-            2269, 2270)  # TODO - make a constant at the top of script
+            2269, 2270, 2923, 2922, 2732, 2733)  # TODO - make a constant at the top of script
         filtered_outcome_averages = unfiltered_outcome_averages.loc[
             ~unfiltered_outcome_averages['outcome_id'].isin(
                 filtered_outcomes)]

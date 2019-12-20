@@ -1,6 +1,13 @@
 function makeTable(outcomes, idx) {
             let $table_el = $(`#table-${idx + 1}`);
 
+            // Check for a display name and use if available
+            outcomes.forEach(outcome => {
+                    if (outcome['display_name']) {
+                        outcome['title'] = outcome['display_name']
+                    }
+                }
+            );
 
             var columns = [
                 {

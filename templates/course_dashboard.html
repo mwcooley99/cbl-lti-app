@@ -4,6 +4,7 @@
         <p>
             <small>Data last updated: {{ record.created_at|strftime }}</small>
         </p>
+        <table id="courseTable"></table>
         <div class="form-group row">
             <div class="col-6">
                 <input id="myInput" class="form-control" type="text"
@@ -161,6 +162,19 @@
             </div>
         </div>
     </div>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+         {#var data = {{ grades_dict|tojson|safe }};#}
+         {#console.log(data);#}
+         $(function () {
+                var data = {{ grades_dict|tojson|safe }};
+                console.log(data);
+                makeCourseTable(data);
+
+
+
+            });
+    </script>
 
 
 {% endblock %}

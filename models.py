@@ -59,16 +59,20 @@ class Grade(db.Model):
     grade = db.Column(db.String)
     outcomes = db.Column(db.JSON)
     record_id = db.Column(db.Integer, db.ForeignKey('records.id'))
-    threshold = db.Column(db.Numeric)
-    min_score = db.Column(db.Numeric)
+    threshold = db.Column(db.Numeric(asdecimal=False))
+    min_score = db.Column(db.Numeric(asdecimal=False))
 
     def to_dict(self):
         '''
         Helper to return dictionary with the joined data included
         :return:
         '''
-        d = self.__dict__
-        d['user'] = self.user
+        d = {k: v for k, v in self.__dict__.items() if not k.startswith('_')}
+
+        d['user'] = {k: v for k, v in self.user.__dict__.items() if not k.startswith('_')}
+        # del d['_sa_instance_state']
+        # del d['user']['_sa_instance_state']
+
 
         return(d)
 

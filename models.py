@@ -62,6 +62,16 @@ class Grade(db.Model):
     threshold = db.Column(db.Numeric)
     min_score = db.Column(db.Numeric)
 
+    def to_dict(self):
+        '''
+        Helper to return dictionary with the joined data included
+        :return:
+        '''
+        d = self.__dict__
+        d['user'] = self.user
+
+        return(d)
+
     def __repr__(self):
         return str(self.__dict__)
 

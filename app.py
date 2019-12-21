@@ -209,6 +209,11 @@ def course_dashboard(lti=lti):
         .filter(Course.id == session['course_id']).join(User).order_by(
         User.name).all()
 
+    for grade in grades:
+        print(grade.User.__dict__)
+    print(grades[0])
+    # print("Hello")
+
     return render_template('course_dashboard.html', students=grades,
                            calculation_dict=calculation_dictionaries,
                            record=record)

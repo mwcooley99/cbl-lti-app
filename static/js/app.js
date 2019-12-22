@@ -23,7 +23,7 @@ function makeCourseTable(students) {
             sortable: true
         }
     ];
-    
+
     $table_el.bootstrapTable({
         columns: columns,
         data: students,
@@ -36,46 +36,51 @@ function makeCourseTable(students) {
             let $new_table = $detail.html('<table></table>').find('table')
             let outcomes = row['outcomes'];
             makeOutcomesTable(outcomes, $new_table)
-        }})
+        }
+    })
 }
 
-// function makeCourseOutcomesTable(outcomes, idx) {
-//     // let $table_el = $(`#table-${idx + 1}`);
-//     let $table_el = $(idx);
-//
-//
-//     // Check for a display name and use if available
-//     outcomes.forEach(outcome => {
-//             if (outcome['display_name']) {
-//                 outcome['title'] = outcome['display_name']
-//             }
-//         }
-//     );
-//
-//     var columns = [
-//         {
-//             field: 'title',
-//             title: 'Outcome',
-//             sortable: true
-//         },
-//         {
-//             field: 'outcome_avg',
-//             title: 'Outcome Average',
-//             sortable: true
-//         },
-//     ];
-//
-//     $table_el.bootstrapTable({
-//         columns: columns,
-//         data: outcomes,
-//         detailView: true,
-//         onExpandRow: function (index, row, $detail) {
-//             expandTable($detail, row)
-//         }
-//
-//     });
-//
-// }
+function makeMasteryTable(data) {
+    // Get unique outcomes
+    var $tableOut = $('#outcomesTable');
+
+    const outcomes_list = [];
+    outcomes_list.push({field: 'name', title:'Student Name', sortable: true});
+    const student_outcomes = [];
+    const map = new Map();
+    for (const student of data) {
+        let student_dict = {};
+        student_dict['name'] = student.user.name;
+        for (const outcome of student['outcomes']) {
+            if (!map.has(outcome['outcome_id'])) {
+                map.set(outcome['outcome_id'], true);    // set any value to Map
+                outcomes_list.push({
+                    field: outcome['outcome_id'],
+                    title: outcome['title'],
+                    sortable: true
+                });
+            }
+
+            student_dict[outcome['outcome_id']] = outcome['outcome_avg'];
+
+        }
+        student_outcomes.push(student_dict);
+    }
+
+
+    $tableOut.bootstrapTable({
+        columns: outcomes_list,
+        data: student_outcomes,
+        height: 1200,
+        search: true,
+        showColumns: true,
+        showColumnsToggleAll: true,
+        showSearchClearButton: true,
+    });
+
+
+}
+
 
 function makeOutcomesTable(outcomes, $table_el) {
     // let $table_el = $(`#table-${idx + 1}`);
@@ -162,11 +167,11 @@ function buildSubTable($el, alignments) {
     });
 }
 
-$(function() {
+$(function () {
     var $aButton = $('#A');
     $aButton.click(function () {
-      $table.bootstrapTable('filterBy', {
-        grade: 'B'
-      })
+        $table.bootstrapTable('filterBy', {
+            grade: 'B'
+        })
     })
-  })
+})

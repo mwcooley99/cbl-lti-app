@@ -9,7 +9,8 @@
             <button id="button2" class="btn btn-secondary">collapseAllRows
             </button>
         </div>
-        <table id="courseTable"></table>
+{#        <table id="courseTable"></table>#}
+        <table id="outcomesTable"></table>
         <div class="form-group row">
             <div class="col-6">
                 <input id="myInput" class="form-control" type="text"
@@ -176,16 +177,10 @@
             var data = {{ grades_dict|tojson|safe }};
             console.log(data);
             makeCourseTable(data);
+            makeMasteryTable(data);
 
         });
-        var $table = $('#courseTable')
-        var $button2 = $('#button2')
 
-        $(function () {
-            $button2.click(function () {
-                $table.bootstrapTable('collapseAllRows')
-            })
-        })
 
     </script>
 

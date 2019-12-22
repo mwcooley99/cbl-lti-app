@@ -76,6 +76,10 @@ function makeMasteryTable(data) {
         showColumns: true,
         showColumnsToggleAll: true,
         showSearchClearButton: true,
+        cellStyle: function(value, row, index, field) {  // Not working
+            mcellStyle(value, row, index);
+        }
+
     });
 
 
@@ -175,3 +179,25 @@ $(function () {
         })
     })
 })
+
+function mcellStyle(value, row, index) {
+    console.log("Hello there!");
+    var classes = [
+      'bg-blue',
+      'bg-green',
+      'bg-orange',
+      'bg-yellow',
+      'bg-red'
+    ];
+
+    if (index % 2 === 0 && index / 2 < classes.length) {
+      return {
+        classes: classes[index / 2]
+      }
+    }
+    return {
+      css: {
+        color: 'blue'
+      }
+    }
+  }

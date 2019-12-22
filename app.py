@@ -211,8 +211,8 @@ def course_dashboard(lti=lti):
 
     grades_dict = [grade.to_dict() for grade in grades]
 
-    print(grades_dict[0]['user'])
-    print(json.dumps(grades_dict[0], indent=2))
+    # print(grades_dict[0]['user'])
+    # print(json.dumps(grades_dict[0], indent=2))
 
     return render_template('course_dashboard.html', students=grades,
                            calculation_dict=calculation_dictionaries,
@@ -222,6 +222,7 @@ def course_dashboard(lti=lti):
 @app.route("/table")
 def table():
     return render_template('table.html')
+
 
 
 @app.route("/json")
@@ -354,7 +355,12 @@ def serve_json():
             "amount": 109
         }
     ]
-    return jsonify(data)
+    url = f"https://dtechhs.instructure.com/api/v1/courses/400/outcome_results"
+    access_token = os.getenv('CANVAS_API_KEY')
+    headers = {'Authorization': f'Bearer {access_token}'}
+    response = requests.request("GET", url, headers=headers)
+    print(response)
+    return jsonify(response.json())
 
 
 @app.template_filter('strftime')

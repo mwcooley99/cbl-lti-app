@@ -4,7 +4,9 @@ function makeCourseTable(students) {
         {
             field: 'user.name',
             title: 'Student',
-            sortable: true
+            class: "headcol",
+            sortable: true,
+
         },
         {
             field: 'grade',
@@ -27,7 +29,7 @@ function makeCourseTable(students) {
     $table_el.bootstrapTable({
         columns: columns,
         data: students,
-        height: 1200,
+        height: 800,
         search: true,
         filterControl: true,
         showSearchClearButton: true,
@@ -47,7 +49,7 @@ function makeMasteryTable(data) {
     var $tableOut = $('#outcomesTable');
 
     const outcomes_list = [];
-    outcomes_list.push({field: 'name', title:'Student Name', sortable: true});
+    outcomes_list.push({field: 'name', title:'Student Name', sortable: true, width: 900, widthUnit: "px"});
     const student_outcomes = [];
     const map = new Map();
     for (const student of data) {
@@ -73,17 +75,14 @@ function makeMasteryTable(data) {
     $tableOut.bootstrapTable({
         columns: outcomes_list,
         data: student_outcomes,
-        height: 1200,
+        height: 800,
         search: true,
         showColumns: true,
         showColumnsToggleAll: true,
         showSearchClearButton: true,
         showExport: true,
         exportTypes: ['csv'],
-        cellStyle: function(value, row, index, field) {  // Not working
-            mcellStyle(value, row, index);
-        }
-
+        fixedColumns: true
     });
 
 
@@ -119,6 +118,7 @@ function makeOutcomesTable(outcomes, $table_el) {
     $table_el.bootstrapTable({
         columns: columns,
         data: outcomes,
+        height: 480,
         detailView: true,
         onExpandRow: function (index, row, $detail) {
             expandTable($detail, row)
@@ -149,6 +149,7 @@ function expandTable($el, outcome) {
     $subTable.bootstrapTable({
         columns: columns,
         data: alignments,
+        height:400
 
     });
 
@@ -175,14 +176,11 @@ function buildSubTable($el, alignments) {
     });
 }
 
-$(function () {
-    var $aButton = $('#A');
-    $aButton.click(function () {
-        $table.bootstrapTable('filterBy', {
-            grade: 'B'
-        })
+ $(function() {
+    $button2.click(function () {
+      $courseTable.bootstrapTable('collapseAllRows')
     })
-})
+  })
 
 function mcellStyle(value, row, index) {
     console.log("Hello there!");

@@ -32,6 +32,8 @@ function makeCourseTable(students) {
         filterControl: true,
         showSearchClearButton: true,
         detailView: true,
+        showExport: true,
+        exportTypes: ['csv'],
         onExpandRow: function (index, row, $detail) {
             let $new_table = $detail.html('<table></table>').find('table')
             let outcomes = row['outcomes'];
@@ -76,6 +78,8 @@ function makeMasteryTable(data) {
         showColumns: true,
         showColumnsToggleAll: true,
         showSearchClearButton: true,
+        showExport: true,
+        exportTypes: ['csv'],
         cellStyle: function(value, row, index, field) {  // Not working
             mcellStyle(value, row, index);
         }

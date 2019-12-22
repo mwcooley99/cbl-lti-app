@@ -187,8 +187,9 @@
             $(function () {
                 var data = {{ outcomes|tojson|safe }};
                 data.forEach(function(item, index) {
-                    let id = `#table-${index+1}`
-                    makeOutcomesTable(item, id);
+
+                    let $el = $(`#table-${index + 1}`);
+                    makeOutcomesTable(item, $el);
                 });
 
             });

@@ -61,7 +61,8 @@ function makeMasteryTable(data) {
                 outcomes_list.push({
                     field: outcome['outcome_id'],
                     title: outcome['title'],
-                    sortable: true
+                    sortable: true,
+                    class: 'result_table_col'
                 });
             }
 

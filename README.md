@@ -1,14 +1,18 @@
 [![Join UCF Open Slack Discussions](https://ucf-open-slackin.herokuapp.com/badge.svg)](https://ucf-open-slackin.herokuapp.com/)
 
-# LTI Template for Python and Flask
+# Custom Grade Dashboard for Canvas
+Built for displaying Canvas Learning Outcome results and aggregating them into a letter grade. This includes views for students, parents, teachers and advisers.
+
+### Screenshots
+![Image of student Dashboard](static/img/student_dashboard.png)
 
 ## Setup
 
 ### Virtual Environment
-Create a virtual environment that uses Python 2:
+Create a virtual environment that uses Python 3:
 
 ```
-virtualenv venv -p /usr/bin/python2.7
+virtualenv venv -p /usr/bin/python3
 source venv/bin/activate
 ```
 
@@ -25,7 +29,7 @@ Create settings.py from settings.py.template
 cp settings.py.template settings.py
 ```
 
-Note: settings.py is alreay referenced in the .gitignore and multiple python files, if you want a different settings file name be sure to update the references.
+Note: settings.py is already referenced in the .gitignore and multiple python files, if you want a different settings file name be sure to update the references.
 
 #### Add your values to the settings file.
 At a minimum, CONSUMER_KEY, SHARED_SECRET, and secret_key need to be input by the developer. The secret_key is used by Flask, but the CONSUMER_KEY and SHARED_SECRET will be used in setting up the LTI. For security purposes, it's best to have randomized keys. You can generate random keys in the command line by using os.urandom(24) and inputing the resulting values into the settings.py file:
@@ -58,3 +62,12 @@ Your running server will be visible at [http://127.0.0.1:5000](http://127.0.0.1:
     - User Navigation (user profile)
 
 **Note**: If you're using Canvas, your version might be finicky about SSL certificates. Keep HTTP/HTTPS in mind when creating your XML and while developing your project. Some browsers will disable non-SSL LTI content until you enable it through clicking a shield in the browser bar or something similar.
+
+## Build with
+- [Flask](http://flask.palletsprojects.com/en/1.1.x/) - the web framework used
+- [Postgres](https://www.postgresql.org/) - DBMS
+- [Heroku](https://www.heroku.com/) - Hosting
+
+## Acknowledgments
+- [University of Central Florida - Open Source
+](https://github.com/ucfopen)

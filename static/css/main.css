@@ -50,6 +50,7 @@
 .result_table_col {
     min-width: 130px !important;
     max-width: 250px;
+    word-break: break-word;
     word-wrap: break-word !important;
 
 }

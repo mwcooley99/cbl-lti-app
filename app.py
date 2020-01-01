@@ -67,7 +67,7 @@ def launch(lti=lti):
 
     # store some of the user data in the session
     session['user_id'] = request.form.get('custom_canvas_user_id')
-    # print(json.dumps(request.form, indent=2))
+
     # Check if they are a student
     # TODO - exclude Teachers
     # Check if it's a student (or teacher currently)
@@ -93,17 +93,19 @@ def launch(lti=lti):
         user_id = session['users'][0][0]
         return redirect(url_for('student_dashboard', user_id=user_id))
 
-    # TODO - make a template
-    return "You are not a student of any course"
-
 
 @app.route('/student_dashboard/<user_id>', methods=['GET'])
 @lti(error=error, request='session', role='any', app=app)
 def student_dashboard(lti=lti, user_id=None):
+    '''
+    Dashboard froms a student view. Used for students, parents and advisors
+    :param lti: pylti
+    :param user_id: users Canvas ID
+    :return: template or error message
+    '''
     record = Record.query.order_by(Record.id.desc()).first()
     if user_id:  # Todo - this probably isn't needed
         # check user is NOT authorized to access this file
-        # print(json.dumps(request.form, indent=2))
         auth_users_id = [user[0] for user in session['users']]
         if not (int(user_id) in auth_users_id):
             return "You are not authorized to view this users information"
@@ -112,10 +114,8 @@ def student_dashboard(lti=lti, user_id=None):
                                        user_id=user_id).join(Course).filter(
             ~Course.name.contains('@dtech')).order_by(Course.name).all()
 
+        # Create dictionary with outcome details
         outcome_details = [grade.__dict__['outcomes'] for grade in grades]
-        for course in outcome_details:
-            for outcome in course:
-                print(outcome)
 
         if grades:
             return render_template('student_dashboard.html', record=record,
@@ -129,6 +129,11 @@ def student_dashboard(lti=lti, user_id=None):
 @app.route('/course_navigation', methods=['POST', 'GET'])
 @lti(error=error, request='initial', role='instructor', app=app)
 def course_navigation(lti=lti):
+    '''
+    Authorization for course navigation
+    :param lti: pylti
+    :return: redirects to course page or adviser page depending on the course type
+    '''
     session['dash_type'] = 'course'
     course_title = request.form.get('context_title')
     session['course_id'] = request.form.get('custom_canvas_course_id')
@@ -147,25 +152,17 @@ def course_navigation(lti=lti):
     return redirect(url_for('course_dashboard'))
 
 
-# Home page
-@app.route('/', methods=['GET'])
-@lti(error=error, request='any', app=app)
-def index(lti=lti):
-    return render_template('index.html')
-
-
-@app.route('/course_test')
-def course_test():
+@app.route("/course_dashboard/")
+@lti(error=error, request='session', role='instructor', app=app)
+def course_dashboard(lti=lti):
+    '''
+    Dashboard for core content teachers
+    :param lti: pylti
+    :return: template for a core content teacher
+    '''
     record = Record.query.order_by(Record.id.desc()).first()
 
-    user_ids = [524, 656, 678, 653, 670, 557, 720, 595, 662, 447, 466, 573,
-                393, 302, 560, 461, 621, 672, 204, 476, 463, 554, 298, 401,
-                438, 593, 523, 829, 613, 651, 539, 380, 617, 535, 437, 381,
-                731, 428, 636, 366, 496, 645, 669, 570, 620, 512, 481, 506,
-                534, 488, 404, 499, 234, 316, 451, 540, 266, 661, 528, 611,
-                210, 420, 567, 334, 399, 414, 646, 336, 494, 391, 491, 575,
-                384, 533, 530, 167, 475, 458, 432, 508, 441, 623, 665, 435,
-                564, 717, 169, 536, 233, 389, 634, 550, 387]
+    user_ids = [user[0] for user in session['users']]
 
     grades = Grade.query.filter(Grade.user_id.in_(user_ids)) \
         .filter(Grade.record_id == record.id).join(Course) \
@@ -176,6 +173,13 @@ def course_test():
     return render_template('course_dashboard.html', students=grades,
                            calculation_dict=calculation_dictionaries,
                            record=record)
+
+
+# Home page
+@app.route('/', methods=['GET'])
+@lti(error=error, request='any', app=app)
+def index(lti=lti):
+    return render_template('index.html')
 
 
 # LTI XML Configuration
@@ -193,163 +197,6 @@ def xml():
         app.logger.error("Error with XML.")
         return return_error('''Error with XML. Please refresh and try again. If this error persists,
             please contact support.''')
-
-
-@app.route("/course_dashboard/")
-@lti(error=error, request='session', role='instructor', app=app)
-def course_dashboard(lti=lti):
-    record = Record.query.order_by(Record.id.desc()).first()
-
-    user_ids = [user[0] for user in session['users']]
-    # print(user_ids)
-
-    grades = Grade.query.filter(Grade.user_id.in_(user_ids)) \
-        .filter(Grade.record_id == record.id).join(Course) \
-        .filter(~Course.name.contains('@dtech')) \
-        .filter(Course.id == session['course_id']).join(User).order_by(
-        User.name).all()
-
-    return render_template('course_dashboard.html', students=grades,
-                           calculation_dict=calculation_dictionaries,
-                           record=record)
-
-
-@app.route("/table")
-def table():
-    return render_template('table.html')
-
-
-@app.route("/json")
-def serve_json():
-    data = [
-        {
-            "id": 0,
-            "name": "Item 0",
-            "price": "$0",
-            "amount": 3
-        },
-        {
-            "id": 1,
-            "name": "Item 1",
-            "price": "$1",
-            "amount": 4
-        },
-        {
-            "id": 2,
-            "name": "Item 2",
-            "price": "$2",
-            "amount": 8
-        },
-        {
-            "id": 3,
-            "name": "Item 3",
-            "price": "$3",
-            "amount": 2
-        },
-        {
-            "id": 4,
-            "name": "Item 4",
-            "price": "$4",
-            "amount": 90
-        },
-        {
-            "id": 5,
-            "name": "Item 5",
-            "price": "$5",
-            "amount": 2
-        },
-        {
-            "id": 6,
-            "name": "Item 6",
-            "price": "$6",
-            "amount": 3
-        },
-        {
-            "id": 7,
-            "name": "Item 7",
-            "price": "$7",
-            "amount": 7
-        },
-        {
-            "id": 8,
-            "name": "Item 8",
-            "price": "$8",
-            "amount": 39
-        },
-        {
-            "id": 9,
-            "name": "Item 9",
-            "price": "$9",
-            "amount": 78
-        },
-        {
-            "id": 10,
-            "name": "Item 10",
-            "price": "$10",
-            "amount": 30
-        },
-        {
-            "id": 11,
-            "name": "Item 11",
-            "price": "$11",
-            "amount": 32
-        },
-        {
-            "id": 12,
-            "name": "Item 12",
-            "price": "$12",
-            "amount": 12
-        },
-        {
-            "id": 13,
-            "name": "Item 13",
-            "price": "$13",
-            "amount": 76
-        },
-        {
-            "id": 14,
-            "name": "Item 14",
-            "price": "$14",
-            "amount": 10
-        },
-        {
-            "id": 15,
-            "name": "Item 15",
-            "price": "$15",
-            "amount": 9
-        },
-        {
-            "id": 16,
-            "name": "Item 16",
-            "price": "$16",
-            "amount": 8
-        },
-        {
-            "id": 17,
-            "name": "Item 17",
-            "price": "$17",
-            "amount": 1
-        },
-        {
-            "id": 18,
-            "name": "Item 18",
-            "price": "$18",
-            "amount": 99
-        },
-        {
-            "id": 19,
-            "name": "Item 19",
-            "price": "$19",
-            "amount": 100
-        },
-        {
-            "id": 20,
-            "name": "Item 20",
-            "price": "$20",
-            "amount": 109
-        }
-    ]
-    return jsonify(data)
 
 
 @app.template_filter('strftime')

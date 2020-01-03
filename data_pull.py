@@ -104,12 +104,22 @@ def upsert_users(users, session):
 
 
 def update_users():
+    '''
+    Runs through functions to update Users table
+    :return: None
+    '''
     session = Session(engine)
     users = get_users()
     upsert_users(users, session)
 
 
 def upsert_courses(courses, session):
+    '''
+    Updates courses table
+    :param courses: List of courses dictionaries from (/api/v1/accounts/:account_id/courses)
+    :param session: DB session
+    :return: None
+    '''
     keys = ['id', 'name', 'enrollment_term_id']
     values = [{key: course[key] for key in keys} for course in courses]
     insert_stmt = postgresql.insert(Courses).values(values)
@@ -148,6 +158,10 @@ def create_record(current_term, session):
 ####################################
 
 def get_users():
+    '''
+    Roll up current Users into a list of dictionaries (Canvas API /api/v1/accounts/:account_id/users)
+    :return: List of user dictionaries
+    '''
     url = "https://dtechhs.instructure.com/api/v1/accounts/1/users"
 
     querystring = {"enrollment_type": "student", "per_page": "100"}
@@ -167,6 +181,11 @@ def get_users():
 
 
 def get_courses(current_term):
+    '''
+    Roll up current Users into a list of dictionaries (Canvas API /api/v1/accounts/:account_id/courses)
+    :param current_term: Canvas Term to filter courses
+    :return: list of course dictionaries
+    '''
     url = "https://dtechhs.instructure.com/api/v1/accounts/1/courses"
     querystring = {'enrollment_term_id': current_term, 'published': True,
                    'per_page': 100}
@@ -185,7 +204,13 @@ def get_courses(current_term):
 
 
 def create_outcome_dataframes(course, user_ids=None):
-    outcome_rollups = []
+    '''
+    Creates DataFrames of the  outcome results data pulled from Canvas API:
+        /api/v1/courses/:course_id/outcome_results
+    :param course: course dictionaries
+    :param user_ids: Limit User ids mostly for testing
+    :return: Dataframes with outcome_results, assignment alignments, and outcome details
+    '''
     url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/outcome_results"
     querystring = {
         "include[]": ["alignments", "outcomes.alignments", "outcomes"],
@@ -219,6 +244,11 @@ def create_outcome_dataframes(course, user_ids=None):
 
 
 def get_course_users(course):
+    '''
+    Gets list of users for a course
+    :param course: course dictionary
+    :return: user id's for course
+    '''
     url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/users"
 
     querystring = {"enrollment_type[]": "student",
@@ -228,7 +258,6 @@ def get_course_users(course):
     students = [user['id'] for user in response.json()]
 
     # Pagination
-
     while response.links.get('next'):
         url = response.links['next']['url']
         response = requests.request("GET", url, headers=headers,
@@ -244,6 +273,15 @@ def get_course_users(course):
 
 
 def make_grade_object(grade, outcome_avgs, record_id, course, user_id):
+    '''
+    Creates grade dictionary for grades table
+    :param grade: Letter Grade
+    :param outcome_avgs: List of outcome average info dictionaries
+    :param record_id: Current Record ID
+    :param course: Course Dictionary
+    :param user_id: User ID
+    :return: return dictionary formatted for Grades Table
+    '''
     # store in a dict
     grade = dict(
         user_id=user_id,
@@ -262,15 +300,28 @@ def outcome_results_to_df_dict(df):
     return df.to_dict('records')
 
 
-def make_empty_grade(course, grades_list, record, student):
+def make_empty_grade(course, grades_list, record_id, user_id):
+    '''
+    Create empty grade for non-graded courses
+    :param course: course dictionary
+    :param grades_list: list to append empty grade to
+    :param record_id: record ID
+    :param user_id: user_id
+    :return: 
+    '''
     empty_grade = {'grade': 'n/a', 'threshold': None,
                    'min_score': None}
-    grade = make_grade_object(empty_grade, [], record, course,
-                              student)
+    grade = make_grade_object(empty_grade, [], record_id, course,
+                              user_id)
     grades_list.append(grade)
 
 
 def preform_grade_pull(current_term=10):
+    '''
+    Main function to update courses and calculate and insert new grades
+    :param current_term: Term to filter courses
+    :return: None
+    '''
     session = Session(engine)
 
     # Create a new record
@@ -299,7 +350,13 @@ def preform_grade_pull(current_term=10):
             session.commit()
 
 
-def make_grades_list(course, record):
+def make_grades_list(course, record_id):
+    '''
+    Creates list of student grades for a given course
+    :param course: Course dictionary
+    :param record_id: Current record ID
+    :return:
+    '''
     grades_list = []
     students = get_course_users(course)
 
@@ -307,7 +364,7 @@ def make_grades_list(course, record):
 
         # If @dtech, fill with empty grades - Todo refactor
         if re.match('@dtech', course['name']):
-            make_empty_grade(course, grades_list, record, student)
+            make_empty_grade(course, grades_list, record_id, student)
             continue
 
         outcome_results, alignments, outcomes = create_outcome_dataframes(
@@ -315,7 +372,7 @@ def make_grades_list(course, record):
 
         # Check if outcome_results are empty. If so make an empty grade object
         if len(outcome_results) == 0:
-            make_empty_grade(course, grades_list, record, student)
+            make_empty_grade(course, grades_list, record_id, student)
             continue
 
         # Drop blank scores
@@ -323,7 +380,7 @@ def make_grades_list(course, record):
 
         # Check if outcome_results are empty. If so make an empty grade object
         if len(outcome_results) == 0:
-            make_empty_grade(course, grades_list, record, student)
+            make_empty_grade(course, grades_list, record_id, student)
             continue
 
         # Clean up the format of the outcome_results
@@ -389,7 +446,7 @@ def make_grades_list(course, record):
             'records')
 
         # create grade object
-        grade = make_grade_object(final_grade, outcome_avg_dict, record,
+        grade = make_grade_object(final_grade, outcome_avg_dict, record_id,
                                   course, student)
 
         grades_list.append(grade)
@@ -398,6 +455,12 @@ def make_grades_list(course, record):
 
 
 def calc_outcome_avgs(outcome_results):
+    '''
+    Calculates outcome averages with both simple and weighted averages,
+    choosing the higher of the two
+    :param outcome_results:
+    :return: DataFrame of outcome_averages with max of two averages
+    '''
     group_cols = ['links.user', 'outcome_id']
     outcome_averages = outcome_results.sort_values(
         ['links.user', 'outcome_id',
@@ -412,6 +475,13 @@ def calc_outcome_avgs(outcome_results):
 
 
 def add_outcome_meta(outcome_results, outcomes, alignments):
+    '''
+    Adds outcome and assignment alignment data to the results dataframe
+    :param outcome_results: DataFrame
+    :param outcomes: DataFrame
+    :param alignments: DataFrame
+    :return: DataFrame with outcome and assignments data
+    '''
     outcome_results = pd.merge(outcome_results, outcomes, how='left',
                                on='outcome_id')
     outcome_results = pd.merge(outcome_results, alignments[['id', 'name']],
@@ -425,12 +495,22 @@ def add_outcome_meta(outcome_results, outcomes, alignments):
 
 
 def format_outcomes(outcomes):
+    '''
+    Cleans up formatting of outcomes DataFrame
+    :param outcomes: outcomes DataFrame
+    :return: Reformatted outcomes DataFrame
+    '''
     outcomes['id'] = outcomes['id'].astype('int')
     outcomes = outcomes.rename(columns={'id': 'outcome_id'})
     return outcomes
 
 
 def format_outcome_results(outcome_results):
+    '''
+    Cleans up formattin of outcome_results DataFrame
+    :param outcome_results: outcome_results DataFrame
+    :return: Reformatted outcomes DataFrame
+    '''
     new_col_names = {'links.learning_outcome': 'outcome_id'}
     outcome_results = outcome_results.rename(columns=new_col_names)
     outcome_results['outcome_id'] = outcome_results[

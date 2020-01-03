@@ -2,7 +2,6 @@ from pdf_reports import pug_to_html, write_report, preload_stylesheet
 
 import pandas as pd
 from pandas.io.json import json_normalize
-import numpy as np
 
 import os, re, requests, sys
 from datetime import datetime
@@ -79,89 +78,169 @@ Users = Table('users', metadata,
               Column('login_id', String))
 
 
-def find_outcome(outcomes, outcome_id):
-    for outcome in outcomes:
-        if outcome['id'] == outcome_id:
-            return outcome
+# def find_outcome(outcomes, outcome_id):
+#     for outcome in outcomes:
+#         if outcome['id'] == outcome_id:
+#             return outcome
 
 
-def make_html(context, template='templates/cbl_report_template.pug'):
-    return pug_to_html(template,
-                       **context)
+# def make_html(context, template='templates/cbl_report_template.pug'):
+#     return pug_to_html(template,
+#                        **context)
 
 
-def make_pdf(html, file_path="out/example_report.pdf",
-             template='templates/cbl_report_template.pug',
-             stylesheets='templates/styles.css'):
-    css = preload_stylesheet(stylesheets)
-
-    write_report(html, file_path, extra_stylesheets=[css])
-
-
-def get_outcome_rollups(course):
-    outcome_rollups = []
-    url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/outcome_rollups"
-    querystring = {"include[]": "outcomes", "per_page": "100"}
-    response = requests.request("GET", url, headers=headers,
-                                params=querystring)
-    # Pagination
-    outcome_rollups.append(response.json())
-    while response.links.get('next'):
-        url = response.links['next']['url']
-        response = requests.request("GET", url, headers=headers,
-                                    params=querystring)
-        outcome_rollups.append(response.json())
-
-    return outcome_rollups
+# def make_pdf(html, file_path="out/example_report.pdf",
+#              template='templates/cbl_report_template.pug',
+#              stylesheets='templates/styles.css'):
+#     css = preload_stylesheet(stylesheets)
+#
+#     write_report(html, file_path, extra_stylesheets=[css])
 
 
-def get_outcome_results(course):
-    outcome_rollups = []
-    url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/outcome_results"
-    querystring = {
-        "include[]": ["alignments", "outcomes.alignments", "outcomes"],
-        "per_page": "100"}
-    response = requests.request("GET", url, headers=headers,
-                                params=querystring)
-    # Pagination
-    outcome_rollups.append(response.json())
-    while response.links.get('next'):
-        url = response.links['next']['url']
-        response = requests.request("GET", url, headers=headers,
-                                    params=querystring)
-        outcome_rollups.append(response.json())
-
-    return outcome_rollups
+# def get_outcome_rollups(course):
+#     outcome_rollups = []
+#     url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/outcome_rollups"
+#     querystring = {"include[]": "outcomes", "per_page": "100"}
+#     response = requests.request("GET", url, headers=headers,
+#                                 params=querystring)
+#     # Pagination
+#     outcome_rollups.append(response.json())
+#     while response.links.get('next'):
+#         url = response.links['next']['url']
+#         response = requests.request("GET", url, headers=headers,
+#                                     params=querystring)
+#         outcome_rollups.append(response.json())
+#
+#     return outcome_rollups
 
 
-def extract_outcomes(outcomes):
-    '''
-    Filtering the data that in need for the Outcomes Table
-    :param outcomes: List of outcome dictionaries
-    :return: list of tuples in the form ('id', 'title', 'display_name'
-    '''
-    return [(outcome['id'], outcome['title'], outcome['display_name']) for
-            outcome in outcomes]
+# def get_outcome_results(course):
+#     outcome_rollups = []
+#     url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/outcome_results"
+#     querystring = {
+#         "include[]": ["alignments", "outcomes.alignments", "outcomes"],
+#         "per_page": "100"}
+#     response = requests.request("GET", url, headers=headers,
+#                                 params=querystring)
+#     # Pagination
+#     outcome_rollups.append(response.json())
+#     while response.links.get('next'):
+#         url = response.links['next']['url']
+#         response = requests.request("GET", url, headers=headers,
+#                                     params=querystring)
+#         outcome_rollups.append(response.json())
+#
+#     return outcome_rollups
+
+
+# def extract_outcomes(outcomes):
+#     '''
+#     Filtering the data that in need for the Outcomes Table
+#     :param outcomes: List of outcome dictionaries
+#     :return: list of tuples in the form ('id', 'title', 'display_name'
+#     '''
+#     return [(outcome['id'], outcome['title'], outcome['display_name']) for
+#             outcome in outcomes]
 
 
 # todo - deprecated - delete
-def upsert_outcomes(outcomes, session):
-    keys = ['id', 'title', 'display_name']
-    values = [dict(zip(keys, outcome)) for outcome in outcomes]
+# def upsert_outcomes(outcomes, session):
+#     keys = ['id', 'title', 'display_name']
+#     values = [dict(zip(keys, outcome)) for outcome in outcomes]
+#
+#     insert_stmt = postgresql.insert(Outcomes).values(values)
+#     update_stmt = insert_stmt.on_conflict_do_update(
+#         index_elements=['id'],
+#         set_={
+#             'title': insert_stmt.excluded.title,
+#             'display_name': insert_stmt.excluded.display_name
+#         }
+#     )
+#     session.execute(update_stmt)
+#     session.commit()
 
-    insert_stmt = postgresql.insert(Outcomes).values(values)
-    update_stmt = insert_stmt.on_conflict_do_update(
-        index_elements=['id'],
-        set_={
-            'title': insert_stmt.excluded.title,
-            'display_name': insert_stmt.excluded.display_name
-        }
-    )
-    session.execute(update_stmt)
-    session.commit()
+
+# TODO - deprecated - delete
+# def add_blank_outcome_average(course, user_id, record_id):
+#     outcome_avg = dict(
+#         user_id=int(user_id),
+#         course_id=int(course['id']),
+#         outcome_id=-1,
+#         outcome_avg=-1,
+#         record_id=record_id
+#     )
+#
+#     return outcome_avg
 
 
+# def extract_outcome_avg_data(score, course, outcomes):
+#     outcome_info = find_outcome(outcomes, int(score['links']['outcome']))
+#
+#     outcome_avg = dict(
+#         course_id=int(course['id']),  # todo - probably not needed
+#         outcome_id=int(score['links']['outcome']),
+#         outcome_avg=score['score'],
+#         title=outcome_info['title'],
+#         final_assignment=score['title'],
+#         display_name=outcome_info['display_name'],
+#     )
+#
+#     return outcome_avg
+
+
+# def filter_outcomes_grade_rollup(outcome_averages, include_filter=True):
+#     outcomes_to_filter = (2269, 2270)
+#     # filtered_scores
+#     filtered_outcome_averages = [x for x in outcome_averages if
+#                                  x['outcome_id'] not in outcomes_to_filter]
+#     filtered_scores = list(
+#         map(lambda x: x['outcome_avg'], filtered_outcome_averages))
+#
+#     filtered_grade_rollup, filtered_index = calculate_traditional_grade(
+#         filtered_scores)
+#
+#     # non-filtered scores
+#     scores = list(map(lambda x: x['outcome_avg'], outcome_averages))
+#     grade_rollup, index = calculate_traditional_grade(scores)
+#
+#     if filtered_index < index and include_filter:
+#         return filtered_grade_rollup, filtered_outcome_averages
+#
+#     return grade_rollup, outcome_averages
+
+
+# def extract_outcome_averages(course, outcomes, student_rollup):
+#     outcome_averages = []
+#     # Iterate through desc sorted outcome averages to extract data we want
+#     for rollup in sorted(student_rollup['scores'], key=lambda x: x['score'],
+#                          reverse=True):
+#         outcome_averages.append(
+#             extract_outcome_avg_data(rollup, course, outcomes))
+#     return outcome_averages
+
+
+# def parse_rollups(course, outcome_rollups, record):
+#     grades = []
+#
+#     outcomes = outcome_rollups['linked']['outcomes']
+#
+#     for student_rollup in outcome_rollups['rollups']:
+#         grade = make_grade_object(student_rollup, course, outcomes, record)
+#         grades.append(grade)
+#
+#     return grades
+
+
+####################################
+# Database Functions
+####################################
 def upsert_users(users, session):
+    '''
+    Upserts users into the Users table
+    :param users: list of user dictionaries from Canvas API (/api/v1/accounts/:account_id/users)
+    :param session: database session
+    :return: None
+    '''
     keys = ['id', 'name', 'sis_user_id', 'login_id']
     values = [{key: user[key] for key in keys} for user in users]
     insert_stmt = postgresql.insert(Users).values(values)
@@ -175,25 +254,6 @@ def upsert_users(users, session):
     )
     session.execute(update_stmt)
     session.commit()
-
-
-def get_users():
-    url = "https://dtechhs.instructure.com/api/v1/accounts/1/users"
-
-    querystring = {"enrollment_type": "student", "per_page": "100"}
-    response = requests.request("GET", url, headers=headers,
-                                params=querystring)
-
-    users = response.json()
-
-    # pagination
-    while response.links.get('next'):
-        url = response.links['next']['url']
-        response = requests.request("GET", url, headers=headers,
-                                    params=querystring)
-        users += response.json()
-
-    return users
 
 
 def update_users():
@@ -236,6 +296,29 @@ def create_record(current_term, session):
     return record[0]
 
 
+####################################
+# Canvas API Functions
+####################################
+
+def get_users():
+    url = "https://dtechhs.instructure.com/api/v1/accounts/1/users"
+
+    querystring = {"enrollment_type": "student", "per_page": "100"}
+    response = requests.request("GET", url, headers=headers,
+                                params=querystring)
+
+    users = response.json()
+
+    # pagination
+    while response.links.get('next'):
+        url = response.links['next']['url']
+        response = requests.request("GET", url, headers=headers,
+                                    params=querystring)
+        users += response.json()
+
+    return users
+
+
 def get_courses(current_term):
     url = "https://dtechhs.instructure.com/api/v1/accounts/1/courses"
     querystring = {'enrollment_term_id': current_term, 'published': True,
@@ -252,95 +335,6 @@ def get_courses(current_term):
                                     params=querystring)
         courses += response.json()
     return courses
-
-
-# TODO - deprecated - delete
-def add_blank_outcome_average(course, user_id, record_id):
-    outcome_avg = dict(
-        user_id=int(user_id),
-        course_id=int(course['id']),
-        outcome_id=-1,
-        outcome_avg=-1,
-        record_id=record_id
-    )
-
-    return outcome_avg
-
-
-def extract_outcome_avg_data(score, course, outcomes):
-    outcome_info = find_outcome(outcomes, int(score['links']['outcome']))
-
-    outcome_avg = dict(
-        course_id=int(course['id']),  # todo - probably not needed
-        outcome_id=int(score['links']['outcome']),
-        outcome_avg=score['score'],
-        title=outcome_info['title'],
-        final_assignment=score['title'],
-        display_name=outcome_info['display_name'],
-    )
-
-    return outcome_avg
-
-
-def filter_outcomes_grade_rollup(outcome_averages, include_filter=True):
-    outcomes_to_filter = (2269, 2270)
-    # filtered_scores
-    filtered_outcome_averages = [x for x in outcome_averages if
-                                 x['outcome_id'] not in outcomes_to_filter]
-    filtered_scores = list(
-        map(lambda x: x['outcome_avg'], filtered_outcome_averages))
-
-    filtered_grade_rollup, filtered_index = calculate_traditional_grade(
-        filtered_scores)
-
-    # non-filtered scores
-    scores = list(map(lambda x: x['outcome_avg'], outcome_averages))
-    grade_rollup, index = calculate_traditional_grade(scores)
-
-    if filtered_index < index and include_filter:
-        return filtered_grade_rollup, filtered_outcome_averages
-
-    return grade_rollup, outcome_averages
-
-
-def extract_outcome_averages(course, outcomes, student_rollup):
-    outcome_averages = []
-    # Iterate through desc sorted outcome averages to extract data we want
-    for rollup in sorted(student_rollup['scores'], key=lambda x: x['score'],
-                         reverse=True):
-        outcome_averages.append(
-            extract_outcome_avg_data(rollup, course, outcomes))
-    return outcome_averages
-
-
-def parse_rollups(course, outcome_rollups, record):
-    grades = []
-
-    outcomes = outcome_rollups['linked']['outcomes']
-
-    for student_rollup in outcome_rollups['rollups']:
-        grade = make_grade_object(student_rollup, course, outcomes, record)
-        grades.append(grade)
-
-    return grades
-
-
-####################################
-# CURRENT FUNCTIONS
-####################################
-def make_grade_object(grade, outcome_avgs, record_id, course, user_id):
-    # store in a dict
-    grade = dict(
-        user_id=user_id,
-        course_id=course['id'],
-        grade=grade['grade'],
-        threshold=grade['threshold'],
-        min_score=grade['min_score'],
-        record_id=record_id,
-        outcomes=outcome_avgs
-    )
-
-    return grade
 
 
 def create_outcome_dataframes(course, user_ids=None):
@@ -378,7 +372,6 @@ def create_outcome_dataframes(course, user_ids=None):
 
 
 def get_course_users(course):
-    students = []
     url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/users"
 
     querystring = {"enrollment_type[]": "student",
@@ -396,6 +389,26 @@ def get_course_users(course):
         students += [user['id'] for user in response.json()]
 
     return students
+
+
+####################################
+# Additional Functions
+####################################
+
+
+def make_grade_object(grade, outcome_avgs, record_id, course, user_id):
+    # store in a dict
+    grade = dict(
+        user_id=user_id,
+        course_id=course['id'],
+        grade=grade['grade'],
+        threshold=grade['threshold'],
+        min_score=grade['min_score'],
+        record_id=record_id,
+        outcomes=outcome_avgs
+    )
+
+    return grade
 
 
 def outcome_results_to_df_dict(df):
@@ -439,9 +452,6 @@ def preform_grade_pull(current_term=10):
             session.commit()
 
 
-
-
-
 def make_grades_list(course, record):
     grades_list = []
     students = get_course_users(course)
@@ -481,33 +491,21 @@ def make_grades_list(course, record):
 
         # Calculate outcome averages using simple and weighted averages
         unfiltered_outcome_averages = calc_outcome_avgs(outcome_results,
-                                                        outcomes).round(2)
-
-        # TODO - REMOVE
-        # outcome_results.to_csv('out/outcome_results.csv')
-        # alignments.to_csv('out/alignments.csv')
-        # unfiltered_outcome_averages.to_csv('out/outcome_averages.csv')
+                                                        ).round(2)
 
         # Outcomes with unwanted outcomes filtered out.
         filtered_outcomes = (
-            2269, 2270, 2923, 2922, 2732, 2733)  # TODO - make a constant at the top of script
+            2269, 2270, 2923, 2922, 2732,
+            2733)  # TODO - make a constant at the top of script
         filtered_outcome_averages = unfiltered_outcome_averages.loc[
             ~unfiltered_outcome_averages['outcome_id'].isin(
                 filtered_outcomes)]
-
-
-        # cols = ['outcome_id', 'outcome_avg', 'title', 'display_name']
-        # unfiltered_outcome_avg_dicts = unfiltered_outcome_averages[cols].round(
-        #     2).to_dict('records')
-        # filtered_outcome_avg_dicts = filtered_outcome_averages[cols].round(
-        #     2).to_dict('records')
 
         # Calculate grades
         filtered_grade = calculate_traditional_grade(
             filtered_outcome_averages['outcome_avg'])
         unfiltered_grade = calculate_traditional_grade(
             unfiltered_outcome_averages['outcome_avg'])
-
 
         # Pick the higher of the two
         if filtered_grade[1] < unfiltered_grade[1]:
@@ -520,23 +518,28 @@ def make_grades_list(course, record):
         # merge the outcome_results with the final outcome_avg
         group_cols = ['outcome_id', 'outcome_avg']
 
-        outcome_results = pd.merge(outcome_results, final_outcome_avg[group_cols], how='inner', on='outcome_id', suffixes=('_results', '_avg'))
-        outcome_results = outcome_results.sort_values(['outcome_id', 'submitted_or_assessed_at'], ascending=False)
-
+        outcome_results = pd.merge(outcome_results,
+                                   final_outcome_avg[group_cols], how='inner',
+                                   on='outcome_id',
+                                   suffixes=('_results', '_avg'))
+        outcome_results = outcome_results.sort_values(
+            ['outcome_id', 'submitted_or_assessed_at'], ascending=False)
 
         group_cols = ['outcome_id', 'outcome_avg', 'title']
         cols = ['name', 'links.alignment', 'score', 'submitted_or_assessed_at']
-        outcome_avg_dict = pd.DataFrame(outcome_results.groupby(group_cols)[cols].apply(lambda x: x.to_dict('records'))).reset_index()
+        outcome_avg_dict = pd.DataFrame(
+            outcome_results.groupby(group_cols)[cols].apply(
+                lambda x: x.to_dict('records'))).reset_index()
 
         outcomes_merge = outcomes[['outcome_id', 'display_name']]
 
-        outcome_avg_dict = pd.merge(outcome_avg_dict, outcomes_merge, how='left', on='outcome_id')
+        outcome_avg_dict = pd.merge(outcome_avg_dict, outcomes_merge,
+                                    how='left', on='outcome_id')
 
-        outcome_avg_dict = outcome_avg_dict.rename(columns={0: "alignments"}).sort_values('outcome_avg', ascending=False).to_dict('records')
-
-        # print(json.dumps(outcome_avg_dict, indent=2))
-        # with open(f'out/grades_{student}.json', 'w+') as fp:
-        #     json.dump([filtered_grade, unfiltered_grade, final_grade], fp, indent=2)
+        outcome_avg_dict = outcome_avg_dict.rename(
+            columns={0: "alignments"}).sort_values('outcome_avg',
+                                                   ascending=False).to_dict(
+            'records')
 
         # create grade object
         grade = make_grade_object(final_grade, outcome_avg_dict, record,
@@ -547,7 +550,7 @@ def make_grades_list(course, record):
     return grades_list
 
 
-def calc_outcome_avgs(outcome_results, outcomes):
+def calc_outcome_avgs(outcome_results):
     group_cols = ['links.user', 'outcome_id']
     outcome_averages = outcome_results.sort_values(
         ['links.user', 'outcome_id',
@@ -557,11 +560,7 @@ def calc_outcome_avgs(outcome_results, outcomes):
     outcome_averages = outcome_averages.reset_index()
     outcome_averages['outcome_avg'] = outcome_averages[
         ['score', 'score_int']].max(axis=1).round(2)
-    # merge outcome_averages outcomes here
-    # outcome_averages = pd.merge(outcome_averages, outcomes,
-    #                             how='left',
-    #                             on='outcome_id').sort_values(
-    #     ['outcome_avg'], ascending=False).round(2)
+
     return outcome_averages
 
 
@@ -590,7 +589,7 @@ def format_outcome_results(outcome_results):
     outcome_results['outcome_id'] = outcome_results[
         'outcome_id'].astype('int')
     outcome_results = outcome_results.sort_values(['links.user', 'outcome_id',
-         'submitted_or_assessed_at'])
+                                                   'submitted_or_assessed_at'])
 
     return outcome_results
 

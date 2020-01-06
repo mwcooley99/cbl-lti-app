@@ -55,7 +55,6 @@ Courses = Table('courses', metadata,
                 Column('name', String),
                 Column('enrollment_term_id', Integer))
 
-
 Grades = Table('grades', metadata,
                Column('id', Integer, primary_key=True, autoincrement=True),
                Column('user_id', Integer),
@@ -79,13 +78,15 @@ OutcomeResults = Table('outcome_results', metadata,
                        Column('course_id', Integer, nullable=False),
                        Column('user_id', Integer, nullable=False),
                        Column('outcome_id', Integer, nullable=False),
-                       Column('alignment_id', Integer, nullable=False),
-                       Column('submitted_or_assessed_at', DateTime, nullable=False),
-                       Column('last_updated', DateTime, nullable=False)
+                       Column('alignment_id', String, nullable=False),
+                       Column('submitted_or_assessed_at', DateTime,
+                              nullable=False),
+                       Column('last_updated', DateTime, nullable=False),
+                       Column('enrollment_term', Integer)
                        )
 
 Alignments = Table('alignments', metadata,
-                   Column('id', Integer, primary_key=True),
+                   Column('id', String, primary_key=True),
                    Column('name', String, nullable=False)
                    )
 
@@ -99,6 +100,7 @@ Outcomes = Table('outcomes', metadata,
 metadata.create_all(engine, checkfirst=True)
 
 session = Session(engine)
+
 
 ####################################
 # Database Functions
@@ -150,6 +152,50 @@ def upsert_courses(courses, session):
         set_={
             'name': insert_stmt.excluded.name,
             'enrollment_term_id': insert_stmt.excluded.enrollment_term_id
+        }
+    )
+    session.execute(update_stmt)
+    session.commit()
+
+
+def upsert_outcomes(outcomes):
+    insert_stmt = postgresql.insert(Outcomes).values(outcomes)
+    update_stmt = insert_stmt.on_conflict_do_update(
+        index_elements=['id'],
+        set_={
+            'title': insert_stmt.excluded.title,
+            'display_name': insert_stmt.excluded.display_name,
+            'calculation_int': insert_stmt.excluded.calculation_int
+        }
+    )
+    session.execute(update_stmt)
+    session.commit()
+
+
+def upsert_alignments(alignments):
+    insert_stmt = postgresql.insert(Alignments).values(alignments)
+    update_stmt = insert_stmt.on_conflict_do_update(
+        index_elements=['id'],
+        set_={
+            'name': insert_stmt.excluded.name,
+        }
+    )
+    session.execute(update_stmt)
+    session.commit()
+
+
+def upsert_outcome_results(outcome_results):
+    insert_stmt = postgresql.insert(OutcomeResults).values(outcome_results)
+    update_stmt = insert_stmt.on_conflict_do_update(
+        index_elements=['id'],
+        set_={
+            'score': insert_stmt.excluded.score,
+            'course_id': insert_stmt.excluded.course_id,
+            'user_id': insert_stmt.excluded.user_id,
+            'outcome_id': insert_stmt.excluded.outcome_id,
+            'alignment_id': insert_stmt.excluded.alignment_id,
+            'submitted_or_assessed_at': insert_stmt.excluded.submitted_or_assessed_at,
+            'last_updated': insert_stmt.excluded.last_updated,
         }
     )
     session.execute(update_stmt)
@@ -223,6 +269,36 @@ def get_courses(current_term):
                                     params=querystring)
         courses += response.json()
     return courses
+
+
+def get_outcome_results(course, user_ids=None):
+    url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/outcome_results"
+    querystring = {
+        "include[]": ["alignments", "outcomes.alignments", "outcomes"],
+        "per_page": "100"}
+    if user_ids:
+        querystring['user_ids[]'] = user_ids
+
+    response = requests.request("GET", url, headers=headers,
+                                params=querystring)
+    data = response.json()
+
+    outcome_results = data['outcome_results']
+    alignments = data['linked']['alignments']
+    outcomes = data['linked']['outcomes']
+
+    # Pagination
+    while response.links.get('next'):
+        url = response.links['next']['url']
+        response = requests.request("GET", url, headers=headers,
+                                    params=querystring)
+        data = response.json()
+        outcome_results += data['outcome_results']
+        alignments += data['linked']['alignments']
+        outcomes += data['linked']['outcomes']
+        break
+
+    return outcome_results, alignments, outcomes
 
 
 def create_outcome_dataframes(course, user_ids=None):
@@ -371,9 +447,88 @@ def preform_grade_pull(current_term=10):
             session.execute(Grades.insert().values(grades_list))
             session.commit()
 
-def pull_outcome_results():
+
+def make_outcome_result(outcome_result, course_id):
+    temp_dict = {
+        'id': outcome_result['id'],
+        'score': outcome_result['score'],
+        'course_id': course_id,
+        'user_id': outcome_result['links']['user'],
+        'outcome_id': outcome_result['links']['learning_outcome'],
+        'alignment_id': outcome_result['links']['alignment'],
+        'submitted_or_assessed_at': outcome_result['submitted_or_assessed_at'],
+        # TODO might need to make this into a datetime object
+        'last_updated': str(datetime.utcnow())
+        # TODO - remove the change to string
+    }
+    return temp_dict
 
 
+def format_outcome(outcome):
+    temp_dict = {
+        'id': outcome['id'],
+        'display_name': outcome['display_name'],
+        'title': outcome['title'],
+        'calculation_int': outcome['calculation_int']
+    }
+
+    return temp_dict
+
+
+def format_alignments(alignment):
+    ids = ['id', 'name']
+    return {_id: alignment[_id] for _id in ids}
+
+
+def pull_outcome_results(current_term=10):
+    # get all courses for current term
+    courses = get_courses(current_term)
+    upsert_courses(courses, session)
+
+    # get outcome result rollups for each course and list of outcomes
+    pattern = '@dtech|Teacher Assistant|LAB Day|FIT|Innovation Diploma FIT'
+
+    for idx, course in enumerate(courses):
+        print(f'{course["name"]} is course {idx + 1} our of {len(courses)}')
+
+        # Check if it's a non-graded course
+        if re.match(pattern, course['name']):
+            print(course['name'])
+            continue
+
+        outcome_results, alignments, outcomes = get_outcome_results(course)
+
+        # Format results, removing Null entries
+        outcome_results = [make_outcome_result(outcome_result, course['id'])
+                           for
+                           outcome_result in outcome_results if
+                           outcome_result['score']]
+
+        # Format outcomes
+        outcomes = [format_outcome(outcome) for outcome in outcomes]
+        # Filter out duplicate outcomes
+        outcomes = [val for idx, val in enumerate(outcomes) if
+                    val not in outcomes[idx + 1:]]
+
+        # format Alignments
+        alignments = [format_alignments(alignment) for alignment in alignments]
+        # filter out duplicate alignments
+        alignments = [val for idx, val in enumerate(alignments) if
+                      val not in alignments[idx + 1:]]
+
+        print("hello")
+        upsert_outcome_results(outcome_results)
+        print("Hello")
+        upsert_outcomes(outcomes)
+        upsert_alignments(alignments)
+        break
+
+        #
+        # grades_list = make_grades_list(course, record)
+        #
+        # if len(grades_list):
+        #     session.execute(Grades.insert().values(grades_list))
+        #     session.commit()
 
 
 def make_grades_list(course, record_id):
@@ -552,6 +707,7 @@ if __name__ == '__main__':
 
     # update_users()
     # preform_grade_pull()
+    pull_outcome_results()
 
     end = time.time()
     print(f'pull took: {end - start} seconds')

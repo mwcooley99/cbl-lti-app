@@ -55,10 +55,6 @@ Courses = Table('courses', metadata,
                 Column('name', String),
                 Column('enrollment_term_id', Integer))
 
-Outcomes = Table('outcomes', metadata,
-                 Column('id', Integer, primary_key=True),
-                 Column('title', String),
-                 Column('display_name', String))
 
 Grades = Table('grades', metadata,
                Column('id', Integer, primary_key=True, autoincrement=True),
@@ -77,6 +73,32 @@ Users = Table('users', metadata,
               Column('sis_user_id', String),
               Column('login_id', String))
 
+OutcomeResults = Table('outcome_results', metadata,
+                       Column('id', Integer, primary_key=True),
+                       Column('score', Float, nullable=False),
+                       Column('course_id', Integer, nullable=False),
+                       Column('user_id', Integer, nullable=False),
+                       Column('outcome_id', Integer, nullable=False),
+                       Column('alignment_id', Integer, nullable=False),
+                       Column('submitted_or_assessed_at', DateTime, nullable=False),
+                       Column('last_updated', DateTime, nullable=False)
+                       )
+
+Alignments = Table('alignments', metadata,
+                   Column('id', Integer, primary_key=True),
+                   Column('name', String, nullable=False)
+                   )
+
+Outcomes = Table('outcomes', metadata,
+                 Column('id', Integer, primary_key=True),
+                 Column('title', String, nullable=False),
+                 Column('display_name', String),
+                 Column('calculation_int', Integer, nullable=False)
+                 )
+
+metadata.create_all(engine, checkfirst=True)
+
+session = Session(engine)
 
 ####################################
 # Database Functions
@@ -349,6 +371,10 @@ def preform_grade_pull(current_term=10):
             session.execute(Grades.insert().values(grades_list))
             session.commit()
 
+def pull_outcome_results():
+
+
+
 
 def make_grades_list(course, record_id):
     '''
@@ -524,8 +550,8 @@ def format_outcome_results(outcome_results):
 if __name__ == '__main__':
     start = time.time()
 
-    update_users()
-    preform_grade_pull()
+    # update_users()
+    # preform_grade_pull()
 
     end = time.time()
     print(f'pull took: {end - start} seconds')

@@ -296,7 +296,7 @@ def get_outcome_results(course, user_ids=None):
         outcome_results += data['outcome_results']
         alignments += data['linked']['alignments']
         outcomes += data['linked']['outcomes']
-        break
+
 
     return outcome_results, alignments, outcomes
 
@@ -448,7 +448,7 @@ def preform_grade_pull(current_term=10):
             session.commit()
 
 
-def make_outcome_result(outcome_result, course_id):
+def make_outcome_result(outcome_result, course_id, enrollment_term):
     temp_dict = {
         'id': outcome_result['id'],
         'score': outcome_result['score'],
@@ -457,9 +457,9 @@ def make_outcome_result(outcome_result, course_id):
         'outcome_id': outcome_result['links']['learning_outcome'],
         'alignment_id': outcome_result['links']['alignment'],
         'submitted_or_assessed_at': outcome_result['submitted_or_assessed_at'],
-        # TODO might need to make this into a datetime object
-        'last_updated': str(datetime.utcnow())
-        # TODO - remove the change to string
+        'last_updated': datetime.utcnow(),
+        'enrollment_term': enrollment_term
+
     }
     return temp_dict
 
@@ -488,7 +488,7 @@ def pull_outcome_results(current_term=10):
     # get outcome result rollups for each course and list of outcomes
     pattern = '@dtech|Teacher Assistant|LAB Day|FIT|Innovation Diploma FIT'
 
-    for idx, course in enumerate(courses):
+    for idx, course in enumerate(courses[35:]):
         print(f'{course["name"]} is course {idx + 1} our of {len(courses)}')
 
         # Check if it's a non-graded course
@@ -499,7 +499,7 @@ def pull_outcome_results(current_term=10):
         outcome_results, alignments, outcomes = get_outcome_results(course)
 
         # Format results, removing Null entries
-        outcome_results = [make_outcome_result(outcome_result, course['id'])
+        outcome_results = [make_outcome_result(outcome_result, course['id'], current_term)
                            for
                            outcome_result in outcome_results if
                            outcome_result['score']]
@@ -516,12 +516,17 @@ def pull_outcome_results(current_term=10):
         alignments = [val for idx, val in enumerate(alignments) if
                       val not in alignments[idx + 1:]]
 
-        print("hello")
-        upsert_outcome_results(outcome_results)
-        print("Hello")
-        upsert_outcomes(outcomes)
-        upsert_alignments(alignments)
-        break
+        # If there are results to upload
+        if outcome_results:
+            print(f'outcomes results to upload: {len(outcome_results)}')
+            upsert_outcome_results(outcome_results)
+            print('result upsert complete')
+            upsert_outcomes(outcomes)
+            print('outcome upsert complete')
+            upsert_alignments(alignments)
+            print('alignment upsert complete')
+
+
 
         #
         # grades_list = make_grades_list(course, record)

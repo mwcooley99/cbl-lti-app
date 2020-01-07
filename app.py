@@ -2,6 +2,7 @@ from flask import Flask, render_template, session, request, Response, \
     url_for, redirect, jsonify
 
 from flask_sqlalchemy import SQLAlchemy
+from flask_marshmallow import Marshmallow
 
 from pylti.flask import lti
 
@@ -19,8 +20,9 @@ app.secret_key = settings.secret_key
 app.config.from_object(settings.configClass)
 
 db = SQLAlchemy(app)
+ma = Marshmallow(app)
 
-from models import Record, OutcomeAverage, Outcome, Course, Grade, User
+from models import Record, OutcomeAverage, Outcome, Course, Grade, User, GradeSchema, UserSchema
 
 # ============================================
 # Logging
@@ -182,6 +184,7 @@ def index(lti=lti):
     return render_template('index.html')
 
 
+
 # LTI XML Configuration
 @app.route("/xml/", methods=['GET'])
 def xml():
@@ -207,7 +210,8 @@ def datetimeformat(value, format='%m-%d-%Y'):
 @app.shell_context_processor
 def make_shell_context():
     return dict(db=db, Outcome=Outcome, OutcomeAverage=OutcomeAverage,
-                Course=Course, Record=Record, Grade=Grade, User=User)
+                Course=Course, Record=Record, Grade=Grade, User=User,
+                UserSchema=UserSchema, GradeSchema=GradeSchema)
 
 
 if __name__ == '__main__':

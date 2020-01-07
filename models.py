@@ -1,4 +1,4 @@
-from app import db
+from app import db, ma
 
 
 class Record(db.Model):
@@ -77,3 +77,24 @@ class User(db.Model):
 
     def __repr__(self):
         return f'Name: {self.name}'
+
+
+class GradeSchema(ma.Schema):
+    class Meta:
+        # Need to update with relevant fields
+        fields = ('id', 'course_id', 'grade', 'outcomes')
+
+
+class UserSchema(ma.Schema):
+    class Meta:
+        fields = ('id', 'name', 'sis_user_id', 'login_id', 'grades')
+
+    grades = ma.Nested(GradeSchema, many=True)
+
+users = User.query.all()
+user_schema = UserSchema()
+user_schema.dump(users[5])
+
+grades = Grade.query.limit(10)
+grade_schema = GradeSchema()
+grade_schema.dump(grades[3])

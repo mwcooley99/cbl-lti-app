@@ -12,6 +12,7 @@ import os, json
 import requests
 
 from cbl_calculator import calculation_dictionaries
+from data_pull import get_course_users
 
 from logging.handlers import RotatingFileHandler
 
@@ -90,7 +91,7 @@ def launch(lti=lti):
         headers = {'Authorization': f'Bearer {access_token}'}
         response = requests.request("GET", url, headers=headers)
 
-        session['users'] = [(obs['id'], obs['name']) for obs in
+        session['users'] = [{'id': obs['id'], 'name': obs['name']} for obs in
                             response.json()]
         user_id = session['users'][0][0]
         return redirect(url_for('student_dashboard', user_id=user_id))
@@ -106,9 +107,10 @@ def student_dashboard(lti=lti, user_id=None):
     :return: template or error message
     '''
     record = Record.query.order_by(Record.id.desc()).first()
+    print(session['users'])
     if user_id:  # Todo - this probably isn't needed
         # check user is NOT authorized to access this file
-        auth_users_id = [user[0] for user in session['users']]
+        auth_users_id = [user['id'] for user in session['users']]
         if not (int(user_id) in auth_users_id):
             return "You are not authorized to view this users information"
 
@@ -141,15 +143,19 @@ def course_navigation(lti=lti):
     session['course_id'] = request.form.get('custom_canvas_course_id')
     record = Record.query.order_by(Record.id.desc()).first()
 
-    session['users'] = Grade.query.filter_by(record_id=record.id,
-                                             course_id=session['course_id']). \
-        join(User).order_by(User.name).with_entities(Grade.user_id,
-                                                     User.name).all()
+    session['users'] = get_course_users({'id': session['course_id']})
+
+    # session['users'] = Grade.query.filter_by(record_id=record.id,
+    #                                          course_id=session['course_id']). \
+    #     join(User).order_by(User.name).with_entities(Grade.user_id,
+    #                                                  User.name).all()
+    print('++++++++++')
+    print(session['users'])
 
     user = session['users'][0]
 
     if course_title.startswith('@dtech'):
-        return redirect(url_for('student_dashboard', user_id=user[0]))
+        return redirect(url_for('student_dashboard', user_id=user['id']))
 
     return redirect(url_for('course_dashboard'))
 
@@ -163,8 +169,10 @@ def course_dashboard(lti=lti):
     :return: template for a core content teacher
     '''
     record = Record.query.order_by(Record.id.desc()).first()
-
-    user_ids = [user[0] for user in session['users']]
+    session['users'] = get_course_users({'id': session['course_id']})
+    print('***********')
+    print(session['users'])
+    user_ids = [user['id'] for user in session['users']]
 
     grades = Grade.query.filter(Grade.user_id.in_(user_ids)) \
         .filter(Grade.record_id == record.id).join(Course) \

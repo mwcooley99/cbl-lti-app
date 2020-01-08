@@ -345,8 +345,8 @@ def create_outcome_dataframes(course, user_ids=None):
     outcome_results['course_id'] = course['id']
     return outcome_results, alignments, outcomes
 
-
-def get_course_users(course):
+# TODO - have this return the whole dictionary not just the ids
+def get_course_users_ids(course):
     '''
     Gets list of users for a course
     :param course: course dictionary
@@ -366,6 +366,29 @@ def get_course_users(course):
         response = requests.request("GET", url, headers=headers,
                                     params=querystring)
         students += [user['id'] for user in response.json()]
+
+    return students
+
+def get_course_users(course):
+    '''
+    Gets list of users for a course
+    :param course: course dictionary
+    :return: user id's for course
+    '''
+    url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/users"
+
+    querystring = {"enrollment_type[]": "student",
+                   "per_page": "100"}
+    response = requests.request("GET", url, headers=headers,
+                                params=querystring)
+    students = response.json()
+
+    # Pagination
+    while response.links.get('next'):
+        url = response.links['next']['url']
+        response = requests.request("GET", url, headers=headers,
+                                    params=querystring)
+        students += response.json()
 
     return students
 
@@ -664,7 +687,7 @@ def make_grades_list(course, record_id):
     :return:
     '''
     grades_list = []
-    students = get_course_users(course)
+    students = get_course_users_ids(course)
 
     for student_num, student in enumerate(students):
 

@@ -23,7 +23,8 @@ app.config.from_object(settings.configClass)
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
 
-from models import Record, OutcomeAverage, Outcome, Course, Grade, User, GradeSchema, UserSchema
+from models import Record, OutcomeAverage, Outcome, Course, Grade, User, \
+    GradeSchema, UserSchema
 
 # ============================================
 # Logging
@@ -107,7 +108,7 @@ def student_dashboard(lti=lti, user_id=None):
     :return: template or error message
     '''
     record = Record.query.order_by(Record.id.desc()).first()
-    print(session['users'])
+
     if user_id:  # Todo - this probably isn't needed
         # check user is NOT authorized to access this file
         auth_users_id = [user['id'] for user in session['users']]
@@ -141,20 +142,12 @@ def course_navigation(lti=lti):
     session['dash_type'] = 'course'
     course_title = request.form.get('context_title')
     session['course_id'] = request.form.get('custom_canvas_course_id')
-    record = Record.query.order_by(Record.id.desc()).first()
 
-    session['users'] = get_course_users({'id': session['course_id']})
-
-    # session['users'] = Grade.query.filter_by(record_id=record.id,
-    #                                          course_id=session['course_id']). \
-    #     join(User).order_by(User.name).with_entities(Grade.user_id,
-    #                                                  User.name).all()
-    print('++++++++++')
-    print(session['users'])
-
-    user = session['users'][0]
 
     if course_title.startswith('@dtech'):
+        users = get_course_users({'id': session['course_id']})
+        format_users(users)
+        user = session['users'][0]
         return redirect(url_for('student_dashboard', user_id=user['id']))
 
     return redirect(url_for('course_dashboard'))
@@ -169,9 +162,11 @@ def course_dashboard(lti=lti):
     :return: template for a core content teacher
     '''
     record = Record.query.order_by(Record.id.desc()).first()
-    session['users'] = get_course_users({'id': session['course_id']})
-    print('***********')
-    print(session['users'])
+
+    # Get course users
+    users = get_course_users({'id': session['course_id']})
+    format_users(users)
+
     user_ids = [user['id'] for user in session['users']]
 
     grades = Grade.query.filter(Grade.user_id.in_(user_ids)) \
@@ -185,12 +180,17 @@ def course_dashboard(lti=lti):
                            record=record)
 
 
+def format_users(users):
+    keys = ['id', 'name']
+    users = [dict(zip(keys, (user['id'], user['name']))) for user in users]
+    session['users'] = sorted(users, key=lambda x: x['name'])
+
+
 # Home page
 @app.route('/', methods=['GET'])
 @lti(error=error, request='any', app=app)
 def index(lti=lti):
     return render_template('index.html')
-
 
 
 # LTI XML Configuration

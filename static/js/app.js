@@ -39,7 +39,7 @@ function expandTable($el, outcome) {
     let alignments = outcome['alignments'];
 
     // buildSubTable($el.html('<table></table>').find('table'), alignments);
-    let $subTable = $el.html('<table></table>').find('table')
+    let $subTable = $el.html('<table></table>').find('table');
     let columns = [
         {
             field: 'name',
@@ -51,6 +51,11 @@ function expandTable($el, outcome) {
             title: 'Score',
             sortable: true
         },
+         {
+            field: 'submitted_or_assessed_at',
+            title: 'Date',
+            sortable: true
+        }
     ];
     $subTable.bootstrapTable({
         columns: columns,
@@ -62,10 +67,16 @@ function expandTable($el, outcome) {
 }
 
 function buildSubTable($el, alignments) {
+    console.log(alignments);
     let columns = [
         {
             field: 'name',
             title: 'Assignment Name',
+            sortable: true
+        },
+        {
+            field: 'submitted_or_assessed_at',
+            title: 'Date',
             sortable: true
         },
         {

@@ -3,6 +3,8 @@ from pdf_reports import pug_to_html, write_report, preload_stylesheet
 import pandas as pd
 from pandas.io.json import json_normalize
 
+import numpy as np
+
 import os, re, requests, sys
 from datetime import datetime
 
@@ -11,6 +13,10 @@ import json
 
 from config import configuration
 from cbl_calculator import calculate_traditional_grade, weighted_avg
+
+OUTCOMES_TO_FILTER = (
+        2269, 2270, 2923, 2922, 2732,
+        2733)
 
 access_token = os.getenv('CANVAS_API_KEY')
 
@@ -297,7 +303,6 @@ def get_outcome_results(course, user_ids=None):
         alignments += data['linked']['alignments']
         outcomes += data['linked']['outcomes']
 
-
     return outcome_results, alignments, outcomes
 
 
@@ -499,10 +504,11 @@ def pull_outcome_results(current_term=10):
         outcome_results, alignments, outcomes = get_outcome_results(course)
 
         # Format results, removing Null entries
-        outcome_results = [make_outcome_result(outcome_result, course['id'], current_term)
-                           for
-                           outcome_result in outcome_results if
-                           outcome_result['score']]
+        outcome_results = [
+            make_outcome_result(outcome_result, course['id'], current_term)
+            for
+            outcome_result in outcome_results if
+            outcome_result['score']]
 
         # Format outcomes
         outcomes = [format_outcome(outcome) for outcome in outcomes]
@@ -527,13 +533,127 @@ def pull_outcome_results(current_term=10):
             print('alignment upsert complete')
 
 
+def insert_grades(current_term=10):
+    sql = """
+        SELECT o_res.user_id as "links.user", o_res.score, o.id as outcome_id, 
+                c.name as course_name, c.id as course_id, o.title, o.calculation_int, o.display_name, 
+                a.name, o_res.enrollment_term, o_res.submitted_or_assessed_at
+        FROM outcome_results o_res
+            LEFT JOIN courses c on c.id = o_res.course_id
+            LEFT JOIN outcomes o on o.id = o_res.outcome_id
+            LEFT JOIN alignments a on a.id = o_res.alignment_id
+        ORDER BY o_res.submitted_or_assessed_at DESC;
+    """
+    conn = session.connection()
+    # outcome_results = pd.read_sql(sql, conn)
+    # outcome_results.to_pickle('./out/outcome_results.pkl')
+    outcome_results = pd.read_pickle('./out/outcome_results.pkl')
 
-        #
-        # grades_list = make_grades_list(course, record)
-        #
-        # if len(grades_list):
-        #     session.execute(Grades.insert().values(grades_list))
-        #     session.commit()
+    outcome_results['submitted_or_assessed_at'] = outcome_results['submitted_or_assessed_at'].dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+
+    # Create outcome_results dictionaries
+    group_cols = ['links.user', 'course_id', 'outcome_id']
+    align_cols = ['name', 'score', 'submitted_or_assessed_at']
+    unfiltered_alignment_dict = outcome_results.groupby(group_cols)[align_cols].apply(lambda x: x.sort_values('submitted_or_assessed_at', ascending=False).to_dict('r')).reset_index().rename(columns={0: 'alignments'})
+    filtered_alignment_dict = outcome_results.loc[~outcome_results['outcome_id'].isin(OUTCOMES_TO_FILTER)].groupby(group_cols)[align_cols].apply(lambda x: x.sort_values('submitted_or_assessed_at', ascending=False).to_dict('r')).reset_index().rename(columns={0: 'alignments'})
+
+    # make outcome averages df
+    outcome_results['score_int'] = list(
+        zip(outcome_results['score'],
+            outcome_results['calculation_int'],
+            outcome_results['outcome_id']))
+
+    # unfiltered_avgs = calc_outcome_avgs(outcome_results)
+    # unfiltered_avgs.to_pickle('./out/outcome_averages.pkl')
+    unfiltered_avgs = pd.read_pickle('./out/outcome_averages.pkl')
+
+    # Filter out unwanted success skills
+    filtered_avgs = unfiltered_avgs.loc[
+        ~unfiltered_avgs['outcome_id'].isin(
+            OUTCOMES_TO_FILTER)]
+
+    # Merge alignments with outcome_averages
+    merge_cols = ['links.user', 'course_id', 'outcome_id']
+    filtered_alignment_dict.to_csv('./out/filtered.csv')
+    unfiltered_avgs = pd.merge(unfiltered_avgs, unfiltered_alignment_dict, how='left', on=merge_cols)
+    filtered_avgs = pd.merge(filtered_avgs, filtered_alignment_dict, how='left', on=merge_cols)
+
+    filtered_avgs.to_csv('./out/filtered_avg.csv')
+    # Create outcome_avg dfs with dictionaries
+    group_cols = ['links.user', 'course_id']
+    avg_cols = ['outcome_id', 'outcome_avg', 'title', 'display_name', 'alignments']
+    unfiltered_avg_dict = unfiltered_avgs.groupby(group_cols)[avg_cols].apply(
+        lambda x: x.sort_values('outcome_avg', ascending=False).to_dict('r')).reset_index().rename(columns={0: 'unfiltered_avgs'})
+    filtered_avg_dict = filtered_avgs.groupby(group_cols)[avg_cols].apply(
+        lambda x: x.sort_values('outcome_avg', ascending=False).to_dict('r')).reset_index().rename(columns={0: 'filtered_avgs'})
+
+    print('************')
+    print(unfiltered_avg_dict.head())
+    print(unfiltered_avg_dict.columns)
+    unfiltered_avg_dict.to_csv('./out/avg_dict.csv')
+
+    # make grades df
+    group_cols = ['links.user', 'course_id']
+    unfiltered_grades = unfiltered_avgs.groupby(group_cols).agg(
+        {'outcome_avg': calculate_traditional_grade})
+    unfiltered_grades.reset_index(inplace=True)
+    filtered_grades = filtered_avgs.groupby(group_cols).agg(
+        {'outcome_avg': calculate_traditional_grade})
+    filtered_grades.reset_index(inplace=True)
+
+    # Merge grades dfs
+    merge_cols = ['links.user', 'course_id']
+    grades = pd.merge(unfiltered_grades, filtered_grades, how="inner",
+                      on=merge_cols,
+                      suffixes=('_unfiltered', '_filtered'))
+
+    # Merge outcome_avg dictionaries
+    grades = pd.merge(grades, unfiltered_avg_dict, how='left', on=merge_cols)
+    grades = pd.merge(grades, filtered_avg_dict, how='left', on=merge_cols)
+
+    # Break up grades into their own columns
+    grades[['filtered_grades', 'filtered_idx']] = pd.DataFrame(
+        grades['outcome_avg_filtered'].values.tolist(), index=grades.index)
+    grades[['unfiltered_grades', 'unfiltered_idx']] = pd.DataFrame(
+        grades['outcome_avg_unfiltered'].values.tolist(), index=grades.index)
+
+    # Pick the higher of the two Grades
+    grades['final_grade'] = np.where(
+        grades['unfiltered_idx'] < grades['filtered_idx'],
+        grades['unfiltered_grades'], grades['filtered_grades'])
+    # Pick the correct outcome dictionary
+    grades['outcomes'] = np.where(
+        grades['unfiltered_idx'] < grades['filtered_idx'],
+        grades['unfiltered_avgs'], grades['filtered_avgs'])
+
+    print(grades['outcomes'])
+    # Break up grade dict into columns
+    grades[['threshold', 'min_score', 'grade']] = pd.DataFrame(
+        grades['final_grade'].values.tolist(), index=grades.index)
+    grades.to_csv('out/grades.csv')
+
+    # Make a new record
+    record_id = create_record(current_term, session)
+    grades['record_id'] = record_id
+
+    # Create grades_dict for database insert
+    grades.rename(columns={'links.user': 'user_id'}, inplace=True)
+    grade_cols = ['course_id', 'user_id', 'threshold', 'min_score', 'grade', 'outcomes', 'record_id']
+    grades_list = grades[grade_cols].to_dict('r')
+
+    with open('./out/grades.json', 'w') as fp:
+        json.dump(grades_list, fp, indent=2)
+
+    if len(grades_list):
+        session.execute(Grades.insert().values(grades_list))
+        session.commit()
+
+
+    # Merge outcome_results_dict df onto outcome_averages
+
+    # Make outcome_avg_dict df
+
+    # Merge outcome_avg_dict df with grades df
 
 
 def make_grades_list(course, record_id):
@@ -647,7 +767,9 @@ def calc_outcome_avgs(outcome_results):
     :param outcome_results:
     :return: DataFrame of outcome_averages with max of two averages
     '''
-    group_cols = ['links.user', 'outcome_id']
+
+    group_cols = ['links.user', 'outcome_id', 'course_id', 'title',
+                  'display_name']
     outcome_averages = outcome_results.sort_values(
         ['links.user', 'outcome_id',
          'submitted_or_assessed_at']) \
@@ -712,7 +834,7 @@ if __name__ == '__main__':
 
     # update_users()
     # preform_grade_pull()
-    pull_outcome_results()
-
+    # pull_outcome_results()
+    insert_grades()
     end = time.time()
     print(f'pull took: {end - start} seconds')

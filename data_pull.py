@@ -1,7 +1,4 @@
-from pdf_reports import pug_to_html, write_report, preload_stylesheet
-
 import pandas as pd
-from pandas.io.json import json_normalize
 
 import numpy as np
 
@@ -11,391 +8,18 @@ from datetime import datetime
 import time
 import json
 
-from config import configuration
 from cbl_calculator import calculate_traditional_grade, weighted_avg
+from utilities.canvas_api import get_users, get_courses, get_course_users, \
+    get_outcome_results, get_course_users_ids, create_outcome_dataframes
+
+from utilities.db_functions import insert_grades_to_db, create_record, \
+    upsert_users, update_users, \
+    upsert_alignments, upsert_outcome_results, upsert_outcomes, upsert_courses, \
+    query_current_outcome_results
 
 OUTCOMES_TO_FILTER = (
-        2269, 2270, 2923, 2922, 2732,
-        2733)
-
-access_token = os.getenv('CANVAS_API_KEY')
-
-headers = {'Authorization': f'Bearer {access_token}'}
-url = 'https://dtechhs.instructure.com'
-
-# todo - move to it's own folder
-from sqlalchemy.ext.automap import automap_base
-from sqlalchemy.orm import Session
-from sqlalchemy import create_engine, Integer, String, Table, Column, MetaData, \
-    ForeignKey, DateTime, Float, JSON, desc
-from sqlalchemy.dialects import postgresql
-
-config = configuration[os.getenv('PULL_CONFIG')]
-
-Base = automap_base()
-
-engine = create_engine(
-    config.SQLALCHEMY_DATABASE_URI)
-
-# reflect the tables
-metadata = MetaData()
-metadata.bind = engine
-
-Records = Table('records', metadata,
-                Column('id', Integer, primary_key=True, autoincrement=True),
-                Column('created_at', DateTime),
-                Column('term_id', Integer),
-                )
-
-OutcomeAverages = Table('outcome_averages', metadata,
-                        # Column('id', Integer, primary_key=True),
-                        Column('user_id', Integer),
-                        Column('outcome_id', Integer),
-                        Column('record_id', Integer, ForeignKey('Records.id')),
-                        Column('outcome_avg', Float),
-                        Column('course_id', Integer)
-                        )
-
-Courses = Table('courses', metadata,
-                Column('id', Integer, primary_key=True),
-                Column('name', String),
-                Column('enrollment_term_id', Integer))
-
-Grades = Table('grades', metadata,
-               Column('id', Integer, primary_key=True, autoincrement=True),
-               Column('user_id', Integer),
-               Column('course_id', Integer),
-               Column('grade', String),
-               Column('outcomes', JSON),
-               Column('record_id', Integer),
-               Column('threshold', Float),
-               Column('min_score', Float),
-               )
-
-Users = Table('users', metadata,
-              Column('id', Integer, primary_key=True),
-              Column('name', String),
-              Column('sis_user_id', String),
-              Column('login_id', String))
-
-OutcomeResults = Table('outcome_results', metadata,
-                       Column('id', Integer, primary_key=True),
-                       Column('score', Float, nullable=False),
-                       Column('course_id', Integer, nullable=False),
-                       Column('user_id', Integer, nullable=False),
-                       Column('outcome_id', Integer, nullable=False),
-                       Column('alignment_id', String, nullable=False),
-                       Column('submitted_or_assessed_at', DateTime,
-                              nullable=False),
-                       Column('last_updated', DateTime, nullable=False),
-                       Column('enrollment_term', Integer)
-                       )
-
-Alignments = Table('alignments', metadata,
-                   Column('id', String, primary_key=True),
-                   Column('name', String, nullable=False)
-                   )
-
-Outcomes = Table('outcomes', metadata,
-                 Column('id', Integer, primary_key=True),
-                 Column('title', String, nullable=False),
-                 Column('display_name', String),
-                 Column('calculation_int', Integer, nullable=False)
-                 )
-
-metadata.create_all(engine, checkfirst=True)
-
-session = Session(engine)
-
-
-####################################
-# Database Functions
-####################################
-def upsert_users(users, session):
-    '''
-    Upserts users into the Users table
-    :param users: list of user dictionaries from Canvas API (/api/v1/accounts/:account_id/users)
-    :param session: database session
-    :return: None
-    '''
-    keys = ['id', 'name', 'sis_user_id', 'login_id']
-    values = [{key: user[key] for key in keys} for user in users]
-    insert_stmt = postgresql.insert(Users).values(values)
-    update_stmt = insert_stmt.on_conflict_do_update(
-        index_elements=['id'],
-        set_={
-            'name': insert_stmt.excluded.name,
-            'sis_user_id': insert_stmt.excluded.sis_user_id,
-            'login_id': insert_stmt.excluded.login_id
-        }
-    )
-    session.execute(update_stmt)
-    session.commit()
-
-
-def update_users():
-    '''
-    Runs through functions to update Users table
-    :return: None
-    '''
-    session = Session(engine)
-    users = get_users()
-    upsert_users(users, session)
-
-
-def upsert_courses(courses, session):
-    '''
-    Updates courses table
-    :param courses: List of courses dictionaries from (/api/v1/accounts/:account_id/courses)
-    :param session: DB session
-    :return: None
-    '''
-    keys = ['id', 'name', 'enrollment_term_id']
-    values = [{key: course[key] for key in keys} for course in courses]
-    insert_stmt = postgresql.insert(Courses).values(values)
-    update_stmt = insert_stmt.on_conflict_do_update(
-        index_elements=['id'],
-        set_={
-            'name': insert_stmt.excluded.name,
-            'enrollment_term_id': insert_stmt.excluded.enrollment_term_id
-        }
-    )
-    session.execute(update_stmt)
-    session.commit()
-
-
-def upsert_outcomes(outcomes):
-    insert_stmt = postgresql.insert(Outcomes).values(outcomes)
-    update_stmt = insert_stmt.on_conflict_do_update(
-        index_elements=['id'],
-        set_={
-            'title': insert_stmt.excluded.title,
-            'display_name': insert_stmt.excluded.display_name,
-            'calculation_int': insert_stmt.excluded.calculation_int
-        }
-    )
-    session.execute(update_stmt)
-    session.commit()
-
-
-def upsert_alignments(alignments):
-    insert_stmt = postgresql.insert(Alignments).values(alignments)
-    update_stmt = insert_stmt.on_conflict_do_update(
-        index_elements=['id'],
-        set_={
-            'name': insert_stmt.excluded.name,
-        }
-    )
-    session.execute(update_stmt)
-    session.commit()
-
-
-def upsert_outcome_results(outcome_results):
-    insert_stmt = postgresql.insert(OutcomeResults).values(outcome_results)
-    update_stmt = insert_stmt.on_conflict_do_update(
-        index_elements=['id'],
-        set_={
-            'score': insert_stmt.excluded.score,
-            'course_id': insert_stmt.excluded.course_id,
-            'user_id': insert_stmt.excluded.user_id,
-            'outcome_id': insert_stmt.excluded.outcome_id,
-            'alignment_id': insert_stmt.excluded.alignment_id,
-            'submitted_or_assessed_at': insert_stmt.excluded.submitted_or_assessed_at,
-            'last_updated': insert_stmt.excluded.last_updated,
-        }
-    )
-    session.execute(update_stmt)
-    session.commit()
-
-
-def create_record(current_term, session):
-    '''
-    Creates new record
-    :param current_term:
-    :param session:
-    :return: record_id for newly created record
-    '''
-    timestamp = datetime.utcnow()
-    values = {'created_at': timestamp, 'term_id': current_term}
-
-    # Make new record
-    session.execute(Records.insert().values(values))
-    session.commit()
-
-    # Grab record to use id later
-    record = session.query(Records).order_by(desc(Records.c.id)).first()
-    return record[0]
-
-
-####################################
-# Canvas API Functions
-####################################
-
-def get_users():
-    '''
-    Roll up current Users into a list of dictionaries (Canvas API /api/v1/accounts/:account_id/users)
-    :return: List of user dictionaries
-    '''
-    url = "https://dtechhs.instructure.com/api/v1/accounts/1/users"
-
-    querystring = {"enrollment_type": "student", "per_page": "100"}
-    response = requests.request("GET", url, headers=headers,
-                                params=querystring)
-
-    users = response.json()
-
-    # pagination
-    while response.links.get('next'):
-        url = response.links['next']['url']
-        response = requests.request("GET", url, headers=headers,
-                                    params=querystring)
-        users += response.json()
-
-    return users
-
-
-def get_courses(current_term):
-    '''
-    Roll up current Users into a list of dictionaries (Canvas API /api/v1/accounts/:account_id/courses)
-    :param current_term: Canvas Term to filter courses
-    :return: list of course dictionaries
-    '''
-    url = "https://dtechhs.instructure.com/api/v1/accounts/1/courses"
-    querystring = {'enrollment_term_id': current_term, 'published': True,
-                   'per_page': 100}
-    # initial request
-    response = requests.request("GET", url, headers=headers,
-                                params=querystring)
-    courses = response.json()
-
-    # pagination
-    while response.links.get('next'):
-        url = response.links['next']['url']
-        response = requests.request("GET", url, headers=headers,
-                                    params=querystring)
-        courses += response.json()
-    return courses
-
-
-def get_outcome_results(course, user_ids=None):
-    url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/outcome_results"
-    querystring = {
-        "include[]": ["alignments", "outcomes.alignments", "outcomes"],
-        "per_page": "100"}
-    if user_ids:
-        querystring['user_ids[]'] = user_ids
-
-    response = requests.request("GET", url, headers=headers,
-                                params=querystring)
-    data = response.json()
-
-    outcome_results = data['outcome_results']
-    alignments = data['linked']['alignments']
-    outcomes = data['linked']['outcomes']
-
-    # Pagination
-    while response.links.get('next'):
-        url = response.links['next']['url']
-        response = requests.request("GET", url, headers=headers,
-                                    params=querystring)
-        data = response.json()
-        outcome_results += data['outcome_results']
-        alignments += data['linked']['alignments']
-        outcomes += data['linked']['outcomes']
-
-    return outcome_results, alignments, outcomes
-
-
-def create_outcome_dataframes(course, user_ids=None):
-    '''
-    Creates DataFrames of the  outcome results data pulled from Canvas API:
-        /api/v1/courses/:course_id/outcome_results
-    :param course: course dictionaries
-    :param user_ids: Limit User ids mostly for testing
-    :return: Dataframes with outcome_results, assignment alignments, and outcome details
-    '''
-    url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/outcome_results"
-    querystring = {
-        "include[]": ["alignments", "outcomes.alignments", "outcomes"],
-        "per_page": "100"}
-    if user_ids:
-        querystring['user_ids[]'] = user_ids
-
-    response = requests.request("GET", url, headers=headers,
-                                params=querystring)
-    data = response.json()
-
-    outcome_results = json_normalize(data['outcome_results'])
-    alignments = json_normalize(data['linked']['alignments'])
-    outcomes = json_normalize(data['linked']['outcomes'])
-
-    # Pagination
-    while response.links.get('next'):
-        url = response.links['next']['url']
-        response = requests.request("GET", url, headers=headers,
-                                    params=querystring)
-        data = response.json()
-        outcome_results = pd.concat(
-            [outcome_results, json_normalize(data['outcome_results'])])
-        alignments = pd.concat(
-            [alignments, json_normalize(data['linked']['alignments'])])
-        outcomes = pd.concat(
-            [outcomes, json_normalize(data['linked']['outcomes'])])
-
-    outcome_results['course_id'] = course['id']
-    return outcome_results, alignments, outcomes
-
-# TODO - have this return the whole dictionary not just the ids
-def get_course_users_ids(course):
-    '''
-    Gets list of users for a course
-    :param course: course dictionary
-    :return: user id's for course
-    '''
-    url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/users"
-
-    querystring = {"enrollment_type[]": "student",
-                   "per_page": "100"}
-    response = requests.request("GET", url, headers=headers,
-                                params=querystring)
-    students = [user['id'] for user in response.json()]
-
-    # Pagination
-    while response.links.get('next'):
-        url = response.links['next']['url']
-        response = requests.request("GET", url, headers=headers,
-                                    params=querystring)
-        students += [user['id'] for user in response.json()]
-
-    return students
-
-def get_course_users(course):
-    '''
-    Gets list of users for a course
-    :param course: course dictionary
-    :return: user id's for course
-    '''
-    url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/users"
-
-    querystring = {"enrollment_type[]": "student",
-                   "per_page": "100"}
-    response = requests.request("GET", url, headers=headers,
-                                params=querystring)
-    students = response.json()
-
-    # Pagination
-    while response.links.get('next'):
-        url = response.links['next']['url']
-        response = requests.request("GET", url, headers=headers,
-                                    params=querystring)
-        students += response.json()
-
-    return students
-
-
-####################################
-# Additional Functions
-####################################
+    2269, 2270, 2923, 2922, 2732,
+    2733)
 
 
 def make_grade_object(grade, outcome_avgs, record_id, course, user_id):
@@ -448,16 +72,15 @@ def preform_grade_pull(current_term=10):
     :param current_term: Term to filter courses
     :return: None
     '''
-    session = Session(engine)
 
     # Create a new record
-    record = create_record(current_term, session)
+    record = create_record(current_term)
 
     # get all courses for current term
     courses = get_courses(current_term)
 
     # add courses to database
-    upsert_courses(courses, session)
+    upsert_courses(courses)
 
     # get outcome result rollups for each course and list of outcomes
     pattern = 'Teacher Assistant|LAB Day|FIT|Innovation Diploma FIT'
@@ -472,8 +95,7 @@ def preform_grade_pull(current_term=10):
         grades_list = make_grades_list(course, record)
 
         if len(grades_list):
-            session.execute(Grades.insert().values(grades_list))
-            session.commit()
+            insert_grades_to_db(current_term)
 
 
 def make_outcome_result(outcome_result, course_id, enrollment_term):
@@ -511,12 +133,12 @@ def format_alignments(alignment):
 def pull_outcome_results(current_term=10):
     # get all courses for current term
     courses = get_courses(current_term)
-    upsert_courses(courses, session)
+    upsert_courses(courses)
 
     # get outcome result rollups for each course and list of outcomes
     pattern = '@dtech|Teacher Assistant|LAB Day|FIT|Innovation Diploma FIT'
 
-    for idx, course in enumerate(courses[35:]):
+    for idx, course in enumerate(courses):
         print(f'{course["name"]} is course {idx + 1} our of {len(courses)}')
 
         # Check if it's a non-graded course
@@ -557,28 +179,23 @@ def pull_outcome_results(current_term=10):
 
 
 def insert_grades(current_term=10):
-    sql = """
-        SELECT o_res.user_id as "links.user", o_res.score, o.id as outcome_id, 
-                c.name as course_name, c.id as course_id, o.title, o.calculation_int, o.display_name, 
-                a.name, o_res.enrollment_term, o_res.submitted_or_assessed_at
-        FROM outcome_results o_res
-            LEFT JOIN courses c on c.id = o_res.course_id
-            LEFT JOIN outcomes o on o.id = o_res.outcome_id
-            LEFT JOIN alignments a on a.id = o_res.alignment_id
-        ORDER BY o_res.submitted_or_assessed_at DESC;
-    """
-    conn = session.connection()
-    # outcome_results = pd.read_sql(sql, conn)
-    # outcome_results.to_pickle('./out/outcome_results.pkl')
-    outcome_results = pd.read_pickle('./out/outcome_results.pkl')
-
-    outcome_results['submitted_or_assessed_at'] = outcome_results['submitted_or_assessed_at'].dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    outcome_results = query_current_outcome_results(current_term)
+    outcome_results['submitted_or_assessed_at'] = outcome_results[
+        'submitted_or_assessed_at'].dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
     # Create outcome_results dictionaries
     group_cols = ['links.user', 'course_id', 'outcome_id']
     align_cols = ['name', 'score', 'submitted_or_assessed_at']
-    unfiltered_alignment_dict = outcome_results.groupby(group_cols)[align_cols].apply(lambda x: x.sort_values('submitted_or_assessed_at', ascending=False).to_dict('r')).reset_index().rename(columns={0: 'alignments'})
-    filtered_alignment_dict = outcome_results.loc[~outcome_results['outcome_id'].isin(OUTCOMES_TO_FILTER)].groupby(group_cols)[align_cols].apply(lambda x: x.sort_values('submitted_or_assessed_at', ascending=False).to_dict('r')).reset_index().rename(columns={0: 'alignments'})
+    unfiltered_alignment_dict = outcome_results.groupby(group_cols)[
+        align_cols].apply(lambda x: x.sort_values('submitted_or_assessed_at',
+                                                  ascending=False).to_dict(
+        'r')).reset_index().rename(columns={0: 'alignments'})
+    filtered_alignment_dict = outcome_results.loc[
+        ~outcome_results['outcome_id'].isin(OUTCOMES_TO_FILTER)].groupby(
+        group_cols)[align_cols].apply(
+        lambda x: x.sort_values('submitted_or_assessed_at',
+                                ascending=False).to_dict(
+            'r')).reset_index().rename(columns={0: 'alignments'})
 
     # make outcome averages df
     outcome_results['score_int'] = list(
@@ -586,9 +203,7 @@ def insert_grades(current_term=10):
             outcome_results['calculation_int'],
             outcome_results['outcome_id']))
 
-    # unfiltered_avgs = calc_outcome_avgs(outcome_results)
-    # unfiltered_avgs.to_pickle('./out/outcome_averages.pkl')
-    unfiltered_avgs = pd.read_pickle('./out/outcome_averages.pkl')
+    unfiltered_avgs = calc_outcome_avgs(outcome_results)
 
     # Filter out unwanted success skills
     filtered_avgs = unfiltered_avgs.loc[
@@ -598,21 +213,23 @@ def insert_grades(current_term=10):
     # Merge alignments with outcome_averages
     merge_cols = ['links.user', 'course_id', 'outcome_id']
     filtered_alignment_dict.to_csv('./out/filtered.csv')
-    unfiltered_avgs = pd.merge(unfiltered_avgs, unfiltered_alignment_dict, how='left', on=merge_cols)
-    filtered_avgs = pd.merge(filtered_avgs, filtered_alignment_dict, how='left', on=merge_cols)
+    unfiltered_avgs = pd.merge(unfiltered_avgs, unfiltered_alignment_dict,
+                               how='left', on=merge_cols)
+    filtered_avgs = pd.merge(filtered_avgs, filtered_alignment_dict,
+                             how='left', on=merge_cols)
 
     filtered_avgs.to_csv('./out/filtered_avg.csv')
     # Create outcome_avg dfs with dictionaries
     group_cols = ['links.user', 'course_id']
-    avg_cols = ['outcome_id', 'outcome_avg', 'title', 'display_name', 'alignments']
+    avg_cols = ['outcome_id', 'outcome_avg', 'title', 'display_name',
+                'alignments']
     unfiltered_avg_dict = unfiltered_avgs.groupby(group_cols)[avg_cols].apply(
-        lambda x: x.sort_values('outcome_avg', ascending=False).to_dict('r')).reset_index().rename(columns={0: 'unfiltered_avgs'})
+        lambda x: x.sort_values('outcome_avg', ascending=False).to_dict(
+            'r')).reset_index().rename(columns={0: 'unfiltered_avgs'})
     filtered_avg_dict = filtered_avgs.groupby(group_cols)[avg_cols].apply(
-        lambda x: x.sort_values('outcome_avg', ascending=False).to_dict('r')).reset_index().rename(columns={0: 'filtered_avgs'})
+        lambda x: x.sort_values('outcome_avg', ascending=False).to_dict(
+            'r')).reset_index().rename(columns={0: 'filtered_avgs'})
 
-    print('************')
-    print(unfiltered_avg_dict.head())
-    print(unfiltered_avg_dict.columns)
     unfiltered_avg_dict.to_csv('./out/avg_dict.csv')
 
     # make grades df
@@ -649,34 +266,24 @@ def insert_grades(current_term=10):
         grades['unfiltered_idx'] < grades['filtered_idx'],
         grades['unfiltered_avgs'], grades['filtered_avgs'])
 
-    print(grades['outcomes'])
     # Break up grade dict into columns
     grades[['threshold', 'min_score', 'grade']] = pd.DataFrame(
         grades['final_grade'].values.tolist(), index=grades.index)
     grades.to_csv('out/grades.csv')
 
     # Make a new record
-    record_id = create_record(current_term, session)
+    record_id = create_record(current_term)
     grades['record_id'] = record_id
 
     # Create grades_dict for database insert
     grades.rename(columns={'links.user': 'user_id'}, inplace=True)
-    grade_cols = ['course_id', 'user_id', 'threshold', 'min_score', 'grade', 'outcomes', 'record_id']
+    grade_cols = ['course_id', 'user_id', 'threshold', 'min_score', 'grade',
+                  'outcomes', 'record_id']
     grades_list = grades[grade_cols].to_dict('r')
 
-    with open('./out/grades.json', 'w') as fp:
-        json.dump(grades_list, fp, indent=2)
-
+    # Insert into Database
     if len(grades_list):
-        session.execute(Grades.insert().values(grades_list))
-        session.commit()
-
-
-    # Merge outcome_results_dict df onto outcome_averages
-
-    # Make outcome_avg_dict df
-
-    # Merge outcome_avg_dict df with grades df
+        insert_grades_to_db(grades_list)
 
 
 def make_grades_list(course, record_id):
@@ -838,7 +445,7 @@ def format_outcomes(outcomes):
 
 def format_outcome_results(outcome_results):
     '''
-    Cleans up formattin of outcome_results DataFrame
+    Cleans up formatting of outcome_results DataFrame
     :param outcome_results: outcome_results DataFrame
     :return: Reformatted outcomes DataFrame
     '''
@@ -855,9 +462,9 @@ def format_outcome_results(outcome_results):
 if __name__ == '__main__':
     start = time.time()
 
-    # update_users()
+    update_users()
     # preform_grade_pull()
-    # pull_outcome_results()
+    pull_outcome_results()
     insert_grades()
     end = time.time()
     print(f'pull took: {end - start} seconds')

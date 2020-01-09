@@ -12,7 +12,7 @@ import os, json
 import requests
 
 from cbl_calculator import calculation_dictionaries
-from data_pull import get_course_users
+from utilities.canvas_api import get_course_users, get_observees
 
 from logging.handlers import RotatingFileHandler
 
@@ -87,14 +87,11 @@ def launch(lti=lti):
     # Otherwise they must be an observer
     else:
         # Get observees
-        url = f"https://dtechhs.instructure.com/api/v1/users/{session['user_id']}/observees"
-        access_token = os.getenv('CANVAS_API_KEY')
-        headers = {'Authorization': f'Bearer {access_token}'}
-        response = requests.request("GET", url, headers=headers)
-
+        response = get_observees(session['user_id'])
         session['users'] = [{'id': obs['id'], 'name': obs['name']} for obs in
                             response.json()]
-        user_id = session['users'][0][0]
+        user_id = session['users'][0]['id']
+
         return redirect(url_for('student_dashboard', user_id=user_id))
 
 
@@ -115,6 +112,7 @@ def student_dashboard(lti=lti, user_id=None):
         if not (int(user_id) in auth_users_id):
             return "You are not authorized to view this users information"
 
+        # Get current Grades
         grades = Grade.query.filter_by(record_id=record.id,
                                        user_id=user_id).join(Course).filter(
             ~Course.name.contains('@dtech')).order_by(Course.name).all()
@@ -142,7 +140,6 @@ def course_navigation(lti=lti):
     session['dash_type'] = 'course'
     course_title = request.form.get('context_title')
     session['course_id'] = request.form.get('custom_canvas_course_id')
-
 
     if course_title.startswith('@dtech'):
         users = get_course_users({'id': session['course_id']})

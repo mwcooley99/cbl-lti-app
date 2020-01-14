@@ -1,19 +1,16 @@
 import pandas as pd
-
 import numpy as np
 
-import os, re, requests, sys
+import re
 from datetime import datetime
 
 import time
-import json
 
-from cbl_calculator import calculate_traditional_grade, weighted_avg
-from utilities.canvas_api import get_users, get_courses, get_course_users, \
-    get_outcome_results, get_course_users_ids, create_outcome_dataframes
+from utilities.cbl_calculator import calculate_traditional_grade, weighted_avg
+from utilities.canvas_api import get_courses, get_outcome_results, get_course_users_ids, create_outcome_dataframes
 
 from utilities.db_functions import insert_grades_to_db, create_record, \
-    upsert_users, update_users, \
+    update_users, \
     upsert_alignments, upsert_outcome_results, upsert_outcomes, upsert_courses, \
     query_current_outcome_results
 
@@ -148,12 +145,11 @@ def pull_outcome_results(current_term=10):
 
         outcome_results, alignments, outcomes = get_outcome_results(course)
 
-        # Format results, removing Null entries
+        # Format results, Removed Null filter (works better for upsert
         outcome_results = [
             make_outcome_result(outcome_result, course['id'], current_term)
             for
-            outcome_result in outcome_results if
-            outcome_result['score']]
+            outcome_result in outcome_results]
 
         # Format outcomes
         outcomes = [format_outcome(outcome) for outcome in outcomes]
@@ -183,7 +179,10 @@ def insert_grades(current_term=10):
     outcome_results['submitted_or_assessed_at'] = outcome_results[
         'submitted_or_assessed_at'].dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
-    # Create outcome_results dictionaries
+    # TODO - Remove this. should do this with a merge so I don't have to include display_name in groupby
+    outcome_results['display_name'] = outcome_results['display_name'].fillna('')
+
+    # Create outcome_results dictionaries (alignments)
     group_cols = ['links.user', 'course_id', 'outcome_id']
     align_cols = ['name', 'score', 'submitted_or_assessed_at']
     unfiltered_alignment_dict = outcome_results.groupby(group_cols)[
@@ -202,7 +201,6 @@ def insert_grades(current_term=10):
         zip(outcome_results['score'],
             outcome_results['calculation_int'],
             outcome_results['outcome_id']))
-
     unfiltered_avgs = calc_outcome_avgs(outcome_results)
 
     # Filter out unwanted success skills
@@ -218,6 +216,7 @@ def insert_grades(current_term=10):
     filtered_avgs = pd.merge(filtered_avgs, filtered_alignment_dict,
                              how='left', on=merge_cols)
 
+    unfiltered_avgs.to_csv('./out/unfiltered_avg.csv')
     filtered_avgs.to_csv('./out/filtered_avg.csv')
     # Create outcome_avg dfs with dictionaries
     group_cols = ['links.user', 'course_id']
@@ -397,9 +396,8 @@ def calc_outcome_avgs(outcome_results):
     :param outcome_results:
     :return: DataFrame of outcome_averages with max of two averages
     '''
-
-    group_cols = ['links.user', 'outcome_id', 'course_id', 'title',
-                  'display_name']
+    # TODO - DON'T groupby title and displayname. Add back in later (this takes care of displayname is null
+    group_cols = ['links.user', 'outcome_id', 'course_id', 'title', 'display_name']
     outcome_averages = outcome_results.sort_values(
         ['links.user', 'outcome_id',
          'submitted_or_assessed_at']) \
@@ -408,6 +406,8 @@ def calc_outcome_avgs(outcome_results):
     outcome_averages = outcome_averages.reset_index()
     outcome_averages['outcome_avg'] = outcome_averages[
         ['score', 'score_int']].max(axis=1).round(2)
+    # TODO - REMOVE - THIS IS FOR TESTING PURPOSES - JUST TAKING THE SIMPLE AVG
+    outcome_averages['outcome_avg'] = outcome_averages['score']
 
     return outcome_averages
 

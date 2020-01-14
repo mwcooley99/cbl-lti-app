@@ -39,6 +39,44 @@ calculation_dictionaries = [
     }
 ]
 
+calculation_dictionaries = [
+    {
+        'grade': 'A',
+        'threshold': 3.3,
+        'min_score': 3
+    },
+    {
+        'grade': 'A-',
+        'threshold': 3.3,
+        'min_score': 2.5
+    },
+    {
+        'grade': 'B+',
+        'threshold': 2.6,
+        'min_score': 2.2
+    },
+    {
+        'grade': 'B',
+        'threshold': 2.6,
+        'min_score': 1.8
+    },
+    {
+        'grade': 'B-',
+        'threshold': 2.6,
+        'min_score': 1.5
+    },
+    {
+        'grade': 'C',
+        'threshold': 2.2,
+        'min_score': 1.5
+    },
+    {
+        'grade': 'I',
+        'threshold': 0,
+        'min_score': 0
+    }
+]
+
 
 def weighted_avg(scores):
     s = scores.apply(pd.Series)

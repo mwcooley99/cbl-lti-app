@@ -1,5 +1,5 @@
 from flask import Flask, render_template, session, request, Response, \
-    url_for, redirect, jsonify
+    url_for, redirect
 
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
@@ -8,10 +8,8 @@ from pylti.flask import lti
 
 import settings
 import logging
-import os, json
-import requests
 
-from cbl_calculator import calculation_dictionaries
+from utilities.cbl_calculator import calculation_dictionaries
 from utilities.canvas_api import get_course_users, get_observees
 
 from logging.handlers import RotatingFileHandler

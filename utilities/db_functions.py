@@ -115,6 +115,7 @@ def upsert_outcome_results(outcome_results):
             'alignment_id': insert_stmt.excluded.alignment_id,
             'submitted_or_assessed_at': insert_stmt.excluded.submitted_or_assessed_at,
             'last_updated': insert_stmt.excluded.last_updated,
+            'enrollment_term': insert_stmt.excluded.enrollment_term
         }
     )
     session.execute(update_stmt)
@@ -154,7 +155,8 @@ def query_current_outcome_results(current_term):
                 LEFT JOIN courses c ON c.id = o_res.course_id
                 LEFT JOIN outcomes o ON o.id = o_res.outcome_id
                 LEFT JOIN alignments a ON a.id = o_res.alignment_id
-            WHERE o_res.enrollment_term = {current_term}
+            WHERE o_res.score IS NOT NULL 
+--                  AND  o_res.enrollment_term = {current_term}
             ORDER BY o_res.submitted_or_assessed_at DESC;
         """
     conn = session.connection()

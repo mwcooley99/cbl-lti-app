@@ -64,37 +64,37 @@ def make_empty_grade(course, grades_list, record_id, user_id):
                               user_id)
     grades_list.append(grade)
 
-
-def preform_grade_pull(current_term=10):
-    '''
-    Main function to update courses and calculate and insert new grades
-    :param current_term: Term to filter courses
-    :return: None
-    '''
-
-    # Create a new record
-    record = create_record(current_term)
-
-    # get all courses for current term
-    courses = get_courses(current_term)
-
-    # add courses to database
-    upsert_courses(courses)
-
-    # get outcome result rollups for each course and list of outcomes
-    pattern = 'Teacher Assistant|LAB Day|FIT|Innovation Diploma FIT'
-
-    for idx, course in enumerate(courses):
-        print(f'{course["name"]} is course {idx + 1} our of {len(courses)}')
-
-        # Check if it's a non-graded course
-        if re.match(pattern, course['name']):
-            continue
-
-        grades_list = make_grades_list(course, record)
-
-        if len(grades_list):
-            insert_grades_to_db(current_term)
+# todo - remove
+# def preform_grade_pull(current_term=10):
+#     '''
+#     Main function to update courses and calculate and insert new grades
+#     :param current_term: Term to filter courses
+#     :return: None
+#     '''
+#
+#     # Create a new record
+#     record = create_record(current_term)
+#
+#     # get all courses for current term
+#     courses = get_courses(current_term)
+#
+#     # add courses to database
+#     upsert_courses(courses)
+#
+#     # get outcome result rollups for each course and list of outcomes
+#     pattern = 'Teacher Assistant|LAB Day|FIT|Innovation Diploma FIT'
+#
+#     for idx, course in enumerate(courses):
+#         print(f'{course["name"]} is course {idx + 1} our of {len(courses)}')
+#
+#         # Check if it's a non-graded course
+#         if re.match(pattern, course['name']):
+#             continue
+#
+#         grades_list = make_grades_list(course, record)
+#
+#         if len(grades_list):
+#             insert_grades_to_db(current_term)
 
 
 def make_outcome_result(outcome_result, course_id, enrollment_term):
@@ -186,9 +186,6 @@ def insert_grades(current_term=10):
     outcome_cols = ['outcome_id', 'title', 'display_name']
     outcomes = outcome_results[outcome_cols].drop_duplicates()
 
-    # TODO - Remove this. should do this with a merge so I don't have to include display_name in groupby
-    # outcome_results['display_name'] = outcome_results['display_name'].fillna('')
-
     # Create outcome_results dictionaries (alignments)
     group_cols = ['links.user', 'course_id', 'outcome_id']
     align_cols = ['name', 'score', 'submitted_or_assessed_at']
@@ -209,12 +206,12 @@ def insert_grades(current_term=10):
             outcome_results['calculation_int'],
             outcome_results['outcome_id']))
     unfiltered_avgs = calc_outcome_avgs(outcome_results)
+    unfiltered_avgs.to_csv('out/avgs.csv')
+
     # add outcome metadata back in
     unfiltered_avgs = pd.merge(unfiltered_avgs, outcomes, how='left',
                                on='outcome_id')
-    print('******* isna ******')
-    print(unfiltered_avgs[unfiltered_avgs['title'].isna()])
-    print('*******************')
+
 
     # Filter out unwanted success skills
     filtered_avgs = unfiltered_avgs.loc[
@@ -297,109 +294,109 @@ def insert_grades(current_term=10):
     if len(grades_list):
         insert_grades_to_db(grades_list)
 
-
-def make_grades_list(course, record_id):
-    '''
-    Creates list of student grades for a given course
-    :param course: Course dictionary
-    :param record_id: Current record ID
-    :return:
-    '''
-    grades_list = []
-    students = get_course_users_ids(course)
-
-    for student_num, student in enumerate(students):
-
-        # If @dtech, fill with empty grades - Todo refactor
-        if re.match('@dtech', course['name']):
-            make_empty_grade(course, grades_list, record_id, student)
-            continue
-
-        outcome_results, alignments, outcomes = create_outcome_dataframes(
-            course, student)
-
-        # Check if outcome_results are empty. If so make an empty grade object
-        if len(outcome_results) == 0:
-            make_empty_grade(course, grades_list, record_id, student)
-            continue
-
-        # Drop blank scores
-        outcome_results = outcome_results.dropna(subset=['score'])
-
-        # Check if outcome_results are empty. If so make an empty grade object
-        if len(outcome_results) == 0:
-            make_empty_grade(course, grades_list, record_id, student)
-            continue
-
-        # Clean up the format of the outcome_results
-        outcome_results = format_outcome_results(outcome_results)
-
-        # clean up titles of the outcomes metadata
-        outcomes = format_outcomes(outcomes)
-
-        # merge outcome data and create decaying average meta column and alignments
-        outcome_results = add_outcome_meta(outcome_results, outcomes,
-                                           alignments)
-
-        # Calculate outcome averages using simple and weighted averages
-        unfiltered_outcome_averages = calc_outcome_avgs(outcome_results,
-                                                        ).round(2)
-
-        # Outcomes with unwanted outcomes filtered out.
-        filtered_outcomes = (
-            2269, 2270, 2923, 2922, 2732,
-            2733)  # TODO - make a constant at the top of script
-        filtered_outcome_averages = unfiltered_outcome_averages.loc[
-            ~unfiltered_outcome_averages['outcome_id'].isin(
-                filtered_outcomes)]
-
-        # Calculate grades
-        filtered_grade = calculate_traditional_grade(
-            filtered_outcome_averages['outcome_avg'])
-        unfiltered_grade = calculate_traditional_grade(
-            unfiltered_outcome_averages['outcome_avg'])
-
-        # Pick the higher of the two
-        if filtered_grade[1] < unfiltered_grade[1]:
-            final_grade = filtered_grade[0]
-            final_outcome_avg = filtered_outcome_averages
-        else:
-            final_grade = unfiltered_grade[0]
-            final_outcome_avg = unfiltered_outcome_averages
-
-        # merge the outcome_results with the final outcome_avg
-        group_cols = ['outcome_id', 'outcome_avg']
-
-        outcome_results = pd.merge(outcome_results,
-                                   final_outcome_avg[group_cols], how='inner',
-                                   on='outcome_id',
-                                   suffixes=('_results', '_avg'))
-        outcome_results = outcome_results.sort_values(
-            ['outcome_id', 'submitted_or_assessed_at'], ascending=False)
-
-        group_cols = ['outcome_id', 'outcome_avg', 'title']
-        cols = ['name', 'links.alignment', 'score', 'submitted_or_assessed_at']
-        outcome_avg_dict = pd.DataFrame(
-            outcome_results.groupby(group_cols)[cols].apply(
-                lambda x: x.to_dict('records'))).reset_index()
-
-        outcomes_merge = outcomes[['outcome_id', 'display_name']]
-
-        outcome_avg_dict = pd.merge(outcome_avg_dict, outcomes_merge,
-                                    how='left', on='outcome_id')
-
-        outcome_avg_dict = outcome_avg_dict.rename(
-            columns={0: "alignments"}).sort_values('outcome_avg',
-                                                   ascending=False).to_dict(
-            'records')
-
-        # create grade object
-        grade = make_grade_object(final_grade, outcome_avg_dict, record_id,
-                                  course, student)
-
-        grades_list.append(grade)
-
-    return grades_list
+# todo - remove
+# def make_grades_list(course, record_id):
+#     '''
+#     Creates list of student grades for a given course
+#     :param course: Course dictionary
+#     :param record_id: Current record ID
+#     :return:
+#     '''
+#     grades_list = []
+#     students = get_course_users_ids(course)
+#
+#     for student_num, student in enumerate(students):
+#
+#         # If @dtech, fill with empty grades - Todo refactor
+#         if re.match('@dtech', course['name']):
+#             make_empty_grade(course, grades_list, record_id, student)
+#             continue
+#
+#         outcome_results, alignments, outcomes = create_outcome_dataframes(
+#             course, student)
+#
+#         # Check if outcome_results are empty. If so make an empty grade object
+#         if len(outcome_results) == 0:
+#             make_empty_grade(course, grades_list, record_id, student)
+#             continue
+#
+#         # Drop blank scores
+#         outcome_results = outcome_results.dropna(subset=['score'])
+#
+#         # Check if outcome_results are empty. If so make an empty grade object
+#         if len(outcome_results) == 0:
+#             make_empty_grade(course, grades_list, record_id, student)
+#             continue
+#
+#         # Clean up the format of the outcome_results
+#         outcome_results = format_outcome_results(outcome_results)
+#
+#         # clean up titles of the outcomes metadata
+#         outcomes = format_outcomes(outcomes)
+#
+#         # merge outcome data and create decaying average meta column and alignments
+#         outcome_results = add_outcome_meta(outcome_results, outcomes,
+#                                            alignments)
+#
+#         # Calculate outcome averages using simple and weighted averages
+#         unfiltered_outcome_averages = calc_outcome_avgs(outcome_results,
+#                                                         ).round(2)
+#
+#         # Outcomes with unwanted outcomes filtered out.
+#         filtered_outcomes = (
+#             2269, 2270, 2923, 2922, 2732,
+#             2733)  # TODO - make a constant at the top of script
+#         filtered_outcome_averages = unfiltered_outcome_averages.loc[
+#             ~unfiltered_outcome_averages['outcome_id'].isin(
+#                 filtered_outcomes)]
+#
+#         # Calculate grades
+#         filtered_grade = calculate_traditional_grade(
+#             filtered_outcome_averages['outcome_avg'])
+#         unfiltered_grade = calculate_traditional_grade(
+#             unfiltered_outcome_averages['outcome_avg'])
+#
+#         # Pick the higher of the two
+#         if filtered_grade[1] < unfiltered_grade[1]:
+#             final_grade = filtered_grade[0]
+#             final_outcome_avg = filtered_outcome_averages
+#         else:
+#             final_grade = unfiltered_grade[0]
+#             final_outcome_avg = unfiltered_outcome_averages
+#
+#         # merge the outcome_results with the final outcome_avg
+#         group_cols = ['outcome_id', 'outcome_avg']
+#
+#         outcome_results = pd.merge(outcome_results,
+#                                    final_outcome_avg[group_cols], how='inner',
+#                                    on='outcome_id',
+#                                    suffixes=('_results', '_avg'))
+#         outcome_results = outcome_results.sort_values(
+#             ['outcome_id', 'submitted_or_assessed_at'], ascending=False)
+#
+#         group_cols = ['outcome_id', 'outcome_avg', 'title']
+#         cols = ['name', 'links.alignment', 'score', 'submitted_or_assessed_at']
+#         outcome_avg_dict = pd.DataFrame(
+#             outcome_results.groupby(group_cols)[cols].apply(
+#                 lambda x: x.to_dict('records'))).reset_index()
+#
+#         outcomes_merge = outcomes[['outcome_id', 'display_name']]
+#
+#         outcome_avg_dict = pd.merge(outcome_avg_dict, outcomes_merge,
+#                                     how='left', on='outcome_id')
+#
+#         outcome_avg_dict = outcome_avg_dict.rename(
+#             columns={0: "alignments"}).sort_values('outcome_avg',
+#                                                    ascending=False).to_dict(
+#             'records')
+#
+#         # create grade object
+#         grade = make_grade_object(final_grade, outcome_avg_dict, record_id,
+#                                   course, student)
+#
+#         grades_list.append(grade)
+#
+#     return grades_list
 
 
 def calc_outcome_avgs(outcome_results):
@@ -477,7 +474,7 @@ if __name__ == '__main__':
 
     # update_users()
     # preform_grade_pull()
-    pull_outcome_results()
-    # insert_grades()
+    # pull_outcome_results()
+    insert_grades()
     end = time.time()
     print(f'pull took: {end - start} seconds')

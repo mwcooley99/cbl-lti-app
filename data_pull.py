@@ -106,7 +106,7 @@ def make_outcome_result(outcome_result, course_id, enrollment_term):
         'outcome_id': outcome_result['links']['learning_outcome'],
         'alignment_id': outcome_result['links']['alignment'],
         'submitted_or_assessed_at': outcome_result['submitted_or_assessed_at'],
-        'last_updated': str(datetime.utcnow()),
+        'last_updated': datetime.utcnow(),
         'enrollment_term': enrollment_term
 
     }

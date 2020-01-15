@@ -472,9 +472,9 @@ def format_outcome_results(outcome_results):
 if __name__ == '__main__':
     start = time.time()
 
-    # update_users()
-    # preform_grade_pull()
-    # pull_outcome_results()
+    update_users()
+    pull_outcome_results()
     insert_grades()
+
     end = time.time()
     print(f'pull took: {end - start} seconds')

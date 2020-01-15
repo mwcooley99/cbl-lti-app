@@ -24,8 +24,7 @@ def get_users():
     # pagination
     while response.links.get('next'):
         url = response.links['next']['url']
-        response = requests.request("GET", url, headers=headers,
-                                    params=querystring)
+        response = requests.request("GET", url, headers=headers)
         users += response.json()
 
     return users
@@ -43,13 +42,13 @@ def get_courses(current_term):
     # initial request
     response = requests.request("GET", url, headers=headers,
                                 params=querystring)
+
     courses = response.json()
 
     # pagination
     while response.links.get('next'):
         url = response.links['next']['url']
-        response = requests.request("GET", url, headers=headers,
-                                    params=querystring)
+        response = requests.request("GET", url, headers=headers)
         courses += response.json()
     return courses
 
@@ -64,6 +63,7 @@ def get_outcome_results(course, user_ids=None):
 
     response = requests.request("GET", url, headers=headers,
                                 params=querystring)
+
     data = response.json()
 
     outcome_results = data['outcome_results']
@@ -73,8 +73,8 @@ def get_outcome_results(course, user_ids=None):
     # Pagination
     while response.links.get('next'):
         url = response.links['next']['url']
-        response = requests.request("GET", url, headers=headers,
-                                    params=querystring)
+        response = requests.request("GET", url, headers=headers)
+
         data = response.json()
         outcome_results += data['outcome_results']
         alignments += data['linked']['alignments']
@@ -98,8 +98,7 @@ def create_outcome_dataframes(course, user_ids=None):
     if user_ids:
         querystring['user_ids[]'] = user_ids
 
-    response = requests.request("GET", url, headers=headers,
-                                params=querystring)
+    response = requests.request("GET", url, headers=headers)
     data = response.json()
 
     outcome_results = json_normalize(data['outcome_results'])
@@ -109,8 +108,7 @@ def create_outcome_dataframes(course, user_ids=None):
     # Pagination
     while response.links.get('next'):
         url = response.links['next']['url']
-        response = requests.request("GET", url, headers=headers,
-                                    params=querystring)
+        response = requests.request("GET", url, headers=headersg)
         data = response.json()
         outcome_results = pd.concat(
             [outcome_results, json_normalize(data['outcome_results'])])
@@ -141,8 +139,7 @@ def get_course_users_ids(course):
     # Pagination
     while response.links.get('next'):
         url = response.links['next']['url']
-        response = requests.request("GET", url, headers=headers,
-                                    params=querystring)
+        response = requests.request("GET", url, headers=headers)
         students += [user['id'] for user in response.json()]
 
     return students
@@ -165,15 +162,14 @@ def get_course_users(course):
     # Pagination
     while response.links.get('next'):
         url = response.links['next']['url']
-        response = requests.request("GET", url, headers=headers,
-                                    params=querystring)
+        response = requests.request("GET", url, headers=headers)
         students += response.json()
 
     return students
+
 
 def get_observees(user_id):
     url = f"https://dtechhs.instructure.com/api/v1/users/{user_id}/observees"
     response = requests.request("GET", url, headers=headers)
 
     return response
-

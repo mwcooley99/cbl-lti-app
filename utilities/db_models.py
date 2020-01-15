@@ -57,7 +57,7 @@ Users = Table('users', metadata,
 
 OutcomeResults = Table('outcome_results', metadata,
                        Column('id', Integer, primary_key=True),
-                       Column('score', Float, nullable=False),
+                       Column('score', Float),
                        Column('course_id', Integer, nullable=False),
                        Column('user_id', Integer, nullable=False),
                        Column('outcome_id', Integer, nullable=False),

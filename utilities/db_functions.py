@@ -148,9 +148,16 @@ def insert_grades_to_db(grades_list):
 
 def query_current_outcome_results(current_term):
     sql = f"""
-            SELECT o_res.user_id AS "links.user", o_res.score, o.id AS outcome_id, 
-                    c.name AS course_name, c.id AS course_id, o.title, o.calculation_int, o.display_name, 
-                    a.name, o_res.enrollment_term, o_res.submitted_or_assessed_at
+            SELECT o_res.user_id AS "links.user", 
+                    o_res.score, o.id AS outcome_id, 
+                    c.name AS course_name, 
+                    c.id AS course_id, 
+                    o.title, 
+                    o.calculation_int, 
+                    o.display_name, 
+                    a.name, 
+                    o_res.enrollment_term, 
+                    o_res.submitted_or_assessed_at
             FROM outcome_results o_res
                 LEFT JOIN courses c ON c.id = o_res.course_id
                 LEFT JOIN outcomes o ON o.id = o_res.outcome_id

@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import json
 
 import re
 from datetime import datetime
@@ -7,7 +8,8 @@ from datetime import datetime
 import time
 
 from utilities.cbl_calculator import calculate_traditional_grade, weighted_avg
-from utilities.canvas_api import get_courses, get_outcome_results, get_course_users_ids, create_outcome_dataframes
+from utilities.canvas_api import get_courses, get_outcome_results, \
+    get_course_users_ids, create_outcome_dataframes
 
 from utilities.db_functions import insert_grades_to_db, create_record, \
     update_users, \
@@ -104,7 +106,7 @@ def make_outcome_result(outcome_result, course_id, enrollment_term):
         'outcome_id': outcome_result['links']['learning_outcome'],
         'alignment_id': outcome_result['links']['alignment'],
         'submitted_or_assessed_at': outcome_result['submitted_or_assessed_at'],
-        'last_updated': datetime.utcnow(),
+        'last_updated': str(datetime.utcnow()),
         'enrollment_term': enrollment_term
 
     }
@@ -136,6 +138,7 @@ def pull_outcome_results(current_term=10):
     pattern = '@dtech|Teacher Assistant|LAB Day|FIT|Innovation Diploma FIT'
 
     for idx, course in enumerate(courses):
+        print(course['id'])
         print(f'{course["name"]} is course {idx + 1} our of {len(courses)}')
 
         # Check if it's a non-graded course
@@ -145,7 +148,7 @@ def pull_outcome_results(current_term=10):
 
         outcome_results, alignments, outcomes = get_outcome_results(course)
 
-        # Format results, Removed Null filter (works better for upsert
+        # Format results, Removed Null filter (works better for upsert)
         outcome_results = [
             make_outcome_result(outcome_result, course['id'], current_term)
             for
@@ -179,8 +182,12 @@ def insert_grades(current_term=10):
     outcome_results['submitted_or_assessed_at'] = outcome_results[
         'submitted_or_assessed_at'].dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
+    # Create outcomes df
+    outcome_cols = ['outcome_id', 'title', 'display_name']
+    outcomes = outcome_results[outcome_cols].drop_duplicates()
+
     # TODO - Remove this. should do this with a merge so I don't have to include display_name in groupby
-    outcome_results['display_name'] = outcome_results['display_name'].fillna('')
+    # outcome_results['display_name'] = outcome_results['display_name'].fillna('')
 
     # Create outcome_results dictionaries (alignments)
     group_cols = ['links.user', 'course_id', 'outcome_id']
@@ -202,6 +209,12 @@ def insert_grades(current_term=10):
             outcome_results['calculation_int'],
             outcome_results['outcome_id']))
     unfiltered_avgs = calc_outcome_avgs(outcome_results)
+    # add outcome metadata back in
+    unfiltered_avgs = pd.merge(unfiltered_avgs, outcomes, how='left',
+                               on='outcome_id')
+    print('******* isna ******')
+    print(unfiltered_avgs[unfiltered_avgs['title'].isna()])
+    print('*******************')
 
     # Filter out unwanted success skills
     filtered_avgs = unfiltered_avgs.loc[
@@ -396,8 +409,8 @@ def calc_outcome_avgs(outcome_results):
     :param outcome_results:
     :return: DataFrame of outcome_averages with max of two averages
     '''
-    # TODO - DON'T groupby title and displayname. Add back in later (this takes care of displayname is null
-    group_cols = ['links.user', 'outcome_id', 'course_id', 'title', 'display_name']
+
+    group_cols = ['links.user', 'outcome_id', 'course_id']
     outcome_averages = outcome_results.sort_values(
         ['links.user', 'outcome_id',
          'submitted_or_assessed_at']) \
@@ -407,7 +420,7 @@ def calc_outcome_avgs(outcome_results):
     outcome_averages['outcome_avg'] = outcome_averages[
         ['score', 'score_int']].max(axis=1).round(2)
     # TODO - REMOVE - THIS IS FOR TESTING PURPOSES - JUST TAKING THE SIMPLE AVG
-    outcome_averages['outcome_avg'] = outcome_averages['score']
+    # outcome_averages['outcome_avg'] = outcome_averages['score']
 
     return outcome_averages
 
@@ -462,9 +475,9 @@ def format_outcome_results(outcome_results):
 if __name__ == '__main__':
     start = time.time()
 
-    update_users()
+    # update_users()
     # preform_grade_pull()
     pull_outcome_results()
-    insert_grades()
+    # insert_grades()
     end = time.time()
     print(f'pull took: {end - start} seconds')

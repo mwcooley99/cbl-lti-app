@@ -22,6 +22,7 @@ dominate==2.4.0
 entrypoints==0.3
 Flask==1.0.2
 Flask-Bootstrap==3.3.7.1
+flask-marshmallow==0.10.1
 Flask-OAuthlib==0.9.5
 Flask-PyMongo==2.3.0
 Flask-SQLAlchemy==2.3.2
@@ -48,6 +49,8 @@ jupyterlab==1.1.4
 jupyterlab-server==1.0.6
 Markdown==3.1.1
 MarkupSafe==1.1.1
+marshmallow==3.3.0
+marshmallow-sqlalchemy==0.21.0
 mistune==0.8.4
 more-itertools==7.2.0
 multidict==4.5.2

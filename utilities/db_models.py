@@ -68,5 +68,5 @@ Outcomes = Table('outcomes', metadata,
                  Column('display_name', String),
                  Column('calculation_int', Integer, nullable=False)
                  )
-print(metadata)
+
 metadata.create_all(engine, checkfirst=True)

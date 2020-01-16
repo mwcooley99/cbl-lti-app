@@ -64,6 +64,7 @@ def make_empty_grade(course, grades_list, record_id, user_id):
                               user_id)
     grades_list.append(grade)
 
+
 # todo - remove
 # def preform_grade_pull(current_term=10):
 #     '''
@@ -206,12 +207,10 @@ def insert_grades(current_term=10):
             outcome_results['calculation_int'],
             outcome_results['outcome_id']))
     unfiltered_avgs = calc_outcome_avgs(outcome_results)
-    unfiltered_avgs.to_csv('out/avgs.csv')
 
     # add outcome metadata back in
     unfiltered_avgs = pd.merge(unfiltered_avgs, outcomes, how='left',
                                on='outcome_id')
-
 
     # Filter out unwanted success skills
     filtered_avgs = unfiltered_avgs.loc[
@@ -220,14 +219,12 @@ def insert_grades(current_term=10):
 
     # Merge alignments with outcome_averages
     merge_cols = ['links.user', 'course_id', 'outcome_id']
-    filtered_alignment_dict.to_csv('./out/filtered.csv')
+
     unfiltered_avgs = pd.merge(unfiltered_avgs, unfiltered_alignment_dict,
                                how='left', on=merge_cols)
     filtered_avgs = pd.merge(filtered_avgs, filtered_alignment_dict,
                              how='left', on=merge_cols)
 
-    unfiltered_avgs.to_csv('./out/unfiltered_avg.csv')
-    filtered_avgs.to_csv('./out/filtered_avg.csv')
     # Create outcome_avg dfs with dictionaries
     group_cols = ['links.user', 'course_id']
     avg_cols = ['outcome_id', 'outcome_avg', 'title', 'display_name',
@@ -238,8 +235,6 @@ def insert_grades(current_term=10):
     filtered_avg_dict = filtered_avgs.groupby(group_cols)[avg_cols].apply(
         lambda x: x.sort_values('outcome_avg', ascending=False).to_dict(
             'r')).reset_index().rename(columns={0: 'filtered_avgs'})
-
-    unfiltered_avg_dict.to_csv('./out/avg_dict.csv')
 
     # make grades df
     group_cols = ['links.user', 'course_id']
@@ -278,7 +273,6 @@ def insert_grades(current_term=10):
     # Break up grade dict into columns
     grades[['threshold', 'min_score', 'grade']] = pd.DataFrame(
         grades['final_grade'].values.tolist(), index=grades.index)
-    grades.to_csv('out/grades.csv')
 
     # Make a new record
     record_id = create_record(current_term)
@@ -293,6 +287,7 @@ def insert_grades(current_term=10):
     # Insert into Database
     if len(grades_list):
         insert_grades_to_db(grades_list)
+
 
 # todo - remove
 # def make_grades_list(course, record_id):
@@ -473,7 +468,7 @@ if __name__ == '__main__':
     start = time.time()
 
     update_users()
-    pull_outcome_results()
+    # pull_outcome_results()
     insert_grades()
 
     end = time.time()

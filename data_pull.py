@@ -179,6 +179,7 @@ def pull_outcome_results(current_term=10):
 
 
 def insert_grades(current_term=10):
+    print(f'Grade pull started at {datetime.now()}')
     outcome_results = query_current_outcome_results(current_term)
     outcome_results['submitted_or_assessed_at'] = outcome_results[
         'submitted_or_assessed_at'].dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
@@ -275,6 +276,7 @@ def insert_grades(current_term=10):
         grades['final_grade'].values.tolist(), index=grades.index)
 
     # Make a new record
+    print(f'Record created at {datetime.now()}')
     record_id = create_record(current_term)
     grades['record_id'] = record_id
 

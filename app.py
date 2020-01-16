@@ -108,7 +108,7 @@ def student_dashboard(lti=lti, user_id=None):
 
     if user_id:  # Todo - this probably isn't needed
         # check user is NOT authorized to access this file
-        print(session['users'])
+
         auth_users_id = [user['id'] for user in session['users']]
         if not (int(user_id) in auth_users_id):
             return "You are not authorized to view this users information"

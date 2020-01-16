@@ -9,8 +9,6 @@ import os
 
 config = configuration[os.getenv('PULL_CONFIG')]
 
-# Base = automap_base()
-
 engine = create_engine(
     config.SQLALCHEMY_DATABASE_URI)
 
@@ -23,15 +21,6 @@ Records = Table('records', metadata,
                 Column('created_at', DateTime),
                 Column('term_id', Integer),
                 )
-
-OutcomeAverages = Table('outcome_averages', metadata,
-                        # Column('id', Integer, primary_key=True),
-                        Column('user_id', Integer),
-                        Column('outcome_id', Integer),
-                        Column('record_id', Integer, ForeignKey('Records.id')),
-                        Column('outcome_avg', Float),
-                        Column('course_id', Integer)
-                        )
 
 Courses = Table('courses', metadata,
                 Column('id', Integer, primary_key=True),
@@ -79,7 +68,5 @@ Outcomes = Table('outcomes', metadata,
                  Column('display_name', String),
                  Column('calculation_int', Integer, nullable=False)
                  )
-
+print(metadata)
 metadata.create_all(engine, checkfirst=True)
-
-

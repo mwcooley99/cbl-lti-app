@@ -21,8 +21,9 @@ app.config.from_object(settings.configClass)
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
 
-from models import Record, OutcomeAverage, Outcome, Course, Grade, User, \
-    GradeSchema, UserSchema
+from models import Record, OutcomeAverage, Course, Grade, User, \
+    OutcomeResult, Outcome, Alignment, GradeSchema, UserSchema, \
+    OutcomeSchema, AlignmentSchema, OutcomeResultSchema
 
 # ============================================
 # Logging
@@ -79,7 +80,6 @@ def launch(lti=lti):
             User.id == session['user_id']).with_entities(User.id,
                                                          User.name).all()
         session["users"] = [dict(zip(['id', 'name'], users[0]))]
-
 
         return redirect(
             url_for('student_dashboard', user_id=session['user_id']))
@@ -217,7 +217,10 @@ def datetimeformat(value, format='%m-%d-%Y'):
 def make_shell_context():
     return dict(db=db, Outcome=Outcome, OutcomeAverage=OutcomeAverage,
                 Course=Course, Record=Record, Grade=Grade, User=User,
-                UserSchema=UserSchema, GradeSchema=GradeSchema)
+                UserSchema=UserSchema, GradeSchema=GradeSchema,
+                Alignment=Alignment, OutcomeResult=OutcomeResult,
+                OutcomeSchema=OutcomeSchema, OutcomeResultSchema=OutcomeResultSchema,
+                AlignmentSchema=AlignmentSchema)
 
 
 if __name__ == '__main__':

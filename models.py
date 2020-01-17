@@ -40,17 +40,6 @@ class OutcomeAverage(db.Model):
         return str(self.__dict__)
 
 
-class Outcome(db.Model):
-    __tablename__ = 'outcomes'
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String, nullable=False)
-    display_name = db.Column(db.String)
-    outcome_averages = db.relationship('OutcomeAverage', backref='outcome')
-
-    def __repr__(self):
-        return str(self.__dict__)
-
-
 class Grade(db.Model):
     __tablename__ = 'grades'
     id = db.Column(db.Integer, primary_key=True)
@@ -79,6 +68,38 @@ class User(db.Model):
         return f'Name: {self.name}'
 
 
+class OutcomeResult(db.Model):
+    __tablename__ = 'outcome_results'
+    id = db.Column(db.Integer, primary_key=True)
+    score = db.Column(db.Float)
+    course_id = db.Column(db.Integer)
+    user_id = db.Column(db.Integer)
+    outcome_id = db.Column(db.Integer, db.ForeignKey('outcomes.id'))
+    alignment_id = db.Column(db.String, db.ForeignKey('alignments.id'))
+    submitted_or_assessed_at = db.Column(db.DateTime)
+    last_updated = db.Column(db.DateTime)
+
+
+class Outcome(db.Model):
+    __tablename__ = 'outcomes'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String, nullable=False)
+    display_name = db.Column(db.String)
+    outcome_averages = db.relationship('OutcomeAverage', backref='outcome')
+    outcome_results = db.relationship('OutcomeResult', backref='outcome')
+
+    def __repr__(self):
+        return str(self.__dict__)
+
+
+class Alignment(db.Model):
+    __tablename__ = 'alignments'
+    id = db.Column(db.String, primary_key=True)
+    name = db.Column(db.String)
+
+    outcome_results = db.relationship('OutcomeResult', backref='alignment')
+
+
 class GradeSchema(ma.Schema):
     class Meta:
         # Need to update with relevant fields
@@ -91,6 +112,25 @@ class UserSchema(ma.Schema):
 
     grades = ma.Nested(GradeSchema, many=True)
 
+
+class OutcomeSchema(ma.ModelSchema):
+    class Meta:
+        fields = ('title', 'id', 'display_name')
+
+
+class AlignmentSchema(ma.ModelSchema):
+    class Meta:
+        fields = ('id', 'name')
+
+
+class OutcomeResultSchema(ma.ModelSchema):
+    class Meta:
+        model = OutcomeResult
+
+    outcome = ma.Nested(OutcomeSchema)
+    alignment = ma.Nested(AlignmentSchema)
+
+
 users = User.query.all()
 user_schema = UserSchema()
 user_schema.dump(users[5])
@@ -99,3 +139,6 @@ grades = Grade.query.limit(10)
 grade_schema = GradeSchema()
 grade_schema.dump(grades[3])
 
+outcome = OutcomeResult.query.first()
+res_schema = OutcomeResultSchema()
+res_schema.dump(outcome)

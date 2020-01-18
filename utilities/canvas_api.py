@@ -108,7 +108,7 @@ def create_outcome_dataframes(course, user_ids=None):
     # Pagination
     while response.links.get('next'):
         url = response.links['next']['url']
-        response = requests.request("GET", url, headers=headersg)
+        response = requests.request("GET", url, headers=headers)
         data = response.json()
         outcome_results = pd.concat(
             [outcome_results, json_normalize(data['outcome_results'])])
@@ -173,3 +173,14 @@ def get_observees(user_id):
     response = requests.request("GET", url, headers=headers)
 
     return response
+
+
+def get_user_courses(user_id):
+    url = f"https://dtechhs.instructure.com/api/v1/users/{user_id}/courses"
+    querystring = {"enrollment_type[]": "student",
+                   "per_page": "100"}
+    courses = requests.request("GET", url, headers=headers).json()
+    keys = ['id', 'name', 'enrollment_term_id']
+    # courses = [{key: course[key] for key in keys} for course in courses]
+    return courses
+

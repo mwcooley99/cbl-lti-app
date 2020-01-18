@@ -1,6 +1,8 @@
 from flask import Flask, render_template, session, request, Response, \
     url_for, redirect
 
+import json
+
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 
@@ -10,7 +12,7 @@ import settings
 import logging
 
 from utilities.cbl_calculator import calculation_dictionaries
-from utilities.canvas_api import get_course_users, get_observees
+from utilities.canvas_api import get_course_users, get_observees, get_user_courses
 
 from logging.handlers import RotatingFileHandler
 
@@ -108,24 +110,29 @@ def student_dashboard(lti=lti, user_id=None):
 
     if user_id:  # Todo - this probably isn't needed
         # check user is NOT authorized to access this file
-
         auth_users_id = [user['id'] for user in session['users']]
         if not (int(user_id) in auth_users_id):
             return "You are not authorized to view this users information"
 
-        # Get current Grades
-        grades = Grade.query.filter_by(record_id=record.id,
-                                       user_id=user_id).join(Course).filter(
-            ~Course.name.contains('@dtech')).order_by(Course.name).all()
+        # Get current courses
+        courses = get_user_courses(user_id)
+        print(json.dumps(courses, indent=2))
 
-        # Create dictionary with outcome details
-        outcome_details = [grade.__dict__['outcomes'] for grade in grades]
+        # # Get current Grades
+        # grades = Grade.query.filter_by(record_id=record.id,
+        #                                user_id=user_id).join(Course).filter(
+        #     ~Course.name.contains('@dtech')).order_by(Course.name).all()
+        #
+        # # Create dictionary with outcome details
+        # outcome_details = [grade.__dict__['outcomes'] for grade in grades]
 
-        if grades:
-            return render_template('student_dashboard.html', record=record,
-                                   students=session['users'], grades=grades,
-                                   calculation_dict=calculation_dictionaries,
-                                   outcomes=outcome_details)
+        # if grades:
+        #     return render_template('student_dashboard.html', record=record,
+        #                            students=session['users'], grades=grades,
+        #                            calculation_dict=calculation_dictionaries,
+        #                            outcomes=outcome_details)
+        if courses:
+            return render_template('student_dashboard_v2.html', courses=courses)
 
     return "You currently don't have any grades!"
 

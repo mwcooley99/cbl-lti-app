@@ -4,13 +4,21 @@
         <p>
             <small>Data last updated: {{ record.created_at|strftime }}</small>
         </p>
+        <div id="toolbar">
+
+            <button id="button2" class="btn btn-secondary">collapseAllRows
+            </button>
+        </div>
+{#        <table id="courseTable"></table>#}
+                <table id="outcomesTable"></table>
         <div class="form-group row">
             <div class="col-6">
                 <input id="myInput" class="form-control" type="text"
                        placeholder="Search..">
             </div>
             <div class="col-6">
-                <div class="btn-toolbar mb-3 justify-content-center" role="toolbar"
+                <div class="btn-toolbar mb-3 justify-content-center"
+                     role="toolbar"
                      aria-label="Toolbar with button groups">
                     <h4 class="mr-3">Filter by Grade: </h4>
                     <div class="btn-group" role="group"
@@ -161,6 +169,25 @@
             </div>
         </div>
     </div>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        var $courseTable = $('#courseTable');
+        var $button2 = $('#button2');
+        $(function () {
+            var data = {{ grades_dict|tojson|safe }};
+            console.log(data);
+            makeCourseTable(data);
+            makeMasteryTable(data);
+
+        });
+        $(function () {
+            $.getJSON("{{ url_for('serve_json') }}", function (result) {
+                console.log(result);
+            });
+        });
+
+
+    </script>
 
 
 {% endblock %}

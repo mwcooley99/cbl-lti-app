@@ -180,9 +180,11 @@ def course_dashboard(lti=lti):
         .filter(Course.id == session['course_id']).join(User).order_by(
         User.name).all()
 
+    grades_dict = [grade.to_dict() for grade in grades]
+
     return render_template('course_dashboard.html', students=grades,
                            calculation_dict=calculation_dictionaries,
-                           record=record)
+                           record=record, grades_dict=grades_dict)
 
 
 def format_users(users):

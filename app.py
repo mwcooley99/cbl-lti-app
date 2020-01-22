@@ -1,5 +1,7 @@
 from flask import Flask, render_template, session, request, Response, \
-    url_for, redirect
+    url_for, redirect, jsonify
+
+from flask_restful import Resource, Api
 
 import json
 
@@ -10,9 +12,12 @@ from pylti.flask import lti
 
 import settings
 import logging
+import requests
+import os
 
 from utilities.cbl_calculator import calculation_dictionaries
-from utilities.canvas_api import get_course_users, get_observees, get_user_courses
+from utilities.canvas_api import get_course_users, get_observees, \
+    get_user_courses
 
 from logging.handlers import RotatingFileHandler
 
@@ -22,6 +27,7 @@ app.config.from_object(settings.configClass)
 
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
+api = Api(app)
 
 from models import Record, OutcomeAverage, Course, Grade, User, \
     OutcomeResult, Outcome, Alignment, GradeSchema, UserSchema, \
@@ -116,23 +122,30 @@ def student_dashboard(lti=lti, user_id=None):
 
         # Get current courses
         courses = get_user_courses(user_id)
-        print(json.dumps(courses, indent=2))
 
-        # # Get current Grades
-        # grades = Grade.query.filter_by(record_id=record.id,
-        #                                user_id=user_id).join(Course).filter(
-        #     ~Course.name.contains('@dtech')).order_by(Course.name).all()
-        #
-        # # Create dictionary with outcome details
-        # outcome_details = [grade.__dict__['outcomes'] for grade in grades]
 
-        # if grades:
-        #     return render_template('student_dashboard.html', record=record,
-        #                            students=session['users'], grades=grades,
-        #                            calculation_dict=calculation_dictionaries,
-        #                            outcomes=outcome_details)
-        if courses:
-            return render_template('student_dashboard_v2.html', courses=courses)
+        # Get student
+        user = User.query.filter(User.id == user_id).first()
+
+        # Get current Grades
+        grades = Grade.query.filter_by(record_id=record.id,
+                                       user_id=user_id).join(Course).filter(
+            ~Course.name.contains('@dtech')).order_by(Course.name).all()
+
+        grade_schema = GradeSchema()
+        grades = grade_schema.dump(grades, many=True)
+
+
+        # Create dictionary with outcome details
+        outcome_details = [grade['outcomes'] for grade in grades]
+        if grades:
+            return render_template('student_dashboard.html', record=record, user=user,
+                                   students=session['users'], grades=grades,
+                                   calculation_dict=calculation_dictionaries,
+                                   outcomes=outcome_details)
+        # if courses:
+        #     return render_template('student_dashboard_v2.html',
+        #                            courses=courses)
 
     return "You currently don't have any grades!"
 
@@ -217,6 +230,18 @@ def xml():
             please contact support.''')
 
 
+@app.route('/api/course/<course_id>/outcome_results', methods=['GET'])
+@lti(error=error, request='session', app=app)
+def api_course(course_id, lti=lti):
+    if request.args.get('user_id'):
+        print("Hello")
+    results = OutcomeResult.query.filter(OutcomeResult.course_id == int(course_id)).all()
+    res_schema = OutcomeResultSchema()
+
+    return jsonify(res_schema.dump(results, many=True))
+
+
+
 @app.template_filter('strftime')
 def datetimeformat(value, format='%m-%d-%Y'):
     return value.strftime(format)
@@ -228,7 +253,8 @@ def make_shell_context():
                 Course=Course, Record=Record, Grade=Grade, User=User,
                 UserSchema=UserSchema, GradeSchema=GradeSchema,
                 Alignment=Alignment, OutcomeResult=OutcomeResult,
-                OutcomeSchema=OutcomeSchema, OutcomeResultSchema=OutcomeResultSchema,
+                OutcomeSchema=OutcomeSchema,
+                OutcomeResultSchema=OutcomeResultSchema,
                 AlignmentSchema=AlignmentSchema)
 
 

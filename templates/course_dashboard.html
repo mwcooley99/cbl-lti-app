@@ -9,165 +9,197 @@
             <button id="button2" class="btn btn-secondary">collapseAllRows
             </button>
         </div>
-{#        <table id="courseTable"></table>#}
+        <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="pills-home-tab"
+                   data-toggle="pill" href="#pills-home" role="tab"
+                   aria-controls="pills-home" aria-selected="true">Home</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="pills-profile-tab" data-toggle="pill"
+                   href="#pills-profile" role="tab"
+                   aria-controls="pills-profile"
+                   aria-selected="false">Profile</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="pills-contact-tab" data-toggle="pill"
+                   href="#pills-contact" role="tab"
+                   aria-controls="pills-contact"
+                   aria-selected="false">Contact</a>
+            </li>
+        </ul>
+        <div class="tab-content" id="pills-tabContent">
+            <div class="tab-pane fade show active" id="pills-home"
+                 role="tabpanel" aria-labelledby="pills-home-tab">
+                        <table id="courseTable"></table>
+            </div>
+            <div class="tab-pane fade" id="pills-profile" role="tabpanel"
+                 aria-labelledby="pills-profile-tab">
                 <table id="outcomesTable"></table>
-        <div class="form-group row">
-            <div class="col-6">
-                <input id="myInput" class="form-control" type="text"
-                       placeholder="Search..">
             </div>
-            <div class="col-6">
-                <div class="btn-toolbar mb-3 justify-content-center"
-                     role="toolbar"
-                     aria-label="Toolbar with button groups">
-                    <h4 class="mr-3">Filter by Grade: </h4>
-                    <div class="btn-group" role="group"
-                         aria-label="Basic example">
-
-                        <button type="button" class="btn btn-secondary"
-                                id="all">All
-                        </button>
-                        <button type="button" class="btn btn-secondary" id="A">
-                            A
-                        </button>
-                        <button type="button" class="btn btn-secondary" id="B">
-                            B
-                        </button>
-                        <button type="button" class="btn btn-secondary" id="C">
-                            C
-                        </button>
-                        <button type="button" class="btn btn-secondary" id="I">
-                            I
-                        </button>
-
-                    </div>
-                </div>
+            <div class="tab-pane fade" id="pills-contact" role="tabpanel"
+                 aria-labelledby="pills-contact-tab">...
             </div>
         </div>
-        <div id="accordion">
-            <div class="d-inline-flex flex-wrap justify-content-around">
 
-                {% for grade in students %}
-                    <div class="card m-1 align-self-start student-card {{ grade.grade[0] }}"
-                         style="width: 30rem;">
-                        <div class="card-body">
-                            <h5 class="card-title"><span
-                                    class="student-name">{{ grade.user.name }}</span>: {{ grade.grade }}
-                            </h5>
-                            <a href="#explanation{{ loop.index }}"
-                               class="card-link"
-                               data-toggle="collapse">Grade Explanation</a>
-                            <a href="#outcomes{{ loop.index }}"
-                               class="card-link"
-                               data-toggle="collapse">Outcomes</a>
-                        </div>
-                        <div class="collapse" id="explanation{{ loop.index }}"
-                             data-parent="#accordion">
-                            <div class="card-body">
 
-                                <p>The following table is how your outcome
-                                    Averages are converted into a Letter Grade.
-                                </p>
-                                <p class="font-weight-light">
-                                    Please note that both Criteria 1 and 2 must
-                                    be met to earn that letter Grade.
-                                </p>
-                                <table class="table table-bordered table-sm grade-table">
-                                    <thead class="text-center align-text-top">
-                                    <tr>
-                                        <th>Letter Grade</th>
-                                        <th>
-                                            Criteria 1 <br>
-                                            <div class="font-weight-light">75%
-                                                of Outcome Averages Equal to or
-                                                Above:
-                                            </div>
-                                        </th>
-                                        <th>
-                                            Criteria 2 <br>
-                                            <div class="font-weight-light">No
-                                                Outcome Average Below:
-                                            </div>
-                                        </th>
-                                    </tr>
-                                    </thead>
-                                    <tbody class="text-center">
-                                    {% for level in calculation_dict %}
-                                        {% if level.grade == grade.grade %}
-                                            <tr class="table-success">
-                                                {% else %}
-                                            <tr>
-                                        {% endif %}
-                                    <td>{{ level.grade }}</td>
-                                    <td>{{ level.threshold }}</td>
-                                    <td>{{ level.min_score }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                    <tr class="your-results">
-                                        <th>Your results</th>
-                                        <td>
-                                            <strong>{{ grade.threshold }}</strong>
-                                        </td>
-                                        <td>
-                                            <strong>{{ grade.min_score }}</strong>
-                                        </td>
-                                    </tr>
-                                    </tbody>
-                                </table>
-
-                            </div>
-                        </div>
-                        <div class="collapse" id="outcomes{{ loop.index }}"
-                             data-parent="#accordion">
-                            <div class="card-header"><h4>Outcome
-                                Averages</h4></div>
-                            <div class="card-body">
-                                <div>
-                                    <table class="table">
-                                        <thead>
-                                        <tr class="d-flex">
-                                            <th class="col-8">Outcome</th>
-                                            <th class="text-center col-4">
-                                                Outcome
-                                                Average
-                                            </th>
-                                        </tr>
-                                        </thead>
-
-                                        <tbody>
-                                        {% for outcome_average in grade.outcomes %}
-                                            <tr class="d-flex">
-                                                {# Use display name if it's available #}
-                                                {% if outcome_average.display_name %}
-                                                    <td scope="row"
-                                                        class="col-8">
-                                                        {{ outcome_average.display_name }}
-                                                    </td>
-                                                {% else %}
-                                                    <td scope="row"
-                                                        class="col-8">
-                                                        {{ outcome_average.title }}
-                                                    </td>
-                                                {% endif %}
-                                                {#                                     Only display the outcome_avg if outcome's have been assessed.#}
-                                                {% if outcome_average.outcome_avg > 0 %}
-                                                    <td class="text-center col-4">
-                                                        {{ outcome_average.outcome_avg }}
-                                                    </td>
-                                                {% endif %}
-                                            </tr>
-                                        {% endfor %}
-                                        </tbody>
-
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                {% endfor %}
-            </div>
-        </div>
+        {#        <div class="form-group row">#}
+        {#            <div class="col-6">#}
+        {#                <input id="myInput" class="form-control" type="text"#}
+        {#                       placeholder="Search..">#}
+        {#            </div>#}
+        {#            <div class="col-6">#}
+        {#                <div class="btn-toolbar mb-3 justify-content-center"#}
+        {#                     role="toolbar"#}
+        {#                     aria-label="Toolbar with button groups">#}
+        {#                    <h4 class="mr-3">Filter by Grade: </h4>#}
+        {#                    <div class="btn-group" role="group"#}
+        {#                         aria-label="Basic example">#}
+        {##}
+        {#                        <button type="button" class="btn btn-secondary"#}
+        {#                                id="all">All#}
+        {#                        </button>#}
+        {#                        <button type="button" class="btn btn-secondary" id="A">#}
+        {#                            A#}
+        {#                        </button>#}
+        {#                        <button type="button" class="btn btn-secondary" id="B">#}
+        {#                            B#}
+        {#                        </button>#}
+        {#                        <button type="button" class="btn btn-secondary" id="C">#}
+        {#                            C#}
+        {#                        </button>#}
+        {#                        <button type="button" class="btn btn-secondary" id="I">#}
+        {#                            I#}
+        {#                        </button>#}
+        {##}
+        {#                    </div>#}
+        {#                </div>#}
+        {#            </div>#}
+        {#        </div>#}
+        {#        <div id="accordion">#}
+        {#            <div class="d-inline-flex flex-wrap justify-content-around">#}
+        {##}
+        {#                {% for grade in students %}#}
+        {#                    <div class="card m-1 align-self-start student-card {{ grade.grade[0] }}"#}
+        {#                         style="width: 30rem;">#}
+        {#                        <div class="card-body">#}
+        {#                            <h5 class="card-title"><span#}
+        {#                                    class="student-name">{{ grade.user.name }}</span>: {{ grade.grade }}#}
+        {#                            </h5>#}
+        {#                            <a href="#explanation{{ loop.index }}"#}
+        {#                               class="card-link"#}
+        {#                               data-toggle="collapse">Grade Explanation</a>#}
+        {#                            <a href="#outcomes{{ loop.index }}"#}
+        {#                               class="card-link"#}
+        {#                               data-toggle="collapse">Outcomes</a>#}
+        {#                        </div>#}
+        {#                        <div class="collapse" id="explanation{{ loop.index }}"#}
+        {#                             data-parent="#accordion">#}
+        {#                            <div class="card-body">#}
+        {##}
+        {#                                <p>The following table is how your outcome#}
+        {#                                    Averages are converted into a Letter Grade.#}
+        {#                                </p>#}
+        {#                                <p class="font-weight-light">#}
+        {#                                    Please note that both Criteria 1 and 2 must#}
+        {#                                    be met to earn that letter Grade.#}
+        {#                                </p>#}
+        {#                                <table class="table table-bordered table-sm grade-table">#}
+        {#                                    <thead class="text-center align-text-top">#}
+        {#                                    <tr>#}
+        {#                                        <th>Letter Grade</th>#}
+        {#                                        <th>#}
+        {#                                            Criteria 1 <br>#}
+        {#                                            <div class="font-weight-light">75%#}
+        {#                                                of Outcome Averages Equal to or#}
+        {#                                                Above:#}
+        {#                                            </div>#}
+        {#                                        </th>#}
+        {#                                        <th>#}
+        {#                                            Criteria 2 <br>#}
+        {#                                            <div class="font-weight-light">No#}
+        {#                                                Outcome Average Below:#}
+        {#                                            </div>#}
+        {#                                        </th>#}
+        {#                                    </tr>#}
+        {#                                    </thead>#}
+        {#                                    <tbody class="text-center">#}
+        {#                                    {% for level in calculation_dict %}#}
+        {#                                        {% if level.grade == grade.grade %}#}
+        {#                                            <tr class="table-success">#}
+        {#                                                {% else %}#}
+        {#                                            <tr>#}
+        {#                                        {% endif %}#}
+        {#                                    <td>{{ level.grade }}</td>#}
+        {#                                    <td>{{ level.threshold }}</td>#}
+        {#                                    <td>{{ level.min_score }}</td>#}
+        {#                                    </tr>#}
+        {#                                    {% endfor %}#}
+        {#                                    <tr class="your-results">#}
+        {#                                        <th>Your results</th>#}
+        {#                                        <td>#}
+        {#                                            <strong>{{ grade.threshold }}</strong>#}
+        {#                                        </td>#}
+        {#                                        <td>#}
+        {#                                            <strong>{{ grade.min_score }}</strong>#}
+        {#                                        </td>#}
+        {#                                    </tr>#}
+        {#                                    </tbody>#}
+        {#                                </table>#}
+        {##}
+        {#                            </div>#}
+        {#                        </div>#}
+        {#                        <div class="collapse" id="outcomes{{ loop.index }}"#}
+        {#                             data-parent="#accordion">#}
+        {#                            <div class="card-header"><h4>Outcome#}
+        {#                                Averages</h4></div>#}
+        {#                            <div class="card-body">#}
+        {#                                <div>#}
+        {#                                    <table class="table">#}
+        {#                                        <thead>#}
+        {#                                        <tr class="d-flex">#}
+        {#                                            <th class="col-8">Outcome</th>#}
+        {#                                            <th class="text-center col-4">#}
+        {#                                                Outcome#}
+        {#                                                Average#}
+        {#                                            </th>#}
+        {#                                        </tr>#}
+        {#                                        </thead>#}
+        {##}
+        {#                                        <tbody>#}
+        {#                                        {% for outcome_average in grade.outcomes %}#}
+        {#                                            <tr class="d-flex">#}
+        {# Use display name if it's available #}
+        {#                                                {% if outcome_average.display_name %}#}
+        {#                                                    <td scope="row"#}
+        {#                                                        class="col-8">#}
+        {#                                                        {{ outcome_average.display_name }}#}
+        {#                                                    </td>#}
+        {#                                                {% else %}#}
+        {#                                                    <td scope="row"#}
+        {#                                                        class="col-8">#}
+        {#                                                        {{ outcome_average.title }}#}
+        {#                                                    </td>#}
+        {#                                                {% endif %}#}
+        {#                                     Only display the outcome_avg if outcome's have been assessed.#}
+        {#                                                {% if outcome_average.outcome_avg > 0 %}#}
+        {#                                                    <td class="text-center col-4">#}
+        {#                                                        {{ outcome_average.outcome_avg }}#}
+        {#                                                    </td>#}
+        {#                                                {% endif %}#}
+        {#                                            </tr>#}
+        {#                                        {% endfor %}#}
+        {#                                        </tbody>#}
+        {##}
+        {#                                    </table>#}
+        {#                                </div>#}
+        {#                            </div>#}
+        {#                        </div>#}
+        {#                    </div>#}
+        {##}
+        {#                {% endfor %}#}
+        {#            </div>#}
+        {#        </div>#}
     </div>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script>
@@ -179,11 +211,6 @@
             makeCourseTable(data);
             makeMasteryTable(data);
 
-        });
-        $(function () {
-            $.getJSON("{{ url_for('serve_json') }}", function (result) {
-                console.log(result);
-            });
         });
 
 

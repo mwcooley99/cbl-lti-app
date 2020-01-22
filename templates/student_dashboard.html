@@ -20,7 +20,7 @@
                                         data-toggle="dropdown"
                                         aria-haspopup="true"
                                         aria-expanded="false">
-                                    {{ grades[0].user.name }}
+                                    {{ user.name }}
                                 </button>
                                 <div class="dropdown-menu dropdown-menu-lg-right scrollable-menu"
                                      aria-labelledby="dropdownMenuButton">
@@ -31,7 +31,7 @@
                                 </div>
                             </div>
                         {% else %}
-                            <h5>{{ grades[0].user.name }}</h5>
+                            <h5>{{ user.name }}</h5>
 
                         {% endif %}
                         {#                    End dropdown #}

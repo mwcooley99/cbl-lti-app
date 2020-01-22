@@ -58,12 +58,12 @@ class Grade(db.Model):
         '''
         d = {k: v for k, v in self.__dict__.items() if not k.startswith('_')}
 
-        d['user'] = {k: v for k, v in self.user.__dict__.items() if not k.startswith('_')}
+        d['user'] = {k: v for k, v in self.user.__dict__.items() if
+                     not k.startswith('_')}
         # del d['_sa_instance_state']
         # del d['user']['_sa_instance_state']
 
-
-        return(d)
+        return (d)
 
     def __repr__(self):
         return str(self.__dict__)
@@ -114,17 +114,24 @@ class Alignment(db.Model):
     outcome_results = db.relationship('OutcomeResult', backref='alignment')
 
 
-class GradeSchema(ma.Schema):
+class CourseSchema(ma.Schema):
     class Meta:
-        # Need to update with relevant fields
-        fields = ('id', 'course_id', 'grade', 'outcomes')
+        fields = ('id', 'name', 'enrollment_term_id')
 
 
 class UserSchema(ma.Schema):
     class Meta:
-        fields = ('id', 'name', 'sis_user_id', 'login_id', 'grades')
+        fields = ('id', 'name', 'sis_user_id', 'login_id')
 
-    grades = ma.Nested(GradeSchema, many=True)
+
+class GradeSchema(ma.Schema):
+    class Meta:
+        # Need to update with relevant fields
+        fields = (
+        'id', 'course_id', 'grade', 'outcomes', 'course', 'record_id', 'user')
+
+    course = ma.Nested(CourseSchema)
+    user = ma.Nested(UserSchema)
 
 
 class OutcomeSchema(ma.ModelSchema):

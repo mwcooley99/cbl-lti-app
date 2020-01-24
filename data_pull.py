@@ -20,6 +20,8 @@ OUTCOMES_TO_FILTER = (
     2269, 2270, 2923, 2922, 2732,
     2733)
 
+CUTOFF_DATE = datetime(2020, 1, 1)
+
 
 def make_grade_object(grade, outcome_avgs, record_id, course, user_id):
     '''
@@ -181,50 +183,43 @@ def pull_outcome_results(current_term=10):
 def insert_grades(current_term=10):
     print(f'Grade pull started at {datetime.now()}')
     outcome_results = query_current_outcome_results(current_term)
-    outcome_results['submitted_or_assessed_at'] = outcome_results[
-        'submitted_or_assessed_at'].dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
+    # rank the outcomes
+    group_cols = ['links.user', 'course_id', 'outcome_id']
+    outcome_results['drop_eligible_scores'] = outcome_results.where(
+        outcome_results['submitted_or_assessed_at'] > CUTOFF_DATE)['score']
+    outcome_results['rank'] = outcome_results.groupby(group_cols)[
+        'drop_eligible_scores'].rank('min')
+    outcome_results.to_csv('out/os.csv')
     # Create outcomes df
     outcome_cols = ['outcome_id', 'title', 'display_name']
     outcomes = outcome_results[outcome_cols].drop_duplicates()
 
+    unfiltered_avgs = calc_outcome_avgs(outcome_results)
+    unfiltered_avgs.to_csv('out/res.csv')
+    return None
+
+    # add outcome metadata back in
+    unfiltered_avgs = pd.merge(unfiltered_avgs, outcomes, how='left',
+                               on='outcome_id')
+
+    # Convert datetime to string for serializtion into dictionaries
+    outcome_results['submitted_or_assessed_at'] = outcome_results[
+        'submitted_or_assessed_at'].dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+
     # Create outcome_results dictionaries (alignments)
+
     group_cols = ['links.user', 'course_id', 'outcome_id']
     align_cols = ['name', 'score', 'submitted_or_assessed_at']
     unfiltered_alignment_dict = outcome_results.groupby(group_cols)[
         align_cols].apply(lambda x: x.sort_values('submitted_or_assessed_at',
                                                   ascending=False).to_dict(
         'r')).reset_index().rename(columns={0: 'alignments'})
-    filtered_alignment_dict = outcome_results.loc[
-        ~outcome_results['outcome_id'].isin(OUTCOMES_TO_FILTER)].groupby(
-        group_cols)[align_cols].apply(
-        lambda x: x.sort_values('submitted_or_assessed_at',
-                                ascending=False).to_dict(
-            'r')).reset_index().rename(columns={0: 'alignments'})
-
-    # make outcome averages df
-    outcome_results['score_int'] = list(
-        zip(outcome_results['score'],
-            outcome_results['calculation_int'],
-            outcome_results['outcome_id']))
-    unfiltered_avgs = calc_outcome_avgs(outcome_results)
-
-    # add outcome metadata back in
-    unfiltered_avgs = pd.merge(unfiltered_avgs, outcomes, how='left',
-                               on='outcome_id')
-
-    # Filter out unwanted success skills
-    filtered_avgs = unfiltered_avgs.loc[
-        ~unfiltered_avgs['outcome_id'].isin(
-            OUTCOMES_TO_FILTER)]
 
     # Merge alignments with outcome_averages
     merge_cols = ['links.user', 'course_id', 'outcome_id']
-
     unfiltered_avgs = pd.merge(unfiltered_avgs, unfiltered_alignment_dict,
                                how='left', on=merge_cols)
-    filtered_avgs = pd.merge(filtered_avgs, filtered_alignment_dict,
-                             how='left', on=merge_cols)
 
     # Create outcome_avg dfs with dictionaries
     group_cols = ['links.user', 'course_id']
@@ -291,111 +286,6 @@ def insert_grades(current_term=10):
         insert_grades_to_db(grades_list)
 
 
-# todo - remove
-# def make_grades_list(course, record_id):
-#     '''
-#     Creates list of student grades for a given course
-#     :param course: Course dictionary
-#     :param record_id: Current record ID
-#     :return:
-#     '''
-#     grades_list = []
-#     students = get_course_users_ids(course)
-#
-#     for student_num, student in enumerate(students):
-#
-#         # If @dtech, fill with empty grades - Todo refactor
-#         if re.match('@dtech', course['name']):
-#             make_empty_grade(course, grades_list, record_id, student)
-#             continue
-#
-#         outcome_results, alignments, outcomes = create_outcome_dataframes(
-#             course, student)
-#
-#         # Check if outcome_results are empty. If so make an empty grade object
-#         if len(outcome_results) == 0:
-#             make_empty_grade(course, grades_list, record_id, student)
-#             continue
-#
-#         # Drop blank scores
-#         outcome_results = outcome_results.dropna(subset=['score'])
-#
-#         # Check if outcome_results are empty. If so make an empty grade object
-#         if len(outcome_results) == 0:
-#             make_empty_grade(course, grades_list, record_id, student)
-#             continue
-#
-#         # Clean up the format of the outcome_results
-#         outcome_results = format_outcome_results(outcome_results)
-#
-#         # clean up titles of the outcomes metadata
-#         outcomes = format_outcomes(outcomes)
-#
-#         # merge outcome data and create decaying average meta column and alignments
-#         outcome_results = add_outcome_meta(outcome_results, outcomes,
-#                                            alignments)
-#
-#         # Calculate outcome averages using simple and weighted averages
-#         unfiltered_outcome_averages = calc_outcome_avgs(outcome_results,
-#                                                         ).round(2)
-#
-#         # Outcomes with unwanted outcomes filtered out.
-#         filtered_outcomes = (
-#             2269, 2270, 2923, 2922, 2732,
-#             2733)  # TODO - make a constant at the top of script
-#         filtered_outcome_averages = unfiltered_outcome_averages.loc[
-#             ~unfiltered_outcome_averages['outcome_id'].isin(
-#                 filtered_outcomes)]
-#
-#         # Calculate grades
-#         filtered_grade = calculate_traditional_grade(
-#             filtered_outcome_averages['outcome_avg'])
-#         unfiltered_grade = calculate_traditional_grade(
-#             unfiltered_outcome_averages['outcome_avg'])
-#
-#         # Pick the higher of the two
-#         if filtered_grade[1] < unfiltered_grade[1]:
-#             final_grade = filtered_grade[0]
-#             final_outcome_avg = filtered_outcome_averages
-#         else:
-#             final_grade = unfiltered_grade[0]
-#             final_outcome_avg = unfiltered_outcome_averages
-#
-#         # merge the outcome_results with the final outcome_avg
-#         group_cols = ['outcome_id', 'outcome_avg']
-#
-#         outcome_results = pd.merge(outcome_results,
-#                                    final_outcome_avg[group_cols], how='inner',
-#                                    on='outcome_id',
-#                                    suffixes=('_results', '_avg'))
-#         outcome_results = outcome_results.sort_values(
-#             ['outcome_id', 'submitted_or_assessed_at'], ascending=False)
-#
-#         group_cols = ['outcome_id', 'outcome_avg', 'title']
-#         cols = ['name', 'links.alignment', 'score', 'submitted_or_assessed_at']
-#         outcome_avg_dict = pd.DataFrame(
-#             outcome_results.groupby(group_cols)[cols].apply(
-#                 lambda x: x.to_dict('records'))).reset_index()
-#
-#         outcomes_merge = outcomes[['outcome_id', 'display_name']]
-#
-#         outcome_avg_dict = pd.merge(outcome_avg_dict, outcomes_merge,
-#                                     how='left', on='outcome_id')
-#
-#         outcome_avg_dict = outcome_avg_dict.rename(
-#             columns={0: "alignments"}).sort_values('outcome_avg',
-#                                                    ascending=False).to_dict(
-#             'records')
-#
-#         # create grade object
-#         grade = make_grade_object(final_grade, outcome_avg_dict, record_id,
-#                                   course, student)
-#
-#         grades_list.append(grade)
-#
-#     return grades_list
-
-
 def calc_outcome_avgs(outcome_results):
     '''
     Calculates outcome averages with both simple and weighted averages,
@@ -405,16 +295,23 @@ def calc_outcome_avgs(outcome_results):
     '''
 
     group_cols = ['links.user', 'outcome_id', 'course_id']
-    outcome_averages = outcome_results.sort_values(
-        ['links.user', 'outcome_id',
-         'submitted_or_assessed_at']) \
-        .groupby(group_cols).agg(
-        {'score': 'mean', 'score_int': weighted_avg})
-    outcome_averages = outcome_averages.reset_index()
+
+    # Calculate the average with and without dropping the low score
+    no_drop_avg = outcome_results.groupby(group_cols).agg(
+        score=('score', 'mean')).reset_index()
+    outcome_results_drop_min = outcome_results[outcome_results['rank'] != 1.0]
+    print(outcome_results['rank'].unique())
+    print(outcome_results_drop_min.shape)
+    drop_avg = outcome_results_drop_min.groupby(
+        group_cols).agg(drop_score=('score', 'mean')).reset_index()
+
+    outcome_averages = pd.merge(no_drop_avg, drop_avg, on=group_cols)
+
     outcome_averages['outcome_avg'] = outcome_averages[
-        ['score', 'score_int']].max(axis=1).round(2)
-    # TODO - REMOVE - THIS IS FOR TESTING PURPOSES - JUST TAKING THE SIMPLE AVG
-    # outcome_averages['outcome_avg'] = outcome_averages['score']
+        ['score', 'drop_score']].max(axis=1).round(2)
+    outcome_averages['drop_min'] = np.where(
+        outcome_averages['score'] < outcome_averages['drop_score'],
+        True, False)
 
     return outcome_averages
 
@@ -469,7 +366,7 @@ def format_outcome_results(outcome_results):
 if __name__ == '__main__':
     start = time.time()
 
-    update_users()
+    # update_users()
     # pull_outcome_results()
     insert_grades()
 

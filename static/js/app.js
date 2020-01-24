@@ -184,7 +184,6 @@ function buildSubTable($el, alignments) {
   })
 
 function mcellStyle(value, row, index) {
-    console.log("Hello there!");
     var classes = [
       'bg-blue',
       'bg-green',

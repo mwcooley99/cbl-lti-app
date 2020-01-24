@@ -122,6 +122,13 @@ def upsert_outcome_results(outcome_results):
     session.commit()
 
 
+def delete_outcome_results(course_id):
+    delete_stmt = OutcomeResults.delete().where(
+        OutcomeResults.c.course_id == course_id)
+    session.execute(delete_stmt)
+    session.commit()
+
+
 def create_record(current_term):
     '''
     Creates new record
@@ -170,3 +177,7 @@ def query_current_outcome_results(current_term):
     outcome_results = pd.read_sql(sql, conn)
 
     return outcome_results
+
+
+if __name__ == '__main__':
+    delete_outcome_results(343)

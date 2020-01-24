@@ -9,11 +9,11 @@ import time
 
 from utilities.cbl_calculator import calculate_traditional_grade, weighted_avg
 from utilities.canvas_api import get_courses, get_outcome_results, \
-    get_course_users_ids, create_outcome_dataframes
+    get_course_users_ids, create_outcome_dataframes, get_course_users
 
 from utilities.db_functions import insert_grades_to_db, create_record, \
-    update_users, \
-    upsert_alignments, upsert_outcome_results, upsert_outcomes, upsert_courses, \
+    update_users, delete_outcome_results, upsert_alignments, \
+    upsert_outcome_results, upsert_outcomes, upsert_courses, \
     query_current_outcome_results
 
 OUTCOMES_TO_FILTER = (
@@ -118,6 +118,11 @@ def pull_outcome_results(current_term=10):
 
         outcome_results, alignments, outcomes = get_outcome_results(course)
 
+        # get and format course users
+        course_users = get_course_users(course)
+        course_users = [{'course_id': course['id'], 'user_id': user['id']} for
+                        user in course_users]
+
         # Format results, Removed Null filter (works better for upsert)
         outcome_results = [
             make_outcome_result(outcome_result, course['id'], current_term)
@@ -138,6 +143,8 @@ def pull_outcome_results(current_term=10):
 
         # If there are results to upload
         if outcome_results:
+            print(f'deleting outcome_results for {course["name"]}')
+            delete_outcome_results(course['id'])
             print(f'outcomes results to upload: {len(outcome_results)}')
             upsert_outcome_results(outcome_results)
             print('result upsert complete')
@@ -203,18 +210,16 @@ def insert_grades(current_term=10):
         lambda x: x.sort_values('outcome_avg', ascending=False).to_dict(
             'r')).reset_index().rename(columns={0: 'unfiltered_avgs'})
 
-
     # make grades df
     group_cols = ['links.user', 'course_id']
     unfiltered_grades = unfiltered_avgs.groupby(group_cols).agg(
         {'outcome_avg': calculate_traditional_grade})
     unfiltered_grades.reset_index(inplace=True)
 
-
     # Merge outcome_avg dictionaries
     merge_cols = ['links.user', 'course_id']
-    grades = pd.merge(unfiltered_grades, unfiltered_avg_dict, how='left', on=merge_cols)
-
+    grades = pd.merge(unfiltered_grades, unfiltered_avg_dict, how='left',
+                      on=merge_cols)
 
     # Break up grades into their own columns
     grades[['unfiltered_grades', 'unfiltered_idx']] = pd.DataFrame(
@@ -329,7 +334,8 @@ if __name__ == '__main__':
 
     # update_users()
     # pull_outcome_results()
-    insert_grades()
+    # insert_grades()
+    delete_outcome_results(345)
 
     end = time.time()
     print(f'pull took: {end - start} seconds')

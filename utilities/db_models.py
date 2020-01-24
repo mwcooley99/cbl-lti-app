@@ -69,4 +69,11 @@ Outcomes = Table('outcomes', metadata,
                  Column('calculation_int', Integer, nullable=False)
                  )
 
+CourseUserLink = Table('course_user_link', metadata,
+                       Column('course_id', ForeignKey('courses.id'),
+                              primary_key=True),
+                       Column('user_id',
+                              ForeignKey('users.id'), primary_key=True)
+                       )
+
 metadata.create_all(engine, checkfirst=True)

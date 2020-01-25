@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.sql.expression import bindparam
 
 import pandas as pd
 
@@ -122,6 +123,18 @@ def upsert_outcome_results(outcome_results):
     session.commit()
 
 
+def update_outcome_res_dropped(values):
+    print(values)
+    stmt = OutcomeResults.update(). \
+        where(OutcomeResults.c.id == bindparam('_id')). \
+        values({
+        'dropped': bindparam('dropped'),
+
+    })
+    session.execute(stmt, values)
+    session.commit()
+
+
 def delete_outcome_results(course_id):
     delete_stmt = OutcomeResults.delete().where(
         OutcomeResults.c.course_id == course_id)
@@ -149,13 +162,15 @@ def create_record(current_term):
 
 
 def insert_grades_to_db(grades_list):
+
     session.execute(Grades.insert().values(grades_list))
     session.commit()
 
 
 def query_current_outcome_results(current_term):
     sql = f"""
-            SELECT o_res.user_id AS "links.user", 
+            SELECT o_res.id as "_id",
+                    o_res.user_id AS "links.user", 
                     o_res.score, o.id AS outcome_id, 
                     c.name AS course_name, 
                     c.id AS course_id, 

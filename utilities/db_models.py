@@ -1,7 +1,7 @@
 from sqlalchemy.ext.automap import automap_base
 
 from sqlalchemy import create_engine, Integer, String, Table, Column, MetaData, \
-    ForeignKey, DateTime, Float, JSON
+    ForeignKey, DateTime, Float, JSON, Boolean
 from sqlalchemy.dialects import postgresql
 from config import configuration
 
@@ -54,7 +54,8 @@ OutcomeResults = Table('outcome_results', metadata,
                        Column('submitted_or_assessed_at', DateTime,
                               nullable=False),
                        Column('last_updated', DateTime, nullable=False),
-                       Column('enrollment_term', Integer)
+                       Column('enrollment_term', Integer),
+                       Column('dropped', Boolean)
                        )
 
 Alignments = Table('alignments', metadata,

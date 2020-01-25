@@ -14,7 +14,7 @@ from utilities.canvas_api import get_courses, get_outcome_results, \
 from utilities.db_functions import insert_grades_to_db, create_record, \
     update_users, delete_outcome_results, upsert_alignments, \
     upsert_outcome_results, upsert_outcomes, upsert_courses, \
-    query_current_outcome_results
+    query_current_outcome_results, update_outcome_res_dropped
 
 OUTCOMES_TO_FILTER = (
     2269, 2270, 2923, 2922, 2732,
@@ -118,11 +118,6 @@ def pull_outcome_results(current_term=10):
 
         outcome_results, alignments, outcomes = get_outcome_results(course)
 
-        # get and format course users
-        course_users = get_course_users(course)
-        course_users = [{'course_id': course['id'], 'user_id': user['id']} for
-                        user in course_users]
-
         # Format results, Removed Null filter (works better for upsert)
         outcome_results = [
             make_outcome_result(outcome_result, course['id'], current_term)
@@ -159,12 +154,13 @@ def insert_grades(current_term=10):
     outcome_results = query_current_outcome_results(current_term)
 
     # rank the outcomes
-    group_cols = ['links.user', 'course_id', 'outcome_id']
+    rank_group_cols = ['links.user', 'course_id', 'outcome_id']
     outcome_results['drop_eligible_scores'] = outcome_results.where(
-        outcome_results['submitted_or_assessed_at'] > CUTOFF_DATE)['score']
-    outcome_results['rank'] = outcome_results.groupby(group_cols)[
-        'drop_eligible_scores'].rank('min')
-    outcome_results.to_csv('out/os.csv')
+        outcome_results['submitted_or_assessed_at'] < CUTOFF_DATE)['score']
+
+    outcome_results['rank'] = outcome_results.groupby(rank_group_cols)[
+        'drop_eligible_scores'].rank('first')
+
     # Create outcomes df
     outcome_cols = ['outcome_id', 'title', 'display_name']
     outcomes = outcome_results[outcome_cols].drop_duplicates()
@@ -176,12 +172,15 @@ def insert_grades(current_term=10):
                                on='outcome_id')
 
     # Add column to alignments noting if it was used
-    merge_cols = ['links.user', 'course_id', 'outcome_id']
+    avg_merge_cols = ['links.user', 'course_id', 'outcome_id']
     outcome_results = pd.merge(outcome_results, unfiltered_avgs, how='left',
-                               on=merge_cols)
+                               on=avg_merge_cols)
     outcome_results['dropped'] = np.where(
         (outcome_results['drop_min']) & (outcome_results['rank'] == 1.0), True,
         False)
+
+    dropped_dict = outcome_results[['_id', 'dropped']].to_dict('records')
+    update_outcome_res_dropped(dropped_dict)
 
     # Convert datetime to string for serializtion into dictionaries
     outcome_results['submitted_or_assessed_at'] = outcome_results[
@@ -204,7 +203,7 @@ def insert_grades(current_term=10):
     # Create outcome_avg dfs with dictionaries
     group_cols = ['links.user', 'course_id']
     avg_cols = ['outcome_id', 'outcome_avg', 'title', 'display_name',
-                'alignments']
+                'alignments', 'drop_min']
     # todo - look into a way to do this without the apply (it's slow)
     unfiltered_avg_dict = unfiltered_avgs.groupby(group_cols)[avg_cols].apply(
         lambda x: x.sort_values('outcome_avg', ascending=False).to_dict(
@@ -334,8 +333,8 @@ if __name__ == '__main__':
 
     # update_users()
     # pull_outcome_results()
-    # insert_grades()
-    delete_outcome_results(345)
+    insert_grades()
+    # delete_outcome_results(345)
 
     end = time.time()
     print(f'pull took: {end - start} seconds')

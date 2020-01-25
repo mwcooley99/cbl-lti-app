@@ -37,7 +37,7 @@ function makeCourseTable(students) {
         showExport: true,
         exportTypes: ['csv'],
         onExpandRow: function (index, row, $detail) {
-            let $new_table = $detail.html('<table></table>').find('table')
+            let $new_table = $detail.html('<table></table>').find('table');
             let outcomes = row['outcomes'];
             makeOutcomesTable(outcomes, $new_table)
         }
@@ -114,14 +114,24 @@ function makeOutcomesTable(outcomes, $table_el) {
             title: 'Outcome Average',
             sortable: true
         },
+        // {
+        //     field: 'drop_min',
+        //     title: 'Drop Low Score',
+        //     formatter: function (value, row) {
+        //         let icon = value ? "far fa-check-circle": "far fa-times-circle"
+        //         return `<i class="${icon}"</i>`
+        //     }
+        //
+        // }
     ];
 
     $table_el.bootstrapTable({
         columns: columns,
         data: outcomes,
-        height: 480,
+        // height: 480,
         detailView: true,
         onExpandRow: function (index, row, $detail) {
+
             expandTable($detail, row)
         }
 
@@ -130,11 +140,20 @@ function makeOutcomesTable(outcomes, $table_el) {
 }
 
 function expandTable($el, outcome) {
-
     let alignments = outcome['alignments'];
+    let $card = $el.html("<div class='card p-3'></div>").find('.card');
+    let text = "";
+    if (outcome['drop_min']) {
+        text =  "<p>The lowest score <b>was</b> dropped from this outcome because it helped your average.</p>"
+    }
+    else {
+        text =  "<p>The lowest score <b>was not</b> dropped from this outcome because would not have helped your average.</p>"
+    }
 
-    // buildSubTable($el.html('<table></table>').find('table'), alignments);
-    let $subTable = $el.html('<table></table>').find('table')
+    let $details = $card.append(text);
+    let $subTable = $card.append('<table></table>').find('table');
+
+
     let columns = [
         {
             field: 'name',
@@ -144,13 +163,23 @@ function expandTable($el, outcome) {
         {
             field: 'score',
             title: 'Score',
+            align: 'center',
             sortable: true
         },
+        {
+            field: 'dropped',
+            title: 'Dropped',
+            align: 'center',
+            formatter: function (value, row) {
+                let icon = value ? "fas fa-circle": "";
+                return `<i class="${icon}"</i>`
+            }
+        }
     ];
     $subTable.bootstrapTable({
         columns: columns,
         data: alignments,
-        height:400
+        // height:400
 
     });
 
@@ -181,7 +210,7 @@ function buildSubTable($el, alignments) {
     $button2.click(function () {
       $courseTable.bootstrapTable('collapseAllRows')
     })
-  })
+  });
 
 function mcellStyle(value, row, index) {
     var classes = [

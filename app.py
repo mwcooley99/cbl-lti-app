@@ -138,11 +138,11 @@ def student_dashboard(lti=lti, user_id=None):
         # Create dictionary with outcome details
         outcome_details = [grade['outcomes'] for grade in grades]
         if grades:
-            return render_template('student_dashboard.html', record=record, user=user,
+            return render_template('student_dashboard.html', record=record,
+                                   user=user,
                                    students=session['users'], grades=grades,
                                    calculation_dict=calculation_dictionaries,
                                    outcomes=outcome_details)
-
 
     return "You currently don't have any grades!"
 
@@ -232,11 +232,11 @@ def xml():
 def api_course(course_id, lti=lti):
     if request.args.get('user_id'):
         print("Hello")
-    results = OutcomeResult.query.filter(OutcomeResult.course_id == int(course_id)).all()
+    results = OutcomeResult.query.filter(
+        OutcomeResult.course_id == int(course_id)).all()
     res_schema = OutcomeResultSchema()
 
     return jsonify(res_schema.dump(results, many=True))
-
 
 
 @app.template_filter('strftime')

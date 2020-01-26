@@ -123,7 +123,6 @@ def student_dashboard(lti=lti, user_id=None):
         # Get current courses
         courses = get_user_courses(user_id)
 
-
         # Get student
         user = User.query.filter(User.id == user_id).first()
 
@@ -135,7 +134,7 @@ def student_dashboard(lti=lti, user_id=None):
         grade_schema = GradeSchema()
         grades = grade_schema.dump(grades, many=True)
 
-
+        print(grades[0]['course'])
         # Create dictionary with outcome details
         outcome_details = [grade['outcomes'] for grade in grades]
         if grades:
@@ -143,9 +142,7 @@ def student_dashboard(lti=lti, user_id=None):
                                    students=session['users'], grades=grades,
                                    calculation_dict=calculation_dictionaries,
                                    outcomes=outcome_details)
-        # if courses:
-        #     return render_template('student_dashboard_v2.html',
-        #                            courses=courses)
+
 
     return "You currently don't have any grades!"
 

@@ -200,9 +200,9 @@ function makeOutcomesTablev2(alignments, $table_el) {
 
 function expandTablev2($el, outcome) {
     let alignments = outcome['alignments'];
-    alignments.forEach(function (alignment) {
-        alignment['name'] = alignment.alignment.name;
-    });
+    // alignments.forEach(function (alignment) {
+    //     alignment['name'] = alignment.alignment.name;
+    // });
     let $card = $el.html("<div class='card p-3'></div>").find('.card');
     let text = "";
     if (outcome['drop_min']) {
@@ -217,7 +217,7 @@ function expandTablev2($el, outcome) {
 
     let columns = [
         {
-            field: 'name',
+            field: 'alignment.name',
             title: 'Assignment Name',
             sortable: true
         },

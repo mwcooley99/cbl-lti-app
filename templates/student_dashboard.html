@@ -49,15 +49,17 @@
                                 <a class="nav-link text-sm-center active"
                                    id="v-pills-home-tab"
                                    data-toggle="pill"
-                                   href="#v-pills-{{ loop.index }}" role="tab"
-                                   aria-controls="v-pills-{{ loop.index }}"
+                                   href="#v-pills-{{ grade.course.id }}"
+                                   role="tab"
+                                   aria-controls="v-pills-{{ grade.course.id }}"
                                    aria-selected="true">{{ course_name[0] }}: {{ grade.grade }}</a>
                             {% else %}
                                 <a class="nav-link text-sm-center"
                                    id="v-pills-profile-tab"
                                    data-toggle="pill"
-                                   href="#v-pills-{{ loop.index }}" role="tab"
-                                   aria-controls="v-pills-{{ loop.index }}"
+                                   href="#v-pills-{{ grade.course.id }}"
+                                   role="tab"
+                                   aria-controls="v-pills-{{ grade.course.id }}"
                                    aria-selected="false">{{ course_name[0] }}: {{ grade.grade }}</a>
                             {% endif %}
                         {% endfor %}
@@ -77,15 +79,15 @@
                         {% if loop.first %}
                             {#                        Make the first pane visible initially    #}
                             <div class="tab-pane fade show active"
-                                 id="v-pills-{{ loop.index }}"
+                                 id="v-pills-{{ grade.course.id }}"
                                  role="tabpanel"
-                                 aria-labelledby="v-pills-{{ loop.index }}">
+                                 aria-labelledby="v-pills-{{ grade.course.id }}">
 
                         {% else %}
                             <div class="tab-pane fade"
-                                 id="v-pills-{{ loop.index }}"
+                                 id="v-pills-{{ grade.course.id }}"
                                  role="tabpanel"
-                                 aria-labelledby="v-pills-{{ loop.index }}">
+                                 aria-labelledby="v-pills-{{ grade.course.id }}">
                         {% endif %}
                     <div class="card">
                         <div class="card-header">
@@ -167,7 +169,7 @@
 
                     {#                            outcome averages table #}
                     <div class="mt-3">
-                        <table id="table-{{ loop.index }}"></table>
+                        <table id="table-{{ grade.course.id }}"></table>
                     </div>
                     {#                            end outcome averages table    #}
 
@@ -181,18 +183,72 @@
         </div>
     </div>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
-    <script>
-        var data = {{ outcomes|tojson|safe }}
+    <script src="{{ url_for('static', filename='js/lodash.js') }}"></script>
+    {#        <script src='https://cdn.jsdelivr.net/g/lodash@4(lodash.min.js+lodash.fp.min.js)'></script>#}
+    {#    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.15/lodash.min.js"></script>#}
+    {#    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.15/groupBy.min.js"></script>#}
 
-            $(function () {
-                var data = {{ outcomes|tojson|safe }};
-                data.forEach(function(item, index) {
+    <script type="text/javascript">
 
-                    let $el = $(`#table-${index + 1}`);
-                    makeOutcomesTable(item, $el);
-                });
 
+        {#$(function () {#}
+        {##}
+        {#    var data = {{ outcomes|tojson|safe }};#}
+        {#    data.forEach(function (item, index) {#}
+        {#        let $el = $(`#table-${item['course_id']}`);#}
+        {##}
+        {#        makeOutcomesTable(item['outcomes'], $el);#}
+        {#    });#}
+        {##}
+        {#;#}
+
+        $(function () {
+            var alignments = {{ alignments|tojson|safe }};
+
+
+            {#var group = makeGroup(alignments, 'course_id');#}
+            {#var group = _.groupBy(alignments, a => a.course_id)#}
+            var courses = groupBy(alignments, 'course_id');
+            var course_ids = Object.keys(courses);
+
+            course_ids.forEach(function(course_id, index) {
+               let $el = $(`#table-${course_id}`);
+               makeOutcomesTablev2(courses[course_id], $el);
             });
+
+            {#var thing = _.groupBy(group['347'], o => o.outcome.id);#}
+            {#var thing = groupBy(group['347'], o => o.outcome.id);#}
+            {#var thing_filter = thing['2269'].filter(a => !a.dropped).reduce((a, {score}) => a + score, 0);#}
+            {#console.log(thing_filter);#}
+
+
+            {#var s = _.meanBy(thing['2269'], 'score');#}
+            {#console.log(s);#}
+
+            {#var result = _.filter(thing['2269'] )meanBy(thing['2269'], function(value, key) {#}
+            {#    if(!value.dropped) {#}
+            {#        return value['score']#}
+            {#    }#}
+            {##}
+            {#;#}
+
+            {#var l = _.filter(thing['2269'], o => !o.dropped);#}
+            {#console.log(l);#}
+            {#var result = _.flow([outcomes => _.filter(outcomes, o => !o.dropped,#}
+            {#    scores => _.meanBy(scores, score => score.score))])(thing['2269']);#}
+            {#console.log(_.meanBy(l, 'score'));#}
+            {#console.log(`With scores dropped ${result}`);#}
+
+        });
+
+        function makeGroup(a, key) {
+            return _.groupBy(a, key);
+        }
+
+        function returnOutcomeID(o) {
+            return o.outcome['id'];
+        }
+
 
 
     </script>

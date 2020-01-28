@@ -134,15 +134,20 @@ def student_dashboard(lti=lti, user_id=None):
         grade_schema = GradeSchema()
         grades = grade_schema.dump(grades, many=True)
 
-        print(grades[0]['course'])
         # Create dictionary with outcome details
-        outcome_details = [grade['outcomes'] for grade in grades]
+        print(grades[0]['grade'])
+        outcome_details = [{'course_id': grade['course']['id'], 'outcomes': grade['outcomes']} for grade in grades]
+        outcomes = OutcomeResult.query.filter_by(user_id=user_id).all()
+        res_schema = OutcomeResultSchema()
+        alignments = res_schema.dump(outcomes, many=True)
+
+
         if grades:
             return render_template('student_dashboard.html', record=record,
                                    user=user,
                                    students=session['users'], grades=grades,
                                    calculation_dict=calculation_dictionaries,
-                                   outcomes=outcome_details)
+                                   outcomes=outcome_details, alignments=alignments)
 
     return "You currently don't have any grades!"
 

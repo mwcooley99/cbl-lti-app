@@ -91,7 +91,8 @@ class OutcomeResult(db.Model):
     outcome_id = db.Column(db.Integer, db.ForeignKey('outcomes.id'))
     alignment_id = db.Column(db.String, db.ForeignKey('alignments.id'))
     submitted_or_assessed_at = db.Column(db.DateTime)
-    last_updated = db.Column(db.DateTime)
+    last_updated = db.Column(db.DateTime),
+    dropped = db.Column(db.Boolean)
 
 
 class Outcome(db.Model):
@@ -128,7 +129,7 @@ class GradeSchema(ma.Schema):
     class Meta:
         # Need to update with relevant fields
         fields = (
-        'id', 'course_id', 'grade', 'outcomes', 'course', 'record_id', 'user')
+        'id', 'course_id', 'grade', 'outcomes', 'course', 'record_id', 'user', 'threshold', 'min_score')
 
     course = ma.Nested(CourseSchema)
     user = ma.Nested(UserSchema)

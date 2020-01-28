@@ -6,6 +6,7 @@ from flask_restful import Resource, Api
 import json
 
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import func, not_
 from flask_marshmallow import Marshmallow
 
 from pylti.flask import lti
@@ -136,18 +137,20 @@ def student_dashboard(lti=lti, user_id=None):
 
         # Create dictionary with outcome details
         print(grades[0]['grade'])
-        outcome_details = [{'course_id': grade['course']['id'], 'outcomes': grade['outcomes']} for grade in grades]
+        outcome_details = [
+            {'course_id': grade['course']['id'], 'outcomes': grade['outcomes']}
+            for grade in grades]
         outcomes = OutcomeResult.query.filter_by(user_id=user_id).all()
         res_schema = OutcomeResultSchema()
         alignments = res_schema.dump(outcomes, many=True)
-
 
         if grades:
             return render_template('student_dashboard.html', record=record,
                                    user=user,
                                    students=session['users'], grades=grades,
                                    calculation_dict=calculation_dictionaries,
-                                   outcomes=outcome_details, alignments=alignments)
+                                   outcomes=outcome_details,
+                                   alignments=alignments)
 
     return "You currently don't have any grades!"
 
@@ -182,29 +185,56 @@ def course_dashboard(lti=lti):
     :return: template for a core content teacher
     '''
     record = Record.query.order_by(Record.id.desc()).first()
-
+    print("Hello there")
     # todo - Move back to databaseGet course users
     users = get_course_users({'id': session['course_id']})
     format_users(users)
-
+    print("goodbye")
     user_ids = [user['id'] for user in session['users']]
 
+    # Get the grades
     grades = Grade.query.filter(Grade.user_id.in_(user_ids)) \
         .filter(Grade.record_id == record.id).join(Course) \
         .filter(~Course.name.contains('@dtech')) \
         .filter(Course.id == session['course_id']).join(User).order_by(
         User.name).all()
-    print(grades[0].__dict__)
 
     grades_schema = GradeSchema()
     grades_dict = grades_schema.dump(grades, many=True)
 
-    alignments = OutcomeResult.query.filter(OutcomeResult.user_id.in_(user_ids)) \
-                                    .filter(OutcomeResult.course_id ==session['course_id'] ).all()
-    print(alignments[0])
+    #
+    base_query = OutcomeResult.query.filter(
+        OutcomeResult.user_id.in_(user_ids)) \
+        .filter(OutcomeResult.course_id == session['course_id'])
+
+    # Get alignments
+    align_schema = OutcomeResultSchema()
+    alignments = align_schema.dump(base_query.all(), many=True)
+
+    # outcome_avgs = db.session.query(Outcome.title, Outcome.display_name, OutcomeResult.user_id,
+    #                                 OutcomeResult.outcome_id,
+    #                                 db.func.avg(OutcomeResult.score)
+    #                                 .label('outcome_avg'))\
+    #     .filter(db.not_(OutcomeResult.dropped)) \
+    #     .filter(OutcomeResult.user_id.in_(user_ids)) \
+    #     .filter(OutcomeResult.course_id == session['course_id']) \
+    #     .join(Outcome) \
+    #     .group_by(OutcomeResult.user_id, OutcomeResult.outcome_id, Outcome.title, Outcome.display_name).all()
+    #
+    # print(json.dumps(outcome_avgs))
+
+    # Get outcome info
+    outcome_ids = base_query.with_entities(
+        OutcomeResult.outcome_id).distinct().all()
+    outcome_id_list = list(zip(*outcome_ids))[0]
+    outcomes = Outcome.query.filter(Outcome.id.in_(outcome_id_list)).all()
+    outcome_schema = OutcomeSchema()
+    outcomes = outcome_schema.dump(outcomes, many=True)
+    print("Hello there")
     return render_template('course_dashboard.html', students=grades,
                            calculation_dict=calculation_dictionaries,
-                           record=record, grades_dict=grades_dict)
+                           record=record, grades_dict=grades_dict,
+                           alignments=alignments, outcomes=outcomes)
 
 
 def format_users(users):

@@ -1,5 +1,7 @@
-function makeCourseTable(students) {
+function makeCourseTable(students, alignments) {
     let $table_el = $(`#courseTable`);
+    console.log(students);
+    console.log(alignments);
     var columns = [
         {
             field: 'user.name',
@@ -29,7 +31,7 @@ function makeCourseTable(students) {
     $table_el.bootstrapTable({
         columns: columns,
         data: students,
-        height: 800,
+        height: 600,
         search: true,
         filterControl: true,
         showSearchClearButton: true,
@@ -37,52 +39,83 @@ function makeCourseTable(students) {
         showExport: true,
         exportTypes: ['csv'],
         onExpandRow: function (index, row, $detail) {
+            console.log(row.user.id);
             let $new_table = $detail.html('<table></table>').find('table');
-            let outcomes = row['outcomes'];
-            makeOutcomesTable(outcomes, $new_table)
+            let outcomes = alignments.filter(a => a.user_id === row.user.id);
+            makeOutcomesTablev2(outcomes, $new_table)
         }
     })
 }
 
-function makeMasteryTable(data) {
+function makeMasteryTable(grades, alignments, outcomes) {
     // Get unique outcomes
     var $tableOut = $('#outcomesTable');
 
-    const outcomes_list = [];
-    outcomes_list.push({
-        field: 'name',
+    // Create the columns for the table
+    const columns = outcomes.map(function (value, index) {
+        let temp_dict = {
+            field: value['id'],
+            title: value['title'],
+            sortable: true,
+        };
+        return temp_dict;
+    });
+
+    columns.unshift({
+        field: 'user_name',
         title: 'Student Name',
         sortable: true,
-        width: 900,
+        width: 90,
         widthUnit: "px"
     });
+
+
+    const students = groupBy(alignments, 'user_id');
     const student_outcomes = [];
-    const map = new Map();
-    for (const student of data) {
+    for (const student of Object.keys(students)) {
         let student_dict = {};
-        student_dict['name'] = student.user.name;
-        for (const outcome of student['outcomes']) {
-            if (!map.has(outcome['outcome_id'])) {
-                map.set(outcome['outcome_id'], true);    // set any value to Map
-                outcomes_list.push({
-                    field: outcome['outcome_id'],
-                    title: outcome['title'],
-                    sortable: true,
-                    class: 'result_table_col'
-                });
-            }
-
-            student_dict[outcome['outcome_id']] = outcome['outcome_avg'];
-
+        let user_info = grades.find(({user}) => user.id == student);
+        student_dict['user_name'] = user_info.user.name;
+        let outcome_avgs = groupBy(students[student], o => o.outcome.id);
+        for (const outcome of Object.keys(outcome_avgs)) {
+            let alignments = outcome_avgs[outcome];
+            let filtered_align = alignments.filter(a => !a.dropped);
+            let avg = filtered_align.reduce((a, {score}) => a + score, 0) / filtered_align.length;
+            student_dict[outcome] = avg.toFixed(2);
         }
         student_outcomes.push(student_dict);
+
+
     }
+
+    //
+    //
+    // const map = new Map();
+    // for (const student of data) {
+    //     let student_dict = {};
+    //     student_dict['name'] = student.user.name;
+    //     for (const outcome of student['outcomes']) {
+    //         if (!map.has(outcome['outcome_id'])) {
+    //             map.set(outcome['outcome_id'], true);    // set any value to Map
+    //             outcomes_list.push({
+    //                 field: outcome['outcome_id'],
+    //                 title: outcome['title'],
+    //                 sortable: true,
+    //                 class: 'result_table_col'
+    //             });
+    //         }
+    //
+    //         student_dict[outcome['outcome_id']] = outcome['outcome_avg'];
+    //
+    //     }
+    //     student_outcomes.push(student_dict);
+    // }
 
 
     $tableOut.bootstrapTable({
-        columns: outcomes_list,
+        columns: columns,
         data: student_outcomes,
-        height: 800,
+        height: 600,
         search: true,
         showColumns: true,
         showColumnsToggleAll: true,

@@ -43,10 +43,12 @@
         var $courseTable = $('#courseTable');
         var $button2 = $('#button2');
         $(function () {
-            var data = {{ grades_dict|tojson|safe }};
+            var grades = {{ grades_dict|tojson|safe }};
+            var alignments = {{ alignments|tojson|safe }};
+            let outcomes = {{ outcomes|tojson|safe }}
 
-            makeCourseTable(data);
-            makeMasteryTable(data);
+            makeCourseTable(grades, alignments);
+            makeMasteryTable(grades, alignments, outcomes);
 
         });
 

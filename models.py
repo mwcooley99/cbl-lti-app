@@ -91,7 +91,7 @@ class OutcomeResult(db.Model):
     outcome_id = db.Column(db.Integer, db.ForeignKey('outcomes.id'))
     alignment_id = db.Column(db.String, db.ForeignKey('alignments.id'))
     submitted_or_assessed_at = db.Column(db.DateTime)
-    last_updated = db.Column(db.DateTime),
+    last_updated = db.Column(db.DateTime)
     dropped = db.Column(db.Boolean)
 
 
@@ -153,14 +153,14 @@ class OutcomeResultSchema(ma.ModelSchema):
     alignment = ma.Nested(AlignmentSchema)
 
 
-users = User.query.all()
-user_schema = UserSchema()
-user_schema.dump(users[5])
-
-grades = Grade.query.limit(10)
-grade_schema = GradeSchema()
-grade_schema.dump(grades[3])
-
-outcome = OutcomeResult.query.first()
-res_schema = OutcomeResultSchema()
-res_schema.dump(outcome)
+# users = User.query.all()
+# user_schema = UserSchema()
+# user_schema.dump(users[5])
+#
+# grades = Grade.query.limit(10)
+# grade_schema = GradeSchema()
+# grade_schema.dump(grades[3])
+#
+# outcome = OutcomeResult.query.first()
+# res_schema = OutcomeResultSchema()
+# res_schema.dump(outcome)

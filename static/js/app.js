@@ -61,6 +61,7 @@ function makeMasteryTable(grades, alignments, outcomes) {
         return temp_dict;
     });
 
+    // Add in User Name
     columns.unshift({
         field: 'user_name',
         title: 'Student Name',
@@ -71,12 +72,15 @@ function makeMasteryTable(grades, alignments, outcomes) {
 
 
     const students = groupBy(alignments, 'user_id');
+
     const student_outcomes = [];
-    for (const student of Object.keys(students)) {
+    for (const student of grades) {
+        console.log(student);
         let student_dict = {};
-        let user_info = grades.find(({user}) => user.id == student);
-        student_dict['user_name'] = user_info.user.name;
-        let outcome_avgs = groupBy(students[student], o => o.outcome.id);
+        student_dict['user_name'] = student.user.name;
+        student_dict['user_id'] = student.user.id;
+        student_dict['grade'] = student.grade;
+        let outcome_avgs = groupBy(students[student.user.id], o => o.outcome.id);
         for (const outcome of Object.keys(outcome_avgs)) {
             let alignments = outcome_avgs[outcome];
             let filtered_align = alignments.filter(a => !a.dropped);
@@ -85,31 +89,7 @@ function makeMasteryTable(grades, alignments, outcomes) {
         }
         student_outcomes.push(student_dict);
 
-
     }
-
-    //
-    //
-    // const map = new Map();
-    // for (const student of data) {
-    //     let student_dict = {};
-    //     student_dict['name'] = student.user.name;
-    //     for (const outcome of student['outcomes']) {
-    //         if (!map.has(outcome['outcome_id'])) {
-    //             map.set(outcome['outcome_id'], true);    // set any value to Map
-    //             outcomes_list.push({
-    //                 field: outcome['outcome_id'],
-    //                 title: outcome['title'],
-    //                 sortable: true,
-    //                 class: 'result_table_col'
-    //             });
-    //         }
-    //
-    //         student_dict[outcome['outcome_id']] = outcome['outcome_avg'];
-    //
-    //     }
-    //     student_outcomes.push(student_dict);
-    // }
 
 
     $tableOut.bootstrapTable({
@@ -122,7 +102,8 @@ function makeMasteryTable(grades, alignments, outcomes) {
         showSearchClearButton: true,
         showExport: true,
         exportTypes: ['csv'],
-        fixedColumns: true
+        fixedColumns: true,
+
     });
 
 
@@ -149,15 +130,7 @@ function makeOutcomesTable(outcomes, $table_el) {
             title: 'Outcome Average',
             sortable: true
         },
-        // {
-        //     field: 'drop_min',
-        //     title: 'Drop Low Score',
-        //     formatter: function (value, row) {
-        //         let icon = value ? "far fa-check-circle": "far fa-times-circle"
-        //         return `<i class="${icon}"</i>`
-        //     }
-        //
-        // }
+
     ];
 
     $table_el.bootstrapTable({
@@ -191,8 +164,7 @@ function makeOutcomesTablev2(alignments, $table_el) {
 
         return outcome;
     });
-    console.log('**********');
-    console.log(outcome_avgs);
+
 
 
     var columns = [
@@ -206,15 +178,6 @@ function makeOutcomesTablev2(alignments, $table_el) {
             title: 'Outcome Average',
             sortable: true
         },
-        // {
-        //     field: 'drop_min',
-        //     title: 'Drop Low Score',
-        //     formatter: function (value, row) {
-        //         let icon = value ? "far fa-check-circle": "far fa-times-circle"
-        //         return `<i class="${icon}"</i>`
-        //     }
-        //
-        // }
     ];
 
     $table_el.bootstrapTable({
@@ -233,15 +196,15 @@ function makeOutcomesTablev2(alignments, $table_el) {
 
 function expandTablev2($el, outcome) {
     let alignments = outcome['alignments'];
-    // alignments.forEach(function (alignment) {
-    //     alignment['name'] = alignment.alignment.name;
-    // });
+
     let $card = $el.html("<div class='card p-3'></div>").find('.card');
     let text = "";
-    if (outcome['drop_min']) {
+    let drop_min = alignments.filter(a => a.dropped).length;
+
+    if (drop_min > 0) {
         text = "<p>The lowest score <b>was</b> dropped from this outcome because it helped your average.</p>"
     } else {
-        text = "<p>The lowest score <b>was not</b> dropped from this outcome because would not have helped your average.</p>"
+        text = "<p>The lowest score <b>was not</b> dropped from this outcome because dropping it would not have helped your average.</p>"
     }
 
     let $details = $card.append(text);
@@ -267,6 +230,15 @@ function expandTablev2($el, outcome) {
             formatter: function (value, row) {
                 let icon = value ? "fas fa-circle" : "";
                 return `<i class="${icon}"</i>`
+            }
+        },
+        {
+            field: 'submitted_or_assessed_at',
+            title: 'Date Assessed',
+            sortable: true,
+            formatter: function(value, row) {
+                let dt = new Date(`${value}Z`);
+                return dt.toLocaleDateString();
             }
         }
     ];

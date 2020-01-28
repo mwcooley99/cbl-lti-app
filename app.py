@@ -122,7 +122,7 @@ def student_dashboard(lti=lti, user_id=None):
             return "You are not authorized to view this users information"
 
         # Get current courses
-        courses = get_user_courses(user_id)
+        # courses = get_user_courses(user_id)
 
         # Get student
         user = User.query.filter(User.id == user_id).first()
@@ -136,10 +136,10 @@ def student_dashboard(lti=lti, user_id=None):
         grades = grade_schema.dump(grades, many=True)
 
         # Create dictionary with outcome details
-        print(grades[0]['grade'])
-        outcome_details = [
-            {'course_id': grade['course']['id'], 'outcomes': grade['outcomes']}
-            for grade in grades]
+        # outcome_details = [
+        #     {'course_id': grade['course']['id'], 'outcomes': grade['outcomes']}
+        #     for grade in grades]
+
         outcomes = OutcomeResult.query.filter_by(user_id=user_id).all()
         res_schema = OutcomeResultSchema()
         alignments = res_schema.dump(outcomes, many=True)
@@ -149,7 +149,7 @@ def student_dashboard(lti=lti, user_id=None):
                                    user=user,
                                    students=session['users'], grades=grades,
                                    calculation_dict=calculation_dictionaries,
-                                   outcomes=outcome_details,
+                                   # outcomes=outcome_details,
                                    alignments=alignments)
 
     return "You currently don't have any grades!"
@@ -185,16 +185,11 @@ def course_dashboard(lti=lti):
     :return: template for a core content teacher
     '''
     record = Record.query.order_by(Record.id.desc()).first()
-    print("Hello there")
-    # todo - Move back to databaseGet course users
-    users = get_course_users({'id': session['course_id']})
-    format_users(users)
-    print("goodbye")
+
     user_ids = [user['id'] for user in session['users']]
 
     # Get the grades
-    grades = Grade.query.filter(Grade.user_id.in_(user_ids)) \
-        .filter(Grade.record_id == record.id).join(Course) \
+    grades = Grade.query.filter(Grade.record_id == record.id).join(Course) \
         .filter(~Course.name.contains('@dtech')) \
         .filter(Course.id == session['course_id']).join(User).order_by(
         User.name).all()
@@ -202,27 +197,14 @@ def course_dashboard(lti=lti):
     grades_schema = GradeSchema()
     grades_dict = grades_schema.dump(grades, many=True)
 
-    #
-    base_query = OutcomeResult.query.filter(
-        OutcomeResult.user_id.in_(user_ids)) \
+    # Base query
+    base_query = OutcomeResult.query \
         .filter(OutcomeResult.course_id == session['course_id'])
 
     # Get alignments
     align_schema = OutcomeResultSchema()
     alignments = align_schema.dump(base_query.all(), many=True)
-
-    # outcome_avgs = db.session.query(Outcome.title, Outcome.display_name, OutcomeResult.user_id,
-    #                                 OutcomeResult.outcome_id,
-    #                                 db.func.avg(OutcomeResult.score)
-    #                                 .label('outcome_avg'))\
-    #     .filter(db.not_(OutcomeResult.dropped)) \
-    #     .filter(OutcomeResult.user_id.in_(user_ids)) \
-    #     .filter(OutcomeResult.course_id == session['course_id']) \
-    #     .join(Outcome) \
-    #     .group_by(OutcomeResult.user_id, OutcomeResult.outcome_id, Outcome.title, Outcome.display_name).all()
-    #
-    # print(json.dumps(outcome_avgs))
-
+    print(alignments[84]['user_id'])
     # Get outcome info
     outcome_ids = base_query.with_entities(
         OutcomeResult.outcome_id).distinct().all()
@@ -230,7 +212,7 @@ def course_dashboard(lti=lti):
     outcomes = Outcome.query.filter(Outcome.id.in_(outcome_id_list)).all()
     outcome_schema = OutcomeSchema()
     outcomes = outcome_schema.dump(outcomes, many=True)
-    print("Hello there")
+
     return render_template('course_dashboard.html', students=grades,
                            calculation_dict=calculation_dictionaries,
                            record=record, grades_dict=grades_dict,
@@ -265,18 +247,6 @@ def xml():
         app.logger.error("Error with XML.")
         return return_error('''Error with XML. Please refresh and try again. If this error persists,
             please contact support.''')
-
-
-@app.route('/api/course/<course_id>/outcome_results', methods=['GET'])
-@lti(error=error, request='session', app=app)
-def api_course(course_id, lti=lti):
-    if request.args.get('user_id'):
-        print("Hello")
-    results = OutcomeResult.query.filter(
-        OutcomeResult.course_id == int(course_id)).all()
-    res_schema = OutcomeResultSchema()
-
-    return jsonify(res_schema.dump(results, many=True))
 
 
 @app.template_filter('strftime')

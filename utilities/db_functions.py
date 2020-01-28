@@ -124,7 +124,6 @@ def upsert_outcome_results(outcome_results):
 
 
 def update_outcome_res_dropped(values):
-    print(values)
     stmt = OutcomeResults.update(). \
         where(OutcomeResults.c.id == bindparam('_id')). \
         values({

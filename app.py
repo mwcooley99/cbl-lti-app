@@ -183,7 +183,7 @@ def course_dashboard(lti=lti):
     '''
     record = Record.query.order_by(Record.id.desc()).first()
 
-    # Get course users
+    # todo - Move back to databaseGet course users
     users = get_course_users({'id': session['course_id']})
     format_users(users)
 
@@ -194,9 +194,14 @@ def course_dashboard(lti=lti):
         .filter(~Course.name.contains('@dtech')) \
         .filter(Course.id == session['course_id']).join(User).order_by(
         User.name).all()
+    print(grades[0].__dict__)
 
-    grades_dict = [grade.to_dict() for grade in grades]
+    grades_schema = GradeSchema()
+    grades_dict = grades_schema.dump(grades, many=True)
 
+    alignments = OutcomeResult.query.filter(OutcomeResult.user_id.in_(user_ids)) \
+                                    .filter(OutcomeResult.course_id ==session['course_id'] ).all()
+    print(alignments[0])
     return render_template('course_dashboard.html', students=grades,
                            calculation_dict=calculation_dictionaries,
                            record=record, grades_dict=grades_dict)

@@ -129,7 +129,8 @@ class GradeSchema(ma.Schema):
     class Meta:
         # Need to update with relevant fields
         fields = (
-        'id', 'course_id', 'grade', 'outcomes', 'course', 'record_id', 'user', 'threshold', 'min_score')
+            'id', 'course_id', 'grade', 'outcomes', 'course', 'record_id',
+            'user', 'threshold', 'min_score')
 
     course = ma.Nested(CourseSchema)
     user = ma.Nested(UserSchema)
@@ -151,7 +152,6 @@ class OutcomeResultSchema(ma.ModelSchema):
 
     outcome = ma.Nested(OutcomeSchema)
     alignment = ma.Nested(AlignmentSchema)
-
 
 # users = User.query.all()
 # user_schema = UserSchema()

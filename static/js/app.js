@@ -1,7 +1,6 @@
 function makeCourseTable(students, alignments) {
     let $table_el = $(`#courseTable`);
-    console.log(students);
-    console.log(alignments);
+
     var columns = [
         {
             field: 'user.name',
@@ -39,7 +38,6 @@ function makeCourseTable(students, alignments) {
         showExport: true,
         exportTypes: ['csv'],
         onExpandRow: function (index, row, $detail) {
-            console.log(row.user.id);
             let $new_table = $detail.html('<table></table>').find('table');
             let outcomes = alignments.filter(a => a.user_id === row.user.id);
             makeOutcomesTablev2(outcomes, $new_table)
@@ -75,7 +73,6 @@ function makeMasteryTable(grades, alignments, outcomes) {
 
     const student_outcomes = [];
     for (const student of grades) {
-        console.log(student);
         let student_dict = {};
         student_dict['user_name'] = student.user.name;
         student_dict['user_id'] = student.user.id;

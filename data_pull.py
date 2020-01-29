@@ -171,7 +171,7 @@ def insert_grades(current_term=10):
     unfiltered_avgs = pd.merge(unfiltered_avgs, outcomes, how='left',
                                on='outcome_id')
 
-    # Add column to alignments noting if it was used
+    # Add column to alignments noting if it was dropped
     avg_merge_cols = ['links.user', 'course_id', 'outcome_id']
     outcome_results = pd.merge(outcome_results, unfiltered_avgs, how='left',
                                on=avg_merge_cols)
@@ -186,39 +186,13 @@ def insert_grades(current_term=10):
     outcome_results['submitted_or_assessed_at'] = outcome_results[
         'submitted_or_assessed_at'].dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
-    # Create outcome_results dictionaries (alignments)
-    group_cols = ['links.user', 'course_id', 'outcome_id']
-    align_cols = ['name', 'score', 'submitted_or_assessed_at', 'dropped']
-    unfiltered_alignment_dict = outcome_results.groupby(group_cols)[
-        align_cols].apply(lambda x: x.sort_values('submitted_or_assessed_at',
-                                                  ascending=False).to_dict(
-        'r')).reset_index().rename(columns={0: 'alignments'})
-    unfiltered_alignment_dict.to_csv('out/align_dict.csv')
-
-    # Merge alignments with outcome_averages
-    merge_cols = ['links.user', 'course_id', 'outcome_id']
-    unfiltered_avgs = pd.merge(unfiltered_avgs, unfiltered_alignment_dict,
-                               how='left', on=merge_cols)
-
-    # Create outcome_avg dfs with dictionaries
-    group_cols = ['links.user', 'course_id']
-    avg_cols = ['outcome_id', 'outcome_avg', 'title', 'display_name',
-                'alignments', 'drop_min']
-    # todo - look into a way to do this without the apply (it's slow)
-    unfiltered_avg_dict = unfiltered_avgs.groupby(group_cols)[avg_cols].apply(
-        lambda x: x.sort_values('outcome_avg', ascending=False).to_dict(
-            'r')).reset_index().rename(columns={0: 'unfiltered_avgs'})
 
     # make grades df
     group_cols = ['links.user', 'course_id']
-    unfiltered_grades = unfiltered_avgs.groupby(group_cols).agg(
+    grades = unfiltered_avgs.groupby(group_cols).agg(
         {'outcome_avg': calculate_traditional_grade})
-    unfiltered_grades.reset_index(inplace=True)
+    grades.reset_index(inplace=True)
 
-    # Merge outcome_avg dictionaries
-    merge_cols = ['links.user', 'course_id']
-    grades = pd.merge(unfiltered_grades, unfiltered_avg_dict, how='left',
-                      on=merge_cols)
 
     # Break up grades into their own columns
     grades[['unfiltered_grades', 'unfiltered_idx']] = pd.DataFrame(
@@ -226,8 +200,6 @@ def insert_grades(current_term=10):
 
     # todo - refactor. Not needed anymore
     grades['final_grade'] = grades['unfiltered_grades']
-    # Pick the correct outcome dictionary
-    grades['outcomes'] = grades['unfiltered_avgs']
 
     # Break up grade dict into columns
     grades[['threshold', 'min_score', 'grade']] = pd.DataFrame(
@@ -240,8 +212,7 @@ def insert_grades(current_term=10):
 
     # Create grades_dict for database insert
     grades.rename(columns={'links.user': 'user_id'}, inplace=True)
-    grade_cols = ['course_id', 'user_id', 'threshold', 'min_score', 'grade',
-                  'outcomes', 'record_id']
+    grade_cols = ['course_id', 'user_id', 'threshold', 'min_score', 'grade', 'record_id']
     grades_list = grades[grade_cols].to_dict('r')
 
     # Insert into Database

@@ -1,8 +1,5 @@
-from sqlalchemy.ext.automap import automap_base
-
 from sqlalchemy import create_engine, Integer, String, Table, Column, MetaData, \
     ForeignKey, DateTime, Float, JSON, Boolean
-from sqlalchemy.dialects import postgresql
 from config import configuration
 
 import os

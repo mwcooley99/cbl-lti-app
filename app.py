@@ -1,24 +1,18 @@
 from flask import Flask, render_template, session, request, Response, \
-    url_for, redirect, jsonify
+    url_for, redirect
 
-from flask_restful import Resource, Api
-
-import json
+from flask_restful import Api
 
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import func, not_
 from flask_marshmallow import Marshmallow
 
 from pylti.flask import lti
 
 import settings
 import logging
-import requests
-import os
 
 from utilities.cbl_calculator import calculation_dictionaries
-from utilities.canvas_api import get_course_users, get_observees, \
-    get_user_courses
+from utilities.canvas_api import get_course_users, get_observees
 
 from logging.handlers import RotatingFileHandler
 
@@ -121,9 +115,6 @@ def student_dashboard(lti=lti, user_id=None):
         if not (int(user_id) in auth_users_id):
             return "You are not authorized to view this users information"
 
-        # Get current courses
-        # courses = get_user_courses(user_id)
-
         # Get student
         user = User.query.filter(User.id == user_id).first()
 
@@ -135,11 +126,7 @@ def student_dashboard(lti=lti, user_id=None):
         grade_schema = GradeSchema()
         grades = grade_schema.dump(grades, many=True)
 
-        # Create dictionary with outcome details
-        # outcome_details = [
-        #     {'course_id': grade['course']['id'], 'outcomes': grade['outcomes']}
-        #     for grade in grades]
-
+        # Get outcome results
         outcomes = OutcomeResult.query.filter_by(user_id=user_id).all()
         res_schema = OutcomeResultSchema()
         alignments = res_schema.dump(outcomes, many=True)
@@ -149,7 +136,6 @@ def student_dashboard(lti=lti, user_id=None):
                                    user=user,
                                    students=session['users'], grades=grades,
                                    calculation_dict=calculation_dictionaries,
-                                   # outcomes=outcome_details,
                                    alignments=alignments)
 
     return "You currently don't have any grades!"
@@ -186,8 +172,6 @@ def course_dashboard(lti=lti):
     '''
     record = Record.query.order_by(Record.id.desc()).first()
 
-    user_ids = [user['id'] for user in session['users']]
-
     # Get the grades
     grades = Grade.query.filter(Grade.record_id == record.id).join(Course) \
         .filter(~Course.name.contains('@dtech')) \
@@ -204,7 +188,7 @@ def course_dashboard(lti=lti):
     # Get alignments
     align_schema = OutcomeResultSchema()
     alignments = align_schema.dump(base_query.all(), many=True)
-    print(alignments[84]['user_id'])
+
     # Get outcome info
     outcome_ids = base_query.with_entities(
         OutcomeResult.outcome_id).distinct().all()

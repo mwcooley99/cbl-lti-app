@@ -302,10 +302,10 @@ def format_outcome_results(outcome_results):
 if __name__ == '__main__':
     start = time.time()
 
-    # update_users()
-    # pull_outcome_results()
+    update_users()
+    pull_outcome_results()
     insert_grades()
-    # delete_outcome_results(345)
+
 
     end = time.time()
     print(f'pull took: {end - start} seconds')

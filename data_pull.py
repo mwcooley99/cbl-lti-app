@@ -302,9 +302,10 @@ def format_outcome_results(outcome_results):
 if __name__ == '__main__':
     start = time.time()
 
-    update_users()
-    pull_outcome_results()
-    insert_grades()
+
+    # update_users()
+    # pull_outcome_results()
+    # insert_grades()
 
 
     end = time.time()

@@ -1,12 +1,15 @@
 function makeCourseTable(students, alignments) {
     let $table_el = $(`#courseTable`);
-
     var columns = [
         {
             field: 'user.name',
             title: 'Student',
             class: "headcol",
             sortable: true,
+            formatter: function(value, row){
+                let link = `<a href="${row.course_id}/user/${row.user.id}">${value}</a>`
+                return link;
+            }
 
         },
         {

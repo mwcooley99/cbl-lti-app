@@ -11,10 +11,11 @@ from pylti.flask import lti
 import settings
 import itertools
 import logging
-import time
+import time, json
 
 from utilities.cbl_calculator import calculation_dictionaries
 from utilities.canvas_api import get_course_users, get_observees
+from utilities.helpers import safe_round
 
 from logging.handlers import RotatingFileHandler
 
@@ -72,7 +73,6 @@ def launch(lti=lti):
     Returns the launch page
     request.form will contain all the lti params
     """
-
     # store some of the user data in the session
     session['user_id'] = request.form.get('custom_canvas_user_id')
 
@@ -84,6 +84,8 @@ def launch(lti=lti):
         users = User.query.filter(
             User.id == session['user_id']).with_entities(User.id,
                                                          User.name).all()
+
+        # Add user to session
         session["users"] = [dict(zip(['id', 'name'], users[0]))]
 
         return redirect(
@@ -97,11 +99,11 @@ def launch(lti=lti):
                             response.json()]
         user_id = session['users'][0]['id']
 
-        return redirect(url_for('student_dashboard', user_id=user_id))
+        return redirect(url_for('student_dashboardv2', user_id=user_id))
 
 
 @app.route('/student_dashboard/<user_id>', methods=['GET'])
-@lti(error=error, request='session', role='any', app=app)
+@lti(error=error, request='session', role='student', app=app)
 def student_dashboard(lti=lti, user_id=None):
     '''
     Dashboard froms a student view. Used for students, parents and advisors
@@ -159,7 +161,7 @@ def course_navigation(lti=lti):
         users = get_course_users({'id': session['course_id']})
         format_users(users)
         user = session['users'][0]
-        return redirect(url_for('student_dashboard', user_id=user['id']))
+        return redirect(url_for('student_dashboardv2', user_id=user['id']))
 
     return redirect(url_for('course_dashboard'))
 
@@ -179,6 +181,7 @@ def course_dashboard(lti=lti):
     grades = Grade.query.filter(Grade.record_id == record.id) \
         .filter(Grade.course_id == session['course_id']).join(User).order_by(
         User.name).all()
+    session['users'] = [{'id': grade.user_id} for grade in grades]
 
     elapsed = time.perf_counter() - s
     print(f"1 {__file__} executed in {elapsed:0.2f} seconds.")
@@ -215,15 +218,18 @@ def course_dashboard(lti=lti):
     elapsed = time.perf_counter() - s
     print(f"4 {__file__} executed in {elapsed:0.2f} seconds.")
 
+    # get outcome averages
     outcome_averages = db.session.query(OutcomeResult.user_id,
-                                        OutcomeResult.outcome_id,
-                                        db.func.avg(OutcomeResult.score).label(
-                                            'avg')).filter(
-        OutcomeResult.course_id == course_id).group_by(OutcomeResult.user_id,
-                                                       OutcomeResult.outcome_id).order_by(
-        OutcomeResult.user_id, OutcomeResult.outcome_id).all()
+               OutcomeResult.outcome_id,
+               db.func.avg(OutcomeResult.score).label('avg')) \
+        .filter(OutcomeResult.course_id == course_id) \
+        .filter(~OutcomeResult.dropped)\
+        .group_by(OutcomeResult.user_id,
+                  OutcomeResult.outcome_id) \
+        .order_by(OutcomeResult.user_id, OutcomeResult.outcome_id).all()
 
-    outcome_averages = {k: {outcome_avg[1]: outcome_avg[2] for outcome_avg in
+    # convert outcome averages to dictionaries
+    outcome_averages = {k: {outcome_avg[1]: safe_round(outcome_avg[2], 2) for outcome_avg in
                             list(g)} for k, g in
                         itertools.groupby(outcome_averages, lambda t: t[0])}
 
@@ -237,7 +243,7 @@ def course_dashboard(lti=lti):
 
 
 @app.route('/student_dashboard_v2/<user_id>', methods=['GET'])
-@lti(error=error, request='session', role='any', app=app)
+@lti(error=error, request='session', role='student', app=app)
 def student_dashboardv2(lti=lti, user_id=None):
     '''
     Dashboard froms a student view. Used for students, parents and advisors
@@ -280,8 +286,15 @@ def student_dashboardv2(lti=lti, user_id=None):
 
 
 @app.route("/course_dashboard/<course_id>/user/<user_id>")
-@lti(error=error, request='session', role='any', app=app)
+@lti(error=error, request='session', role='student', app=app)
 def course_detail(course_id=357, user_id=384, lti=lti):
+    print(session['users'])
+    auth_users_id = [user['id'] for user in session['users']]
+
+    if not (int(user_id) in auth_users_id):
+        return "You are not authorized to view this users information"
+
+    prev_url = request.referrer
     record = Record.query.order_by(Record.id.desc()).first()
 
     # Get current grade
@@ -297,7 +310,7 @@ def course_detail(course_id=357, user_id=384, lti=lti):
 
     return render_template('course_detail.html', grade=grade,
                            calculation_dict=calculation_dictionaries,
-                           alignments=alignments)
+                           alignments=alignments, prev_url=prev_url)
 
 
 def format_users(users):

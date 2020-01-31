@@ -1,11 +1,5 @@
-# COPY THIS FILE TO settings.py
 import os
 
-# Using a placeholder for environment variables.
-# If not found in the environment, it will default to the local value, which is set in
-# the second parameter. Example:
-# os.environ.get("ENVIRONMENT_KEY", "LOCAL_VALUE")
-# This makes it a bit easier to use one file for local and environment deployment.
 
 # Declare your consumer key and shared secret. If you end
 # up having multiple consumers, you may want to add separate
@@ -28,7 +22,7 @@ PYLTI_CONFIG = {
         # Maps values sent in the lti launch value of "roles" to a group
         # Allows you to check LTI.is_role('admin') for your user
         'admin': ['Administrator', 'urn:lti:instrole:ims/lis/Administrator'],
-        'student': ['Learner', 'urn:lti:instrole:ims/lis/Student'],
+        'student': ['Learner', 'urn:lti:instrole:ims/lis/Student', 'Instructor', 'Observer', 'urn:lti:sysrole:ims/lis/None'],
         'instructor': ['Instructor'],
         'observer': ['Observer', 'urn:lti:role:ims/lis/Mentor']
     }

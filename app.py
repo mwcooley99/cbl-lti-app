@@ -14,7 +14,7 @@ import logging
 import time, json
 
 from utilities.cbl_calculator import calculation_dictionaries
-from utilities.canvas_api import get_course_users, get_observees
+from utilities.canvas_api import get_course_users, get_observees, get_user_courses
 from utilities.helpers import safe_round
 
 from logging.handlers import RotatingFileHandler
@@ -99,7 +99,7 @@ def launch(lti=lti):
                             response.json()]
         user_id = session['users'][0]['id']
 
-        return redirect(url_for('student_dashboardv2', user_id=user_id))
+        return redirect(url_for('student_dashboard', user_id=user_id))
 
 
 @app.route('/student_dashboard/<user_id>', methods=['GET'])
@@ -122,6 +122,9 @@ def student_dashboard(lti=lti, user_id=None):
         # Get student
         user = User.query.filter(User.id == user_id).first()
 
+        courses = get_user_courses(user_id)
+        print(courses)
+
         # Get current Grades
         grades = Grade.query.filter_by(record_id=record.id,
                                        user_id=user_id).join(Course).filter(
@@ -131,6 +134,7 @@ def student_dashboard(lti=lti, user_id=None):
         grades = grade_schema.dump(grades, many=True)
 
         # Get outcome results
+        # todo - need to filter by enrollment term
         outcomes = OutcomeResult.query.filter_by(user_id=user_id).all()
         res_schema = OutcomeResultSchema()
         alignments = res_schema.dump(outcomes, many=True)
@@ -161,7 +165,7 @@ def course_navigation(lti=lti):
         users = get_course_users({'id': session['course_id']})
         format_users(users)
         user = session['users'][0]
-        return redirect(url_for('student_dashboardv2', user_id=user['id']))
+        return redirect(url_for('student_dashboard', user_id=user['id']))
 
     return redirect(url_for('course_dashboard'))
 
@@ -196,21 +200,16 @@ def course_dashboard(lti=lti):
     base_query = OutcomeResult.query \
         .filter(OutcomeResult.course_id == session['course_id'])
 
-    # Get alignments
-    alignments = ''
-    # align = base_query.all()
-    # elapsed = time.perf_counter() - s
-    # print(f"2.5 {__file__} executed in {elapsed:0.2f} seconds.")
-    # align_schema = OutcomeResultSchema()
-    # alignments = align_schema.dump(align, many=True)
-
     elapsed = time.perf_counter() - s
     print(f"3 {__file__} executed in {elapsed:0.2f} seconds.")
 
     # Get outcome info
     outcome_ids = base_query.with_entities(
         OutcomeResult.outcome_id).distinct().all()
-    outcome_id_list = list(zip(*outcome_ids))[0]
+    if outcome_ids:
+        outcome_id_list = list(zip(*outcome_ids))[0]
+    else:
+        outcome_id_list = []
     outcomes = Outcome.query.filter(Outcome.id.in_(outcome_id_list)).all()
     # outcome_schema = OutcomeSchema()
     # outcomes = outcome_schema.dump(outcomes, many=True)
@@ -238,7 +237,7 @@ def course_dashboard(lti=lti):
     return render_template('course_dashboard.html', students=grades,
                            calculation_dict=calculation_dictionaries,
                            record=record, grades_dict=grades_dict,
-                           alignments=alignments, outcomes=outcomes,
+                            outcomes=outcomes,
                            outcome_averages=outcome_averages)
 
 
@@ -261,6 +260,8 @@ def student_dashboardv2(lti=lti, user_id=None):
 
         # Get student
         user = User.query.filter(User.id == user_id).first()
+
+
 
         # Get current Grades
         grades = Grade.query.filter_by(record_id=record.id,

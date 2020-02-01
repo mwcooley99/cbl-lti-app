@@ -14,7 +14,7 @@ from utilities.canvas_api import get_courses, get_outcome_results, \
 from utilities.db_functions import insert_grades_to_db, create_record, \
     update_users, delete_outcome_results, upsert_alignments, \
     upsert_outcome_results, upsert_outcomes, upsert_courses, \
-    query_current_outcome_results, update_outcome_res_dropped
+    query_current_outcome_results, update_outcome_res_dropped, get_db_courses
 
 OUTCOMES_TO_FILTER = (
     2269, 2270, 2923, 2922, 2732,
@@ -100,7 +100,7 @@ def format_alignments(alignment):
 
 
 def pull_outcome_results(current_term=10):
-    # get all courses for current term
+    # get all courses for current term todo move outside of this function
     courses = get_courses(current_term)
     upsert_courses(courses)
 
@@ -116,7 +116,11 @@ def pull_outcome_results(current_term=10):
             print(course['name'])
             continue
 
-        outcome_results, alignments, outcomes = get_outcome_results(course)
+        # get course users
+        users = get_course_users(course)
+        user_ids = [user['id'] for user in users]
+
+        outcome_results, alignments, outcomes = get_outcome_results(course, user_ids=user_ids)
 
         # Format results, Removed Null filter (works better for upsert)
         outcome_results = [
@@ -299,12 +303,37 @@ def format_outcome_results(outcome_results):
     return outcome_results
 
 
+def update_course_students(current_term):
+    # Query current courses
+    courses = get_db_courses(current_term)
+    for course in courses:
+        print(course)
+
+
+    # for course in courses
+        # Get course students
+        # Get user IDs in a list
+        # delete previous course roster
+        # insert current roster
+
+    pass
+
+
+def update_courses(current_term):
+    courses = get_courses(current_term)
+    upsert_courses(courses)
+
+
+
 if __name__ == '__main__':
     start = time.time()
-
+    current_term = 11
     # update_users()
-    # pull_outcome_results()
-    insert_grades()
+    update_course_students(current_term)
+    # update_courses(current_term)
+    # update_course_students(current_term)
+    # pull_outcome_results(current_term=11)
+    # insert_grades(current_term=11)
     # delete_outcome_results(345)
 
     end = time.time()

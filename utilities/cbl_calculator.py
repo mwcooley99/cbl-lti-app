@@ -4,6 +4,10 @@ import pandas as pd
 import json
 import itertools
 
+from datetime import datetime
+
+CUTOFF_DATE = datetime(2020, 5, 1)
+
 # todo - add to database
 calculation_dictionaries = [
     {

@@ -7,7 +7,7 @@ from datetime import datetime
 
 import time
 
-from utilities.cbl_calculator import calculate_traditional_grade, weighted_avg
+from utilities.cbl_calculator import calculate_traditional_grade, weighted_avg, CUTOFF_DATE
 from utilities.canvas_api import get_courses, get_outcome_results, \
     get_course_users_ids, create_outcome_dataframes, get_course_users
 
@@ -21,7 +21,7 @@ OUTCOMES_TO_FILTER = (
     2269, 2270, 2923, 2922, 2732,
     2733)
 
-CUTOFF_DATE = datetime(2020, 5, 1)
+
 
 
 def make_grade_object(grade, outcome_avgs, record_id, course, user_id):

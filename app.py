@@ -13,7 +13,7 @@ import itertools
 import logging
 import time, json
 
-from utilities.cbl_calculator import calculation_dictionaries
+from utilities.cbl_calculator import calculation_dictionaries, CUTOFF_DATE
 from utilities.canvas_api import get_course_users, get_observees
 from utilities.helpers import safe_round
 
@@ -127,18 +127,16 @@ def student_dashboard(lti=lti, user_id=None):
 
         # get student grades
         grades = user.grades.join(Course).filter(
-            Grade.course
+            Course.enrollment_term_id == ENROLLMENT_TERM_ID
         ).all()
 
         # Get outcome results
         outcomes = OutcomeResult.query.filter_by(user_id=user_id
-                                                 ).filter(OutcomeResult.score.isnot(None)).order_by(
+                                                 ).filter(
+            OutcomeResult.score.isnot(None)).order_by(
             OutcomeResult.course_id, OutcomeResult.outcome_id).all()
         res_schema = OutcomeResultSchema()
         alignments = res_schema.dump(outcomes, many=True)
-
-        with open('out/alignments.json', 'w') as fp:
-            json.dump(alignments, fp, indent=2)
 
         if grades:
             return render_template('student_dashboard.html', record=record,
@@ -188,21 +186,9 @@ def course_dashboard(lti=lti):
         User.name).all()
     session['users'] = [{'id': grade.user_id} for grade in grades]
 
-    elapsed = time.perf_counter() - s
-    print(f"1 {__file__} executed in {elapsed:0.2f} seconds.")
-
-    # grades_schema = GradeSchema()
-    # grades_dict = grades_schema.dump(grades, many=True)
-    grades_dict = ''
-
-    elapsed = time.perf_counter() - s
-    print(f"2 {__file__} executed in {elapsed:0.2f} seconds.")
     # Base query
     base_query = OutcomeResult.query \
-        .filter(OutcomeResult.course_id == session['course_id'])
-
-    elapsed = time.perf_counter() - s
-    print(f"3 {__file__} executed in {elapsed:0.2f} seconds.")
+        .filter(OutcomeResult.course_id == course_id)
 
     # Get outcome info
     outcome_ids = base_query.with_entities(
@@ -213,36 +199,34 @@ def course_dashboard(lti=lti):
         outcome_id_list = []
     outcomes = Outcome.query.filter(Outcome.id.in_(outcome_id_list)).all()
 
-    elapsed = time.perf_counter() - s
-    print(f"4 {__file__} executed in {elapsed:0.2f} seconds.")
+    #
+    outcome_results = base_query.order_by(
+        OutcomeResult.user_id, OutcomeResult.outcome_id).all()
+    # res_schema = OutcomeResultSchema()
+    # alignments = res_schema.dump(outcomes, many=True)
 
-    # get outcome averages
-    outcome_averages = db.session.query(OutcomeResult.user_id,
-                                        OutcomeResult.outcome_id,
-                                        db.func.avg(OutcomeResult.score).label(
-                                            'avg')) \
-        .filter(OutcomeResult.course_id == course_id) \
-        .filter(~OutcomeResult.dropped) \
-        .group_by(OutcomeResult.user_id,
-                  OutcomeResult.outcome_id) \
-        .order_by(OutcomeResult.user_id, OutcomeResult.outcome_id).all()
-    for grade in grades:
-        print(grade)
-    # convert outcome averages to dictionaries
-    outcome_averages = {
-        k: {outcome_avg[1]: safe_round(outcome_avg[2], 2) for outcome_avg in
-            list(g)} for k, g in
-        itertools.groupby(outcome_averages, lambda t: t[0])}
+    # Create outcome average dictionaries
+    outcome_averages = {}
+    for student_id, stu_aligns in itertools.groupby(outcome_results, lambda t: t.user_id):
+        temp_dict = {}
+        for outcome_id, out_aligns in itertools.groupby(stu_aligns, lambda x: x.outcome_id):
+            aligns = list(out_aligns)
+            full_sum = sum([o.score for o in aligns])
+            num_of_aligns = len(aligns)
+            temp_dict[outcome_id] = full_sum/num_of_aligns
 
-    outcomes = OutcomeResult.query.filter_by(course_id=course_id).all()
-    res_schema = OutcomeResultSchema()
-    alignments = res_schema.dump(outcomes, many=True)
+            filtered_align = [o.score for o in out_aligns if o.submitted_or_assessed_at < CUTOFF_DATE]
+            if len(filtered_align) > 0:
+                min_score = min(filtered_align)
+                drop_avg = (full_sum - min_score)/(num_of_aligns - 1)
+                if drop_avg > temp_dict[outcome_id]:
+                    temp_dict['outcome_id'] = drop_avg
 
-    elapsed = time.perf_counter() - s
-    print(f"{__file__} executed in {elapsed:0.2f} seconds.")
+        outcome_averages[student_id] = temp_dict
+
     return render_template('course_dashboard.html', students=grades,
                            calculation_dict=calculation_dictionaries,
-                           record=record, grades_dict=grades_dict,
+                           record=record,
                            outcomes=outcomes,
                            outcome_averages=outcome_averages)
 
@@ -250,7 +234,6 @@ def course_dashboard(lti=lti):
 @app.route("/course_dashboard/<course_id>/user/<user_id>")
 @lti(error=error, request='session', role='student', app=app)
 def course_detail(course_id=357, user_id=384, lti=lti):
-    print(session['users'])
     auth_users_id = [user['id'] for user in session['users']]
 
     if not (int(user_id) in auth_users_id):

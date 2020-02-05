@@ -78,7 +78,7 @@ def make_outcome_result(outcome_result, course_id, enrollment_term):
         'alignment_id': outcome_result['links']['alignment'],
         'submitted_or_assessed_at': outcome_result['submitted_or_assessed_at'],
         'last_updated': datetime.utcnow(),
-        'enrollment_term': enrollment_term
+        # 'enrollment_term': enrollment_term
 
     }
     return temp_dict
@@ -386,7 +386,7 @@ if __name__ == '__main__':
     # update_users()
     # update_courses(current_term)
     # update_course_students(current_term)
-    # pull_outcome_results(current_term)
+    pull_outcome_results(current_term)
     insert_grades(current_term)
 
     end = time.time()

@@ -205,22 +205,26 @@ def course_dashboard(lti=lti):
     # res_schema = OutcomeResultSchema()
     # alignments = res_schema.dump(outcomes, many=True)
 
-    # Create outcome average dictionaries
+    # Create outcome average dictionaries todo - move to it's own function
     outcome_averages = {}
-    for student_id, stu_aligns in itertools.groupby(outcome_results, lambda t: t.user_id):
+    for student_id, stu_aligns in itertools.groupby(outcome_results,
+                                                    lambda t: t.user_id):
         temp_dict = {}
-        for outcome_id, out_aligns in itertools.groupby(stu_aligns, lambda x: x.outcome_id):
+        for outcome_id, out_aligns in itertools.groupby(stu_aligns, lambda
+                x: x.outcome_id):
             aligns = list(out_aligns)
             full_sum = sum([o.score for o in aligns])
             num_of_aligns = len(aligns)
-            temp_dict[outcome_id] = full_sum/num_of_aligns
+            full_avg = full_sum / num_of_aligns
+            temp_dict[outcome_id] = safe_round(full_avg, 2)
 
-            filtered_align = [o.score for o in out_aligns if o.submitted_or_assessed_at < CUTOFF_DATE]
+            filtered_align = [o.score for o in out_aligns if
+                              o.submitted_or_assessed_at < CUTOFF_DATE]
             if len(filtered_align) > 0:
                 min_score = min(filtered_align)
-                drop_avg = (full_sum - min_score)/(num_of_aligns - 1)
-                if drop_avg > temp_dict[outcome_id]:
-                    temp_dict['outcome_id'] = drop_avg
+                drop_avg = (full_sum - min_score) / (num_of_aligns - 1)
+                if drop_avg > full_avg:
+                    temp_dict['outcome_id'] = safe_round(drop_avg, 2)
 
         outcome_averages[student_id] = temp_dict
 
@@ -245,7 +249,8 @@ def course_detail(course_id=357, user_id=384, lti=lti):
     # Get current grade
     grade = Grade.query.filter(Grade.user_id == user_id) \
         .filter(Grade.course_id == course_id) \
-        .filter(Grade.course.enrollment_term_id == ENROLLMENT_TERM_ID).join(Course).first()
+        .filter(Grade.course.enrollment_term_id == ENROLLMENT_TERM_ID).join(
+        Course).first()
 
     outcomes = OutcomeResult.query.filter_by(user_id=user_id) \
         .filter_by(course_id=course_id).all()

@@ -7,7 +7,6 @@
                data-show-search-clear-button="true"
                data-show-export="true"
                data-export-types="['csv']"
-{#               data-fixed-columns="true"#}
         >
             <thead>
 
@@ -17,14 +16,16 @@
                 <th data-sortable="true" data-width="100">Email</th>
                 {% for outcome in outcomes %}
                     {% if outcome.display_name %}
-                        <th data-sortable="true">
+                        <th data-sortable="true"
+                        data-align="center">
                             <div class="text-wrap"
                                  style="width: 10rem;">
                                 {{ outcome.display_name }}
                             </div>
                         </th>
                     {% else %}
-                        <th data-sortable="true">
+                        <th data-sortable="true"
+                        data-align="center">
                             <div class="text-wrap"
                                  style="width: 8rem;">
                                 {{ outcome.title }}

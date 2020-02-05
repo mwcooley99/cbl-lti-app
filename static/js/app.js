@@ -180,6 +180,8 @@ function makeOutcomesTablev2(alignments, $table_el, drop_date) {
         return outcome;
     });
 
+    // Sort by outcome average
+    outcome_avgs = outcome_avgs.sort((a, b) => (a.outcome_avg < b.outcome_avg) ? 1 : -1);
 
     var columns = [
         {
@@ -209,7 +211,7 @@ function makeOutcomesTablev2(alignments, $table_el, drop_date) {
 }
 
 function expandTablev2($el, outcome) {
-    let alignments = outcome['alignments'];
+    let alignments = outcome['alignments'].sort((a, b) => (a.submitted_or_assessed_at < b.submitted_or_assessed_at ? 1: -1));
 
     let $card = $el.html("<div class='card p-3'></div>").find('.card');
     let text = "";

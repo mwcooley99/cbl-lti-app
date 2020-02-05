@@ -6,7 +6,7 @@ function makeCourseTable(students, alignments) {
             title: 'Student',
             class: "headcol",
             sortable: true,
-            formatter: function(value, row){
+            formatter: function (value, row) {
                 let link = `<a href="${row.course_id}/user/${row.user.id}">${value}</a>`
                 return link;
             }
@@ -147,16 +147,31 @@ function makeOutcomesTable(outcomes, $table_el) {
 
 }
 
-function makeOutcomesTablev2(alignments, $table_el) {
+function makeOutcomesTablev2(alignments, $table_el, drop_date) {
     // Check for a display name and use if available
     var outcomes = groupBy(alignments, a => a.outcome.id);
 
-
+    // Calculate outcome averages, looping through the different outcome keys
+    // console.log(outcomes);
     var outcome_avgs = Object.keys(outcomes).map(function (key) {
         let outcome = {};
         let alignments = outcomes[key];
-        let filtered_align = alignments.filter(a => !a.dropped);
-        outcome['outcome_avg'] = filtered_align.reduce((a, {score}) => a + score, 0) / filtered_align.length;
+        // calulate full average
+        let align_sum = alignments.reduce((a, {score}) => a + score, 0);
+        outcome['outcome_avg'] = align_sum / alignments.length;
+        outcome['dropped'] = false;
+
+        // calculate drop average
+        let filtered_align = alignments.filter(a => a.submitted_or_assessed_at <= drop_date);
+        // If there's more than one alignment after the filter, check to see if dropping lowest score will help
+        if (filtered_align.length > 0){
+            let min_score = filtered_align.reduce((min, val) => val.score < min ? val.score : min, filtered_align[0].score);
+            let drop_avg = (align_sum - min_score)/(alignments.length - 1)
+            outcome['outcome_avg'] = drop_avg < outcome['outcome_avg'] ? drop_avg : outcome['outcome_avg'];
+            outcome['dropped'] = true;
+        }
+
+        // Format the outcome information
         outcome['outcome_avg'] = outcome['outcome_avg'].toFixed(2);
         let outcome_detail = alignments[0]['outcome'];
         outcome['title'] = outcome_detail['display_name'] ? outcome_detail['display_name'] : outcome_detail['title'];
@@ -164,7 +179,6 @@ function makeOutcomesTablev2(alignments, $table_el) {
 
         return outcome;
     });
-
 
 
     var columns = [
@@ -199,9 +213,8 @@ function expandTablev2($el, outcome) {
 
     let $card = $el.html("<div class='card p-3'></div>").find('.card');
     let text = "";
-    let drop_min = alignments.filter(a => a.dropped).length;
 
-    if (drop_min > 0) {
+    if (outcome['dropped']) {
         text = "<p>The lowest score <b>was</b> dropped from this outcome because it helped your average.</p>"
     } else {
         text = "<p>The lowest score <b>was not</b> dropped from this outcome because dropping it would not have helped your average.</p>"
@@ -236,7 +249,7 @@ function expandTablev2($el, outcome) {
             field: 'submitted_or_assessed_at',
             title: 'Date Assessed',
             sortable: true,
-            formatter: function(value, row) {
+            formatter: function (value, row) {
                 let dt = new Date(`${value}Z`);
                 return dt.toLocaleDateString();
             }
@@ -319,11 +332,11 @@ function buildSubTable($el, alignments) {
     });
 }
 
-$(function () {
-    $button2.click(function () {
-        $courseTable.bootstrapTable('collapseAllRows')
-    })
-});
+// $(function () {
+//     $button2.click(function () {
+//         $courseTable.bootstrapTable('collapseAllRows')
+//     })
+// });
 
 function mcellStyle(value, row, index) {
     var classes = [

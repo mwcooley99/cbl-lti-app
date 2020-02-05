@@ -11,7 +11,7 @@ import os
 from config import configuration
 
 from .db_models import Outcomes, OutcomeResults, Courses, Users, Alignments, \
-    Records, Grades
+    Records, Grades, CourseUserLink
 from .canvas_api import get_users
 
 config = configuration[os.getenv('PULL_CONFIG')]
@@ -141,6 +141,19 @@ def delete_outcome_results(course_id):
     session.commit()
 
 
+def delete_course_students(course_id):
+    delete_stmt = CourseUserLink.delete().where(
+        CourseUserLink.c.course_id == course_id
+    )
+    session.execute(delete_stmt)
+    session.commit()
+
+
+def insert_course_students(students):
+    session.execute(CourseUserLink.insert().values(students))
+    session.commit()
+
+
 def create_record(current_term):
     '''
     Creates new record
@@ -160,8 +173,15 @@ def create_record(current_term):
     return record[0]
 
 
-def insert_grades_to_db(grades_list):
+def delete_grades_current_term(current_term):
+    delete_stmt = delete_stmt = Grades.delete().where(
+        Grades.c.course_id == Courses.c.id).where(
+        Courses.c.enrollment_term_id == current_term
+    )
+    session.execute(delete_stmt)
+    session.commit()
 
+def insert_grades_to_db(grades_list):
     session.execute(Grades.insert().values(grades_list))
     session.commit()
 
@@ -191,6 +211,7 @@ def query_current_outcome_results(current_term):
     outcome_results = pd.read_sql(sql, conn)
 
     return outcome_results
+
 
 def get_db_courses(current_term=None):
     stmt = Courses.select(Courses.c.enrollment_term_id == current_term)

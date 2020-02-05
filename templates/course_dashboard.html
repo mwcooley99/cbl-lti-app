@@ -1,18 +1,19 @@
 {% extends 'base.html' %}
 {% block content %}
     <div class="container-fluid">
-
         <table data-toggle="table"
                data-height="600"
                data-search="true"
                data-show-search-clear-button="true"
                data-show-export="true"
                data-export-types="['csv']"
-               data-fixed-columns="true">
+{#               data-fixed-columns="true"#}
+        >
             <thead>
+
             <tr>
-                <th data-width="8" data-width-unit="em" data-sortable="true">Name</th>
-                <th data-sortable="true" data-width="400">Grade</th>
+                <th data-width="12" data-width-unit="em" data-sortable="true">Name</th>
+                <th data-sortable="true" data-width="100">Grade</th>
                 {% for outcome in outcomes %}
                     {% if outcome.display_name %}
                         <th data-sortable="true">
@@ -85,10 +86,10 @@
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script>
         var $courseTable = $('#courseTable');
-        var $button2 = $('#button2');
+        {#var $button2 = $('#button2');#}
         {#$(function () {#}
         {#    var grades = {{ grades_dict|tojson|safe }};#}
-        {#    var alignments = {{ alignments|tojson|safe }};#}
+            var alignments = {{ alignments|tojson|safe }};
         {#    let outcomes = {{ outcomes|tojson|safe }}#}
         {##}
         {#    makeCourseTable(grades, alignments);#}

@@ -22,6 +22,7 @@ class Course(db.Model):
 
     outcome_averages = db.relationship('OutcomeAverage', backref='course')
     grades = db.relationship('Grade', backref='course')
+    courses = db.relationship('CourseUserLink', backref='course')
 
     def __repr__(self):
         return str(self.name)
@@ -51,6 +52,8 @@ class Grade(db.Model):
     threshold = db.Column(db.Numeric(asdecimal=False))
     min_score = db.Column(db.Numeric(asdecimal=False))
 
+
+
     def to_dict(self):
         '''
         Helper to return dictionary with the joined data included
@@ -76,7 +79,8 @@ class User(db.Model):
     sis_user_id = db.Column(db.String)
     login_id = db.Column(db.String)
 
-    grades = db.relationship('Grade', backref='user')
+    grades = db.relationship('Grade', backref='user', lazy='dynamic')
+    courses = db.relationship('CourseUserLink', backref='user')
 
     def __repr__(self):
         return f'Name: {self.name}'
@@ -92,6 +96,7 @@ class OutcomeResult(db.Model):
     alignment_id = db.Column(db.String, db.ForeignKey('alignments.id'))
     submitted_or_assessed_at = db.Column(db.DateTime)
     last_updated = db.Column(db.DateTime)
+    enrollment_term = db.Column(db.Integer)
     dropped = db.Column(db.Boolean)
 
 
@@ -113,6 +118,11 @@ class Alignment(db.Model):
     name = db.Column(db.String)
 
     outcome_results = db.relationship('OutcomeResult', backref='alignment')
+
+class CourseUserLink(db.Model):
+    __tablename__ = 'course_user_link'
+    course_id = db.Column(db.Integer, db.ForeignKey('courses.id'), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
 
 
 class CourseSchema(ma.Schema):

@@ -14,10 +14,13 @@ import logging
 import time, json
 
 from utilities.cbl_calculator import calculation_dictionaries
-from utilities.canvas_api import get_course_users, get_observees, get_user_courses
+from utilities.canvas_api import get_course_users, get_observees
 from utilities.helpers import safe_round
 
 from logging.handlers import RotatingFileHandler
+
+# TODO add to db
+ENROLLMENT_TERM_ID = 11
 
 app = Flask(__name__)
 app.secret_key = settings.secret_key
@@ -28,7 +31,7 @@ ma = Marshmallow(app)
 api = Api(app)
 
 from models import Record, OutcomeAverage, Course, Grade, User, \
-    OutcomeResult, Outcome, Alignment, GradeSchema, UserSchema, \
+    OutcomeResult, Outcome, Alignment, CourseUserLink, GradeSchema, UserSchema, \
     OutcomeSchema, AlignmentSchema, OutcomeResultSchema
 
 # ============================================
@@ -119,25 +122,23 @@ def student_dashboard(lti=lti, user_id=None):
         if not (int(user_id) in auth_users_id):
             return "You are not authorized to view this users information"
 
-        # Get student
+        # Get student, which is linked to user-courses relationship table
         user = User.query.filter(User.id == user_id).first()
 
-        courses = get_user_courses(user_id)
-        print(courses)
-
-        # Get current Grades
-        grades = Grade.query.filter_by(record_id=record.id,
-                                       user_id=user_id).join(Course).filter(
-            ~Course.name.contains('@dtech')).order_by(Course.name).all()
-
-        grade_schema = GradeSchema()
-        grades = grade_schema.dump(grades, many=True)
+        # get student grades
+        grades = user.grades.join(Course).filter(
+            Grade.course
+        ).all()
 
         # Get outcome results
-        # todo - need to filter by enrollment term
-        outcomes = OutcomeResult.query.filter_by(user_id=user_id).all()
+        outcomes = OutcomeResult.query.filter_by(user_id=user_id
+                                                 ).filter(OutcomeResult.score.isnot(None)).order_by(
+            OutcomeResult.course_id, OutcomeResult.outcome_id).all()
         res_schema = OutcomeResultSchema()
         alignments = res_schema.dump(outcomes, many=True)
+
+        with open('out/alignments.json', 'w') as fp:
+            json.dump(alignments, fp, indent=2)
 
         if grades:
             return render_template('student_dashboard.html', record=record,
@@ -211,79 +212,39 @@ def course_dashboard(lti=lti):
     else:
         outcome_id_list = []
     outcomes = Outcome.query.filter(Outcome.id.in_(outcome_id_list)).all()
-    # outcome_schema = OutcomeSchema()
-    # outcomes = outcome_schema.dump(outcomes, many=True)
 
     elapsed = time.perf_counter() - s
     print(f"4 {__file__} executed in {elapsed:0.2f} seconds.")
 
     # get outcome averages
     outcome_averages = db.session.query(OutcomeResult.user_id,
-               OutcomeResult.outcome_id,
-               db.func.avg(OutcomeResult.score).label('avg')) \
+                                        OutcomeResult.outcome_id,
+                                        db.func.avg(OutcomeResult.score).label(
+                                            'avg')) \
         .filter(OutcomeResult.course_id == course_id) \
-        .filter(~OutcomeResult.dropped)\
+        .filter(~OutcomeResult.dropped) \
         .group_by(OutcomeResult.user_id,
                   OutcomeResult.outcome_id) \
         .order_by(OutcomeResult.user_id, OutcomeResult.outcome_id).all()
-
+    for grade in grades:
+        print(grade)
     # convert outcome averages to dictionaries
-    outcome_averages = {k: {outcome_avg[1]: safe_round(outcome_avg[2], 2) for outcome_avg in
-                            list(g)} for k, g in
-                        itertools.groupby(outcome_averages, lambda t: t[0])}
+    outcome_averages = {
+        k: {outcome_avg[1]: safe_round(outcome_avg[2], 2) for outcome_avg in
+            list(g)} for k, g in
+        itertools.groupby(outcome_averages, lambda t: t[0])}
+
+    outcomes = OutcomeResult.query.filter_by(course_id=course_id).all()
+    res_schema = OutcomeResultSchema()
+    alignments = res_schema.dump(outcomes, many=True)
 
     elapsed = time.perf_counter() - s
     print(f"{__file__} executed in {elapsed:0.2f} seconds.")
     return render_template('course_dashboard.html', students=grades,
                            calculation_dict=calculation_dictionaries,
                            record=record, grades_dict=grades_dict,
-                            outcomes=outcomes,
+                           outcomes=outcomes,
                            outcome_averages=outcome_averages)
-
-
-@app.route('/student_dashboard_v2/<user_id>', methods=['GET'])
-@lti(error=error, request='session', role='student', app=app)
-def student_dashboardv2(lti=lti, user_id=None):
-    '''
-    Dashboard froms a student view. Used for students, parents and advisors
-    :param lti: pylti
-    :param user_id: users Canvas ID
-    :return: template or error message
-    '''
-    record = Record.query.order_by(Record.id.desc()).first()
-
-    if user_id:  # Todo - this probably isn't needed
-        # check user is NOT authorized to access this file
-        # auth_users_id = [user['id'] for user in session['users']]
-        # if not (int(user_id) in auth_users_id):
-        #     return "You are not authorized to view this users information"
-
-        # Get student
-        user = User.query.filter(User.id == user_id).first()
-
-
-
-        # Get current Grades
-        grades = Grade.query.filter_by(record_id=record.id,
-                                       user_id=user_id).join(Course).filter(
-            ~Course.name.contains('@dtech')).order_by(Course.name).all()
-
-        grade_schema = GradeSchema()
-        grades = grade_schema.dump(grades, many=True)
-
-        # Get outcome results
-        outcomes = OutcomeResult.query.filter_by(user_id=user_id).all()
-        res_schema = OutcomeResultSchema()
-        alignments = res_schema.dump(outcomes, many=True)
-
-        if grades:
-            return render_template('student_dashboard_v2.html', record=record,
-                                   user=user,
-                                   students=session['users'], grades=grades,
-                                   calculation_dict=calculation_dictionaries,
-                                   alignments=alignments)
-
-    return "You currently don't have any grades!"
 
 
 @app.route("/course_dashboard/<course_id>/user/<user_id>")
@@ -355,6 +316,7 @@ def make_shell_context():
                 Course=Course, Record=Record, Grade=Grade, User=User,
                 UserSchema=UserSchema, GradeSchema=GradeSchema,
                 Alignment=Alignment, OutcomeResult=OutcomeResult,
+                CourseUserLink=CourseUserLink,
                 OutcomeSchema=OutcomeSchema,
                 OutcomeResultSchema=OutcomeResultSchema,
                 AlignmentSchema=AlignmentSchema)

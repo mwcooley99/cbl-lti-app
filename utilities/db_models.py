@@ -27,7 +27,7 @@ Courses = Table('courses', metadata,
 Grades = Table('grades', metadata,
                Column('id', Integer, primary_key=True, autoincrement=True),
                Column('user_id', Integer),
-               Column('course_id', Integer),
+               Column('course_id', Integer, ForeignKey('courses.id')),
                Column('grade', String),
                Column('outcomes', JSON),
                Column('record_id', Integer),
@@ -69,9 +69,9 @@ Outcomes = Table('outcomes', metadata,
 
 CourseUserLink = Table('course_user_link', metadata,
                        Column('course_id', ForeignKey('courses.id'),
-                              primary_key=True),
+                              primary_key=True, nullable=False),
                        Column('user_id',
-                              ForeignKey('users.id'), primary_key=True)
+                              ForeignKey('users.id'), primary_key=True, nullable=False)
                        )
 
 metadata.create_all(engine, checkfirst=True)

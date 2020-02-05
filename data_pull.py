@@ -7,20 +7,21 @@ from datetime import datetime
 
 import time
 
-from utilities.cbl_calculator import calculate_traditional_grade, weighted_avg
+from utilities.cbl_calculator import calculate_traditional_grade, weighted_avg, CUTOFF_DATE
 from utilities.canvas_api import get_courses, get_outcome_results, \
     get_course_users_ids, create_outcome_dataframes, get_course_users
 
 from utilities.db_functions import insert_grades_to_db, create_record, \
     update_users, delete_outcome_results, upsert_alignments, \
     upsert_outcome_results, upsert_outcomes, upsert_courses, \
-    query_current_outcome_results, update_outcome_res_dropped
+    query_current_outcome_results, update_outcome_res_dropped, get_db_courses, \
+    insert_course_students, delete_course_students, delete_grades_current_term
 
 OUTCOMES_TO_FILTER = (
     2269, 2270, 2923, 2922, 2732,
     2733)
 
-CUTOFF_DATE = datetime(2020, 1, 1)
+
 
 
 def make_grade_object(grade, outcome_avgs, record_id, course, user_id):
@@ -77,7 +78,7 @@ def make_outcome_result(outcome_result, course_id, enrollment_term):
         'alignment_id': outcome_result['links']['alignment'],
         'submitted_or_assessed_at': outcome_result['submitted_or_assessed_at'],
         'last_updated': datetime.utcnow(),
-        'enrollment_term': enrollment_term
+        # 'enrollment_term': enrollment_term
 
     }
     return temp_dict
@@ -100,7 +101,7 @@ def format_alignments(alignment):
 
 
 def pull_outcome_results(current_term=10):
-    # get all courses for current term
+    # get all courses for current term todo move outside of this function
     courses = get_courses(current_term)
     upsert_courses(courses)
 
@@ -116,7 +117,12 @@ def pull_outcome_results(current_term=10):
             print(course['name'])
             continue
 
-        outcome_results, alignments, outcomes = get_outcome_results(course)
+        # get course users
+        users = get_course_users(course)
+        user_ids = [user['id'] for user in users]
+
+        outcome_results, alignments, outcomes = get_outcome_results(course,
+                                                                    user_ids=user_ids)
 
         # Format results, Removed Null filter (works better for upsert)
         outcome_results = [
@@ -151,59 +157,37 @@ def pull_outcome_results(current_term=10):
 
 def insert_grades(current_term=10):
     print(f'Grade pull started at {datetime.now()}')
+
     outcome_results = query_current_outcome_results(current_term)
+    drop_eligible_results = outcome_results.loc[
+        outcome_results['submitted_or_assessed_at'] < CUTOFF_DATE]
 
-    # rank the outcomes
-    rank_group_cols = ['links.user', 'course_id', 'outcome_id']
-    outcome_results['drop_eligible_scores'] = outcome_results.where(
-        outcome_results['submitted_or_assessed_at'] < CUTOFF_DATE)['score']
+    # get min score from drop_eligible_results
+    group_cols = ['links.user', 'course_id', 'outcome_id']
+    min_score = drop_eligible_results.groupby(group_cols).agg(
+        min_score=('score', 'min')).reset_index()
+    full_avg = outcome_results.groupby(group_cols).agg(
+        full_avg=('score', 'mean'),
+        count=('score', 'count'),
+        sum=('score', 'sum')).reset_index()
+    outcome_avgs = pd.merge(min_score, full_avg, on=group_cols)
+    outcome_avgs['drop_avg'] = (outcome_avgs['sum'] - outcome_avgs[
+        'min_score']) / (outcome_avgs['count'] - 1)
 
-    outcome_results['rank'] = outcome_results.groupby(rank_group_cols)[
-        'drop_eligible_scores'].rank('first')
+    # Pick the higher average
+    outcome_avgs['outcome_avg'] = np.where(
+        outcome_avgs['drop_avg'] > outcome_avgs['full_avg'],
+        outcome_avgs['drop_avg'], outcome_avgs['full_avg'])
 
-    # Create outcomes df
-    outcome_cols = ['outcome_id', 'title', 'display_name']
-    outcomes = outcome_results[outcome_cols].drop_duplicates()
-
-    unfiltered_avgs = calc_outcome_avgs(outcome_results)
-
-    # add outcome metadata back in
-    unfiltered_avgs = pd.merge(unfiltered_avgs, outcomes, how='left',
-                               on='outcome_id')
-
-    # Add column to alignments noting if it was dropped
-    avg_merge_cols = ['links.user', 'course_id', 'outcome_id']
-    outcome_results = pd.merge(outcome_results, unfiltered_avgs, how='left',
-                               on=avg_merge_cols)
-    outcome_results['dropped'] = np.where(
-        (outcome_results['drop_min']) & (outcome_results['rank'] == 1.0), True,
-        False)
-
-    dropped_dict = outcome_results[['_id', 'dropped']].to_dict('records')
-    update_outcome_res_dropped(dropped_dict)
-
-    # Convert datetime to string for serializtion into dictionaries
-    outcome_results['submitted_or_assessed_at'] = outcome_results[
-        'submitted_or_assessed_at'].dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-
-
-    # make grades df
+    # calculate the grades
     group_cols = ['links.user', 'course_id']
-    grades = unfiltered_avgs.groupby(group_cols).agg(
-        {'outcome_avg': calculate_traditional_grade})
+    grades = outcome_avgs.groupby(group_cols).agg(
+        grade_dict=('outcome_avg', calculate_traditional_grade))
     grades.reset_index(inplace=True)
 
-
-    # Break up grades into their own columns
-    grades[['unfiltered_grades', 'unfiltered_idx']] = pd.DataFrame(
-        grades['outcome_avg'].values.tolist(), index=grades.index)
-
-    # todo - refactor. Not needed anymore
-    grades['final_grade'] = grades['unfiltered_grades']
-
-    # Break up grade dict into columns
+    # format the grades
     grades[['threshold', 'min_score', 'grade']] = pd.DataFrame(
-        grades['final_grade'].values.tolist(), index=grades.index)
+        grades['grade_dict'].values.tolist(), index=grades.index)
 
     # Make a new record
     print(f'Record created at {datetime.now()}')
@@ -212,12 +196,83 @@ def insert_grades(current_term=10):
 
     # Create grades_dict for database insert
     grades.rename(columns={'links.user': 'user_id'}, inplace=True)
-    grade_cols = ['course_id', 'user_id', 'threshold', 'min_score', 'grade', 'record_id']
+    grade_cols = ['course_id', 'user_id', 'threshold', 'min_score', 'grade',
+                  'record_id']
     grades_list = grades[grade_cols].to_dict('r')
+
+    # Delete grades from current term
+    delete_grades_current_term(current_term)
 
     # Insert into Database
     if len(grades_list):
         insert_grades_to_db(grades_list)
+    # return None
+    #
+    # # todo - drop
+    # # rank the outcomes
+    # rank_group_cols = ['links.user', 'course_id', 'outcome_id']
+    # outcome_results['drop_eligible_scores'] = outcome_results.where(
+    #     outcome_results['submitted_or_assessed_at'] < CUTOFF_DATE)['score']
+    #
+    # outcome_results['rank'] = outcome_results.groupby(rank_group_cols)[
+    #     'drop_eligible_scores'].rank('first')
+    #
+    # # Create outcomes df
+    # outcome_cols = ['outcome_id', 'title', 'display_name']
+    # outcomes = outcome_results[outcome_cols].drop_duplicates()
+    #
+    # unfiltered_avgs = calc_outcome_avgs(outcome_results)
+    #
+    # # add outcome metadata back in
+    # unfiltered_avgs = pd.merge(unfiltered_avgs, outcomes, how='left',
+    #                            on='outcome_id')
+    #
+    # # Add column to alignments noting if it was dropped
+    # avg_merge_cols = ['links.user', 'course_id', 'outcome_id']
+    # outcome_results = pd.merge(outcome_results, unfiltered_avgs, how='left',
+    #                            on=avg_merge_cols)
+    # outcome_results['dropped'] = np.where(
+    #     (outcome_results['drop_min']) & (outcome_results['rank'] == 1.0), True,
+    #     False)
+    #
+    # dropped_dict = outcome_results[['_id', 'dropped']].to_dict('records')
+    # update_outcome_res_dropped(dropped_dict)
+    #
+    # # Convert datetime to string for serializtion into dictionaries
+    # outcome_results['submitted_or_assessed_at'] = outcome_results[
+    #     'submitted_or_assessed_at'].dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    #
+    # # make grades df
+    # group_cols = ['links.user', 'course_id']
+    # grades = unfiltered_avgs.groupby(group_cols).agg(
+    #     {'outcome_avg': calculate_traditional_grade})
+    # grades.reset_index(inplace=True)
+    #
+    # # Break up grades into their own columns
+    # grades[['unfiltered_grades', 'unfiltered_idx']] = pd.DataFrame(
+    #     grades['outcome_avg'].values.tolist(), index=grades.index)
+    #
+    # # todo - refactor. Not needed anymore
+    # grades['final_grade'] = grades['unfiltered_grades']
+    #
+    # # Break up grade dict into columns
+    # grades[['threshold', 'min_score', 'grade']] = pd.DataFrame(
+    #     grades['final_grade'].values.tolist(), index=grades.index)
+    #
+    # # Make a new record
+    # print(f'Record created at {datetime.now()}')
+    # record_id = create_record(current_term)
+    # grades['record_id'] = record_id
+    #
+    # # Create grades_dict for database insert
+    # grades.rename(columns={'links.user': 'user_id'}, inplace=True)
+    # grade_cols = ['course_id', 'user_id', 'threshold', 'min_score', 'grade',
+    #               'record_id']
+    # grades_list = grades[grade_cols].to_dict('r')
+    #
+    # # Insert into Database
+    # if len(grades_list):
+    #     insert_grades_to_db(grades_list)
 
 
 def calc_outcome_avgs(outcome_results):
@@ -299,14 +354,40 @@ def format_outcome_results(outcome_results):
     return outcome_results
 
 
+def update_course_students(current_term):
+    # Query current courses
+    courses = get_db_courses(current_term)
+
+    for course in courses:
+        course_id = course[0]
+        print(course_id)
+        # Get course students
+        students = get_course_users({'id': course_id})
+        # Get user IDs in a list
+        student_dicts = [{'course_id': course_id, 'user_id': student['id']} for
+                         student in students]
+        print(student_dicts)
+
+        if student_dicts:
+            # delete previous course roster
+            delete_course_students(course['id'])
+            # insert current roster
+            insert_course_students(student_dicts)
+
+
+def update_courses(current_term):
+    courses = get_courses(current_term)
+    upsert_courses(courses)
+
+
 if __name__ == '__main__':
     start = time.time()
-
-
+    current_term = 11
     # update_users()
-    # pull_outcome_results()
-    # insert_grades()
-
+    # update_courses(current_term)
+    # update_course_students(current_term)
+    pull_outcome_results(current_term)
+    insert_grades(current_term)
 
     end = time.time()
     print(f'pull took: {end - start} seconds')

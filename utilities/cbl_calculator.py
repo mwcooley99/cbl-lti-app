@@ -1,6 +1,12 @@
 import math
 import pandas as pd
 
+import json
+import itertools
+
+from datetime import datetime
+
+CUTOFF_DATE = datetime(2020, 5, 1)
 
 # todo - add to database
 # calculation_dictionaries = [
@@ -91,6 +97,10 @@ def weighted_avg(scores):
     w_avg = first_weight * s.iloc[:-1, 0].mean() + final_weight * s.iloc[-1, 0]
     return w_avg
 
+def outcome_avg(alignments=None):
+    pass
+
+
 
 def calculate_traditional_grade(scores):
     # check if the outcome is assessed.
@@ -101,7 +111,7 @@ def calculate_traditional_grade(scores):
                    'grade': 'n/a',
                    'threshold': None,
                    'min_score': None,
-               }, 0
+               }
 
     scores_sorted = sorted(scores, reverse=True)
 
@@ -121,6 +131,15 @@ def calculate_traditional_grade(scores):
         if threshold_score >= grade['threshold'] and min_score >= grade[
             'min_score']:
             traditional_grade['grade'] = grade['grade']
-            return traditional_grade, _i
+            return traditional_grade
 
     return calculation_dictionaries[-1]
+
+
+if __name__ == '__main__':
+    with open('../out/alignments.json', 'r') as fp:
+        alignments = json.load(fp)
+
+    # courses = []
+    # for course_id, alignments in itertools.groupby(alignments, lambda t: t['course_id']):
+    #     for

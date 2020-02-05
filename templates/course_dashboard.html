@@ -1,57 +1,61 @@
 {% extends 'base.html' %}
 {% block content %}
     <div class="container-fluid">
-        <p>
-            <small>Data last updated: {{ record.created_at|strftime }}</small>
-        </p>
+        <table data-toggle="table"
+               data-height="600"
+               data-search="true"
+               data-show-search-clear-button="true"
+               data-show-export="true"
+               data-export-types="['csv']"
+        >
+            <thead>
 
-        <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
-            <li class="nav-item">
-                <a class="nav-link active" id="pills-home-tab"
-                   data-toggle="pill" href="#pills-home" role="tab"
-                   aria-controls="pills-home" aria-selected="true">Gradebook</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" id="pills-profile-tab" data-toggle="pill"
-                   href="#pills-profile" role="tab"
-                   aria-controls="pills-profile"
-                   aria-selected="false">Learning Mastery</a>
-            </li>
+            <tr>
+                <th data-width="12" data-width-unit="em" data-sortable="true">Name</th>
+                <th data-sortable="true" data-width="100">Grade</th>
+                <th data-sortable="true" data-width="100">Email</th>
+                {% for outcome in outcomes %}
+                    {% if outcome.display_name %}
+                        <th data-sortable="true"
+                        data-align="center">
+                            <div class="text-wrap"
+                                 style="width: 10rem;">
+                                {{ outcome.display_name }}
+                            </div>
+                        </th>
+                    {% else %}
+                        <th data-sortable="true"
+                        data-align="center">
+                            <div class="text-wrap"
+                                 style="width: 8rem;">
+                                {{ outcome.title }}
+                            </div>
 
-        </ul>
-        <div id="toolbar">
+                        </th>
+                    {% endif %}
+                {% endfor %}
+            </tr>
+            </thead>
+            {% for student in students %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('course_detail', course_id=student.course_id, user_id=student.user.id) }}">{{ student.user.name }}</a>
+                    </td>
+                    <td>{{ student.grade }}</td>
+                    <td>{{student.user.login_id}}</td>
+                    {% set student_avgs = outcome_averages[student.user.id] %}
+                    {% for outcome in outcomes %}
+                        <td>{{ student_avgs[outcome.id] }}</td>
+                    {% endfor %}
+                </tr>
 
-            <button id="button2" class="btn btn-secondary">collapseAllRows
-            </button>
-        </div>
-        <div class="tab-content" id="pills-tabContent">
-            <div class="tab-pane fade show active" id="pills-home"
-                 role="tabpanel" aria-labelledby="pills-home-tab">
-                        <table id="courseTable"></table>
-            </div>
-            <div class="tab-pane fade" id="pills-profile" role="tabpanel"
-                 aria-labelledby="pills-profile-tab">
-                <table id="outcomesTable"></table>
-            </div>
-
-        </div>
-
+            {% endfor %}
+        </table>
 
     </div>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script>
         var $courseTable = $('#courseTable');
-        var $button2 = $('#button2');
-        $(function () {
-            var grades = {{ grades_dict|tojson|safe }};
-            var alignments = {{ alignments|tojson|safe }};
-            let outcomes = {{ outcomes|tojson|safe }}
-
-            makeCourseTable(grades, alignments);
-            makeMasteryTable(grades, alignments, outcomes);
-
-        });
-
 
     </script>
 

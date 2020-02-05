@@ -162,6 +162,7 @@ def insert_grades(current_term=10):
     drop_eligible_results = outcome_results.loc[
         outcome_results['submitted_or_assessed_at'] < CUTOFF_DATE]
 
+    print(outcome_results)
     # get min score from drop_eligible_results
     group_cols = ['links.user', 'course_id', 'outcome_id']
     min_score = drop_eligible_results.groupby(group_cols).agg(

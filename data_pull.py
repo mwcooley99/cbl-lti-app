@@ -206,73 +206,7 @@ def insert_grades(current_term=10):
     # Insert into Database
     if len(grades_list):
         insert_grades_to_db(grades_list)
-    # return None
-    #
-    # # todo - drop
-    # # rank the outcomes
-    # rank_group_cols = ['links.user', 'course_id', 'outcome_id']
-    # outcome_results['drop_eligible_scores'] = outcome_results.where(
-    #     outcome_results['submitted_or_assessed_at'] < CUTOFF_DATE)['score']
-    #
-    # outcome_results['rank'] = outcome_results.groupby(rank_group_cols)[
-    #     'drop_eligible_scores'].rank('first')
-    #
-    # # Create outcomes df
-    # outcome_cols = ['outcome_id', 'title', 'display_name']
-    # outcomes = outcome_results[outcome_cols].drop_duplicates()
-    #
-    # unfiltered_avgs = calc_outcome_avgs(outcome_results)
-    #
-    # # add outcome metadata back in
-    # unfiltered_avgs = pd.merge(unfiltered_avgs, outcomes, how='left',
-    #                            on='outcome_id')
-    #
-    # # Add column to alignments noting if it was dropped
-    # avg_merge_cols = ['links.user', 'course_id', 'outcome_id']
-    # outcome_results = pd.merge(outcome_results, unfiltered_avgs, how='left',
-    #                            on=avg_merge_cols)
-    # outcome_results['dropped'] = np.where(
-    #     (outcome_results['drop_min']) & (outcome_results['rank'] == 1.0), True,
-    #     False)
-    #
-    # dropped_dict = outcome_results[['_id', 'dropped']].to_dict('records')
-    # update_outcome_res_dropped(dropped_dict)
-    #
-    # # Convert datetime to string for serializtion into dictionaries
-    # outcome_results['submitted_or_assessed_at'] = outcome_results[
-    #     'submitted_or_assessed_at'].dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-    #
-    # # make grades df
-    # group_cols = ['links.user', 'course_id']
-    # grades = unfiltered_avgs.groupby(group_cols).agg(
-    #     {'outcome_avg': calculate_traditional_grade})
-    # grades.reset_index(inplace=True)
-    #
-    # # Break up grades into their own columns
-    # grades[['unfiltered_grades', 'unfiltered_idx']] = pd.DataFrame(
-    #     grades['outcome_avg'].values.tolist(), index=grades.index)
-    #
-    # # todo - refactor. Not needed anymore
-    # grades['final_grade'] = grades['unfiltered_grades']
-    #
-    # # Break up grade dict into columns
-    # grades[['threshold', 'min_score', 'grade']] = pd.DataFrame(
-    #     grades['final_grade'].values.tolist(), index=grades.index)
-    #
-    # # Make a new record
-    # print(f'Record created at {datetime.now()}')
-    # record_id = create_record(current_term)
-    # grades['record_id'] = record_id
-    #
-    # # Create grades_dict for database insert
-    # grades.rename(columns={'links.user': 'user_id'}, inplace=True)
-    # grade_cols = ['course_id', 'user_id', 'threshold', 'min_score', 'grade',
-    #               'record_id']
-    # grades_list = grades[grade_cols].to_dict('r')
-    #
-    # # Insert into Database
-    # if len(grades_list):
-    #     insert_grades_to_db(grades_list)
+
 
 
 def calc_outcome_avgs(outcome_results):
@@ -357,16 +291,22 @@ def format_outcome_results(outcome_results):
 def update_course_students(current_term):
     # Query current courses
     courses = get_db_courses(current_term)
+    pattern = '@dtech|Teacher Assistant|LAB Day|FIT|Innovation Diploma FIT'
 
     for course in courses:
         course_id = course[0]
-        print(course_id)
+        course_name = course[1]
+        # Filter out non-academic courses
+        if re.match(pattern, course_name):
+            print(course_name)
+            continue
+
         # Get course students
         students = get_course_users({'id': course_id})
         # Get user IDs in a list
         student_dicts = [{'course_id': course_id, 'user_id': student['id']} for
                          student in students]
-        print(student_dicts)
+
 
         if student_dicts:
             # delete previous course roster
@@ -383,9 +323,9 @@ def update_courses(current_term):
 if __name__ == '__main__':
     start = time.time()
     current_term = 11
-    # update_users()
-    # update_courses(current_term)
-    # update_course_students(current_term)
+    update_users()
+    update_courses(current_term)
+    update_course_students(current_term)
     pull_outcome_results(current_term)
     insert_grades(current_term)
 

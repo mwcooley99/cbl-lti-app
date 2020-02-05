@@ -161,6 +161,7 @@ def course_navigation(lti=lti):
     session['course_id'] = request.form.get('custom_canvas_course_id')
 
     if course_title.startswith('@dtech'):
+        # Would be better to run this internally
         users = get_course_users({'id': session['course_id']})
         format_users(users)
         user = session['users'][0]

@@ -14,6 +14,7 @@
             <tr>
                 <th data-width="12" data-width-unit="em" data-sortable="true">Name</th>
                 <th data-sortable="true" data-width="100">Grade</th>
+                <th data-sortable="true" data-width="100">Email</th>
                 {% for outcome in outcomes %}
                     {% if outcome.display_name %}
                         <th data-sortable="true">
@@ -40,6 +41,7 @@
                         <a href="{{ url_for('course_detail', course_id=student.course_id, user_id=student.user.id) }}">{{ student.user.name }}</a>
                     </td>
                     <td>{{ student.grade }}</td>
+                    <td>{{student.user.login_id}}</td>
                     {% set student_avgs = outcome_averages[student.user.id] %}
                     {% for outcome in outcomes %}
                         <td>{{ student_avgs[outcome.id] }}</td>
@@ -53,8 +55,6 @@
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script>
         var $courseTable = $('#courseTable');
-
-
 
     </script>
 

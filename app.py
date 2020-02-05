@@ -245,7 +245,7 @@ def course_detail(course_id=357, user_id=384, lti=lti):
     # Get current grade
     grade = Grade.query.filter(Grade.user_id == user_id) \
         .filter(Grade.course_id == course_id) \
-        .filter(Grade.record_id == record.id).join(Course).first()
+        .filter(Grade.course.enrollment_term_id == ENROLLMENT_TERM_ID).join(Course).first()
 
     outcomes = OutcomeResult.query.filter_by(user_id=user_id) \
         .filter_by(course_id=course_id).all()

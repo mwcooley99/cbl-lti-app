@@ -34,7 +34,7 @@ class ProductionConfig(BaseConfig):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
-    SQLALCHEMY_ECHO = True
+
 
 
 class TestingConfig(BaseConfig):

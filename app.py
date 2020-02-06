@@ -122,6 +122,7 @@ def student_dashboard(lti=lti, user_id=None):
         if not (int(user_id) in auth_users_id):
             return "You are not authorized to view this users information"
 
+        print("Hello1")
         # Get student, which is linked to user-courses relationship table
         user = User.query.filter(User.id == user_id).first()
 
@@ -129,15 +130,17 @@ def student_dashboard(lti=lti, user_id=None):
         grades = user.grades.join(Course).filter(
             Course.enrollment_term_id == ENROLLMENT_TERM_ID
         ).all()
-
+        print('Hello 1.5')
         # Get outcome results
         outcomes = OutcomeResult.query.filter_by(user_id=user_id
                                                  ).filter(
             OutcomeResult.score.isnot(None)).order_by(
             OutcomeResult.course_id, OutcomeResult.outcome_id).all()
+        print('hello 1.6')
         res_schema = OutcomeResultSchema()
-        alignments = res_schema.dump(outcomes, many=True)
 
+        alignments = res_schema.dump(outcomes, many=True)
+        print("Hello2")
         if grades:
             return render_template('student_dashboard.html', record=record,
                                    user=user,

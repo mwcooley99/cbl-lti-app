@@ -23,6 +23,7 @@ class Course(db.Model):
     outcome_averages = db.relationship('OutcomeAverage', backref='course')
     grades = db.relationship('Grade', backref='course')
     courses = db.relationship('CourseUserLink', backref='course')
+    # outcome_results = db.relationship('OutcomeResult', backref='course')
 
     def __repr__(self):
         return str(self.name)
@@ -97,7 +98,7 @@ class OutcomeResult(db.Model):
     submitted_or_assessed_at = db.Column(db.DateTime)
     last_updated = db.Column(db.DateTime)
     enrollment_term = db.Column(db.Integer)
-    dropped = db.Column(db.Boolean)
+    # dropped = db.Column(db.Boolean)
 
 
 class Outcome(db.Model):

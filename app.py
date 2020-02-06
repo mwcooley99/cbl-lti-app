@@ -132,17 +132,22 @@ def student_dashboard(lti=lti, user_id=None):
         ).all()
         print('Hello 1.5')
         # Get outcome results
-        outcomes = OutcomeResult.query.join(Course,
-            OutcomeResult.course_id == Course.id).filter(
+        outcomes = OutcomeResult.query.options(
+            db.joinedload(OutcomeResult.outcome, innerjoin=True)).options(
+            db.joinedload(OutcomeResult.alignment, innerjoin=True)).options(
+            db.joinedload(OutcomeResult.course, innerjoin=True)).filter(
             OutcomeResult.user_id == user_id
-            ).filter(
-            OutcomeResult.score.isnot(None)).filter(Course.enrollment_term_id == ENROLLMENT_TERM_ID).order_by(
+        ).filter(
+            OutcomeResult.score.isnot(None)
+        # ).filter(
+        #     Course.enrollment_term_id == ENROLLMENT_TERM_ID
+        ).order_by(
             OutcomeResult.course_id, OutcomeResult.outcome_id).all()
         print('hello 1.6')
         res_schema = OutcomeResultSchema()
 
         alignments = res_schema.dump(outcomes, many=True)
-        print("Hello2")
+        print(f"Length of alignments {len(alignments)}")
         if grades:
             return render_template('student_dashboard.html', record=record,
                                    user=user,
@@ -162,9 +167,11 @@ def course_navigation(lti=lti):
     :return: redirects to course page or adviser page depending on the course type
     '''
     session['dash_type'] = 'course'
+    print('*******')
+    print(request.form.get('custom_canvas_course_id'))
     course_title = request.form.get('context_title')
     session['course_id'] = request.form.get('custom_canvas_course_id')
-
+    session.modified = True
     if course_title.startswith('@dtech'):
         # Would be better to run this internally
         users = get_course_users({'id': session['course_id']})
@@ -172,7 +179,7 @@ def course_navigation(lti=lti):
         user = session['users'][0]
         return redirect(url_for('student_dashboard', user_id=user['id']))
 
-    return redirect(url_for('course_dashboard'))
+    return redirect(url_for('course_dashboard', course_id=session['course_id']))
 
 
 @app.route("/course_dashboard/")
@@ -184,12 +191,17 @@ def course_dashboard(lti=lti):
     :return: template for a core content teacher
     '''
     record = Record.query.order_by(Record.id.desc()).first()
+    print(record)
     course_id = session['course_id']
+
+    print(f'course: {course_id}')
     s = time.perf_counter()
     # Get the grades
     grades = Grade.query.filter(Grade.record_id == record.id) \
-        .filter(Grade.course_id == session['course_id']).join(User).order_by(
+        .filter(Grade.course_id == course_id).join(User).order_by(
         User.name).all()
+
+    # todo - remove me
     session['users'] = [{'id': grade.user_id} for grade in grades]
 
     # Base query

@@ -324,10 +324,10 @@ def update_courses(current_term):
 if __name__ == '__main__':
     start = time.time()
     current_term = 11
-    update_users()
-    update_courses(current_term)
-    update_course_students(current_term)
-    pull_outcome_results(current_term)
+    # update_users()
+    # update_courses(current_term)
+    # update_course_students(current_term)
+    # pull_outcome_results(current_term)
     insert_grades(current_term)
 
     end = time.time()

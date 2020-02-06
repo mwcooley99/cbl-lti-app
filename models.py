@@ -23,7 +23,7 @@ class Course(db.Model):
     outcome_averages = db.relationship('OutcomeAverage', backref='course')
     grades = db.relationship('Grade', backref='course')
     courses = db.relationship('CourseUserLink', backref='course')
-    # outcome_results = db.relationship('OutcomeResult', backref='course')
+    outcome_results = db.relationship('OutcomeResult', backref='course')
 
     def __repr__(self):
         return str(self.name)
@@ -91,7 +91,7 @@ class OutcomeResult(db.Model):
     __tablename__ = 'outcome_results'
     id = db.Column(db.Integer, primary_key=True)
     score = db.Column(db.Float)
-    course_id = db.Column(db.Integer)
+    course_id = db.Column(db.Integer, db.ForeignKey('courses.id'))
     user_id = db.Column(db.Integer)
     outcome_id = db.Column(db.Integer, db.ForeignKey('outcomes.id'))
     alignment_id = db.Column(db.String, db.ForeignKey('alignments.id'))

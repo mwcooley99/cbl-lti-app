@@ -217,8 +217,9 @@
 
             {#var group = makeGroup(alignments, 'course_id');#}
             {#var group = _.groupBy(alignments, a => a.course_id)#}
-            var courses = groupBy(alignments, 'course_id');
+            var courses = groupBy(alignments, 'course');
             var course_ids = Object.keys(courses);
+            console.log(courses);
 
             course_ids.forEach(function (course_id, index) {
                 let $el = $(`#table-${course_id}`);

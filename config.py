@@ -21,6 +21,7 @@ class DevelopmentConfig(BaseConfig):
     PYLTI_CONFIG = settings.PYLTI_CONFIG
     SQLALCHEMY_DATABASE_URI = os.getenv('DEVELOPMENT_DB_URI')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ECHO = True
 
 
 class ProductionConfig(BaseConfig):
@@ -33,6 +34,7 @@ class ProductionConfig(BaseConfig):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
+    SQLALCHEMY_ECHO = True
 
 
 class TestingConfig(BaseConfig):

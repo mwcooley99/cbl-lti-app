@@ -132,9 +132,11 @@ def student_dashboard(lti=lti, user_id=None):
         ).all()
         print('Hello 1.5')
         # Get outcome results
-        outcomes = OutcomeResult.query.filter_by(user_id=user_id
-                                                 ).filter(
-            OutcomeResult.score.isnot(None)).order_by(
+        outcomes = OutcomeResult.query.join(Course,
+            OutcomeResult.course_id == Course.id).filter(
+            OutcomeResult.user_id == user_id
+            ).filter(
+            OutcomeResult.score.isnot(None)).filter(Course.enrollment_term_id == ENROLLMENT_TERM_ID).order_by(
             OutcomeResult.course_id, OutcomeResult.outcome_id).all()
         print('hello 1.6')
         res_schema = OutcomeResultSchema()

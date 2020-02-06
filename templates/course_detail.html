@@ -110,10 +110,7 @@
         $(function () {
             var alignments = {{ alignments|tojson|safe }};
 
-
-            {#var group = makeGroup(alignments, 'course_id');#}
-            {#var group = _.groupBy(alignments, a => a.course_id)#}
-            var courses = groupBy(alignments, 'course_id');
+            var courses = groupBy(alignments, 'course');
             var course_ids = Object.keys(courses);
 
             course_ids.forEach(function (course_id, index) {

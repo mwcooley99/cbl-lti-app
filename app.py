@@ -6,7 +6,7 @@ from flask_restful import Api
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 
-from pylti.flask import lti
+from pylti.flask import lti, LTI
 
 import settings
 import itertools
@@ -122,7 +122,6 @@ def student_dashboard(lti=lti, user_id=None):
         if not (int(user_id) in auth_users_id):
             return "You are not authorized to view this users information"
 
-        print("Hello1")
         # Get student, which is linked to user-courses relationship table
         user = User.query.filter(User.id == user_id).first()
 
@@ -130,24 +129,21 @@ def student_dashboard(lti=lti, user_id=None):
         grades = user.grades.join(Course).filter(
             Course.enrollment_term_id == ENROLLMENT_TERM_ID
         ).all()
-        print('Hello 1.5')
+
         # Get outcome results
         outcomes = OutcomeResult.query.options(
             db.joinedload(OutcomeResult.outcome, innerjoin=True)).options(
             db.joinedload(OutcomeResult.alignment, innerjoin=True)).options(
-            db.joinedload(OutcomeResult.course, innerjoin=True)).filter(
-            OutcomeResult.user_id == user_id
+            db.joinedload(OutcomeResult.course, innerjoin=True)
         ).filter(
-            OutcomeResult.score.isnot(None)
-        # ).filter(
-        #     Course.enrollment_term_id == ENROLLMENT_TERM_ID
+            OutcomeResult.user_id == user_id, OutcomeResult.score.isnot(None),
+            Course.enrollment_term_id == ENROLLMENT_TERM_ID
         ).order_by(
             OutcomeResult.course_id, OutcomeResult.outcome_id).all()
-        print('hello 1.6')
-        res_schema = OutcomeResultSchema()
 
+        res_schema = OutcomeResultSchema()
         alignments = res_schema.dump(outcomes, many=True)
-        print(f"Length of alignments {len(alignments)}")
+
         if grades:
             return render_template('student_dashboard.html', record=record,
                                    user=user,
@@ -167,11 +163,11 @@ def course_navigation(lti=lti):
     :return: redirects to course page or adviser page depending on the course type
     '''
     session['dash_type'] = 'course'
-    print('*******')
-    print(request.form.get('custom_canvas_course_id'))
+
     course_title = request.form.get('context_title')
-    session['course_id'] = request.form.get('custom_canvas_course_id')
+    session['course_id'] = None
     session.modified = True
+    session['course_id'] = request.form.get('custom_canvas_course_id')
     if course_title.startswith('@dtech'):
         # Would be better to run this internally
         users = get_course_users({'id': session['course_id']})
@@ -179,27 +175,28 @@ def course_navigation(lti=lti):
         user = session['users'][0]
         return redirect(url_for('student_dashboard', user_id=user['id']))
 
-    return redirect(url_for('course_dashboard', course_id=session['course_id']))
+    return redirect(
+        url_for('course_dashboard', course_id=session['course_id']))
 
 
-@app.route("/course_dashboard/")
+@app.route("/course_dashboard/<course_id>")
 @lti(error=error, request='session', role='instructor', app=app)
-def course_dashboard(lti=lti):
+def course_dashboard(course_id, lti=lti):
     '''
     Dashboard for core content teachers
     :param lti: pylti
     :return: template for a core content teacher
     '''
     record = Record.query.order_by(Record.id.desc()).first()
-    print(record)
-    course_id = session['course_id']
 
-    print(f'course: {course_id}')
     s = time.perf_counter()
     # Get the grades
-    grades = Grade.query.filter(Grade.record_id == record.id) \
-        .filter(Grade.course_id == course_id).join(User).order_by(
-        User.name).all()
+
+    grades = Grade.query.join(Grade.user).options(
+        db.joinedload(Grade.user, innerjoin=True)
+    ).filter(
+        Grade.record_id == record.id, Grade.course_id == course_id
+    ).order_by(User.name).all()
 
     # todo - remove me
     session['users'] = [{'id': grade.user_id} for grade in grades]
@@ -218,7 +215,9 @@ def course_dashboard(lti=lti):
     outcomes = Outcome.query.filter(Outcome.id.in_(outcome_id_list)).all()
 
     #
-    outcome_results = base_query.order_by(
+    outcome_results = base_query.filter(
+        OutcomeResult.score.isnot(None)
+    ).order_by(
         OutcomeResult.user_id, OutcomeResult.outcome_id).all()
     # res_schema = OutcomeResultSchema()
     # alignments = res_schema.dump(outcomes, many=True)
@@ -254,25 +253,30 @@ def course_dashboard(lti=lti):
 
 
 @app.route("/course_dashboard/<course_id>/user/<user_id>")
-@lti(error=error, request='session', role='student', app=app)
+@lti(error=error, request='session', role='instructor', app=app)
 def course_detail(course_id=357, user_id=384, lti=lti):
-    auth_users_id = [user['id'] for user in session['users']]
-
-    if not (int(user_id) in auth_users_id):
-        return "You are not authorized to view this users information"
-
     prev_url = request.referrer
     record = Record.query.order_by(Record.id.desc()).first()
 
     # Get current grade
     grade = Grade.query.filter(Grade.user_id == user_id) \
         .filter(Grade.course_id == course_id) \
-        .filter(Grade.course.enrollment_term_id == ENROLLMENT_TERM_ID).join(
-        Course).first()
+        .first()
 
-    outcomes = OutcomeResult.query.filter_by(user_id=user_id) \
-        .filter_by(course_id=course_id).all()
-
+    outcomes = OutcomeResult.query.options(
+        db.joinedload(OutcomeResult.outcome, innerjoin=True)
+    ).options(
+        db.joinedload(OutcomeResult.alignment, innerjoin=True)
+    ).options(
+        db.joinedload(OutcomeResult.course, innerjoin=True)
+    ).filter(
+        OutcomeResult.user_id == user_id, OutcomeResult.score.isnot(None),
+        Course.enrollment_term_id == ENROLLMENT_TERM_ID,
+        Course.id == OutcomeResult.course_id
+    ).order_by(
+        OutcomeResult.course_id, OutcomeResult.outcome_id).all()
+    print('********')
+    print(outcomes)
     res_schema = OutcomeResultSchema()
     alignments = res_schema.dump(outcomes, many=True)
 

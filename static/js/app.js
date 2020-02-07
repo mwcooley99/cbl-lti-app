@@ -109,71 +109,39 @@ function makeMasteryTable(grades, alignments, outcomes) {
 
 }
 
-
-// function makeOutcomesTable(outcomes, $table_el) {
-//     // Check for a display name and use if available
-//     outcomes.forEach(outcome => {
-//             if (outcome['display_name']) {
-//                 outcome['title'] = outcome['display_name']
-//             }
-//         }
-//     );
-//
-//     var columns = [
-//         {
-//             field: 'title',
-//             title: 'Outcome',
-//             sortable: true
-//         },
-//         {
-//             field: 'outcome_avg',
-//             title: 'Outcome Average',
-//             sortable: true
-//         },
-//
-//     ];
-//
-//     $table_el.bootstrapTable({
-//         columns: columns,
-//         data: outcomes,
-//         // height: 480,
-//         detailView: true,
-//         onExpandRow: function (index, row, $detail) {
-//
-//             expandTable($detail, row)
-//         }
-//
-//     });
-//
-// }
-
 function makeOutcomesTablev2(alignments, $table_el, drop_date) {
     // Check for a display name and use if available
     var outcomes = groupBy(alignments, a => a.outcome.id);
 
     // Calculate outcome averages, looping through the different outcome keys
-    // console.log(outcomes);
+
     var outcome_avgs = Object.keys(outcomes).map(function (key) {
         let outcome = {};
         let alignments = outcomes[key];
-        // calulate full average
+        let outcome_detail = alignments[0]['outcome'];
+
+        // calculate full average
         let align_sum = alignments.reduce((a, {score}) => a + score, 0);
         outcome['outcome_avg'] = align_sum / alignments.length;
         outcome['dropped'] = false;
 
         // calculate drop average
         let filtered_align = alignments.filter(a => a.submitted_or_assessed_at <= drop_date);
+
         // If there's more than one alignment after the filter, check to see if dropping lowest score will help
         if (filtered_align.length > 0){
             let min_score = filtered_align.reduce((min, val) => val.score < min ? val.score : min, filtered_align[0].score);
-            let drop_avg = (align_sum - min_score)/(alignments.length - 1)
-            outcome['outcome_avg'] = drop_avg < outcome['outcome_avg'] ? drop_avg : outcome['outcome_avg'];
-            outcome['dropped'] = true;
+            let drop_avg = (align_sum - min_score)/(alignments.length - 1);
+            // Check if average with low score dropped is better
+            if (drop_avg > outcome['outcome_avg']){
+                outcome['outcome_avg'] = drop_avg;
+                outcome['dropped'] = true;
+            }
         }
+
 
         // Format the outcome information
         outcome['outcome_avg'] = outcome['outcome_avg'].toFixed(2);
-        let outcome_detail = alignments[0]['outcome'];
         outcome['title'] = outcome_detail['display_name'] ? outcome_detail['display_name'] : outcome_detail['title'];
         outcome['alignments'] = alignments;
 

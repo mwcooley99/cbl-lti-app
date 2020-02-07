@@ -213,13 +213,12 @@
 
         $(function () {
             var alignments = {{ alignments|tojson|safe }};
-            var drop_date = "2019-12-01";
+            {# todo - use date from database #}
+            var drop_date = "2020-05-01";
 
-            {#var group = makeGroup(alignments, 'course_id');#}
-            {#var group = _.groupBy(alignments, a => a.course_id)#}
+
             var courses = groupBy(alignments, 'course');
             var course_ids = Object.keys(courses);
-            console.log(courses);
 
             course_ids.forEach(function (course_id, index) {
                 let $el = $(`#table-${course_id}`);

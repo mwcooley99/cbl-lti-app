@@ -36,7 +36,6 @@ class ProductionConfig(BaseConfig):
     SESSION_COOKIE_HTTPONLY = True
 
 
-
 class TestingConfig(BaseConfig):
     DEBUG = False
     TESTING = True

@@ -48,9 +48,10 @@ function makeCourseTable(students, alignments) {
     })
 }
 
-function makeMasteryTable(grades, alignments, outcomes) {
+function makeMasteryTable(grades, alignments, outcomes, tableOut) {
     // Get unique outcomes
-    var $tableOut = $('#outcomesTable');
+    // var $tableOut = $('#outcomesTable');
+    console.log(outcomes);
 
     // Create the columns for the table
     const columns = outcomes.map(function (value, index) {

@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
     <div class="container-fluid">
+        {#        <table id="outcomesTable"></table>#}
         <table data-toggle="table"
                data-height="600"
                data-search="true"
@@ -11,13 +12,15 @@
             <thead>
 
             <tr>
-                <th data-width="12" data-width-unit="em" data-sortable="true">Name</th>
+                <th data-width="12" data-width-unit="em" data-sortable="true">
+                    Name
+                </th>
                 <th data-sortable="true" data-width="100">Grade</th>
                 <th data-sortable="true" data-width="100">Email</th>
                 {% for outcome in outcomes %}
                     {% if outcome.display_name %}
                         <th data-sortable="true"
-                        data-align="center">
+                            data-align="center">
                             <div class="text-wrap"
                                  style="width: 10rem;">
                                 {{ outcome.display_name }}
@@ -25,7 +28,7 @@
                         </th>
                     {% else %}
                         <th data-sortable="true"
-                        data-align="center">
+                            data-align="center">
                             <div class="text-wrap"
                                  style="width: 8rem;">
                                 {{ outcome.title }}
@@ -36,16 +39,35 @@
                 {% endfor %}
             </tr>
             </thead>
-            {% for student in students %}
+            {% for student in users %}
+                {% set grade_list =  grades|selectattr('user_id', 'equalto', student.user.id)|list %}
+                {% if grade_list %}
+                    {% set grade = grade_list|first %}
+                {% else %}
+                    {% set grade = {'grade': 'n/a'} %}
+                {% endif %}
                 <tr>
                     <td>
                         <a href="{{ url_for('course_detail', course_id=student.course_id, user_id=student.user.id) }}">{{ student.user.name }}</a>
                     </td>
-                    <td>{{ student.grade }}</td>
-                    <td>{{student.user.login_id}}</td>
-                    {% set student_avgs = outcome_averages[student.user.id] %}
+                    <td>{{ grade.grade }}</td>
+                    <td>{{ student.user.login_id }}</td>
+                    {% set outcome_student = outcome_averages|selectattr('user_id', 'equalto', student.user.id)|list %}
+                    {% if outcome_student %}
+                        {% set outcome_student = outcome_student|first %}
+                        {% set outcome_avgs = outcome_student['outcome_avgs']  %}
+                    {% else %}
+                        {% set outcome_avgs = [] %}
+                    {% endif %}
                     {% for outcome in outcomes %}
-                        <td>{{ student_avgs[outcome.id] }}</td>
+                        {% set avg = outcome_avgs|selectattr('outcome_id', 'equalto', outcome.id)|list %}
+                        {% if avg %}
+                            {% set avg = avg|first %}
+                        {% else %}
+                            {% set avg = '' %}
+                        {% endif %}
+                        <td>{{avg['avg']}}</td>
+
                     {% endfor %}
                 </tr>
 
@@ -56,6 +78,7 @@
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script>
         var $courseTable = $('#courseTable');
+
 
     </script>
 

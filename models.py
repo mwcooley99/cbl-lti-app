@@ -143,7 +143,7 @@ class GradeSchema(ma.Schema):
             'id', 'course_id', 'grade', 'outcomes', 'course', 'record_id',
             'user', 'threshold', 'min_score')
 
-    course = ma.Nested(CourseSchema)
+    # course = ma.Nested(CourseSchema)
     user = ma.Nested(UserSchema)
 
 

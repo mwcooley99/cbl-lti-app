@@ -192,14 +192,21 @@ def course_dashboard(course_id, lti=lti):
     s = time.perf_counter()
     # Get the grades
 
+    # Query users
+    users = CourseUserLink.query.join(User).options(
+        db.joinedload(CourseUserLink.user, innerjoin=True)).filter(
+        CourseUserLink.course_id == course_id).order_by(User.name).all()
+
     grades = Grade.query.join(Grade.user).options(
         db.joinedload(Grade.user, innerjoin=True)
     ).filter(
         Grade.record_id == record.id, Grade.course_id == course_id
     ).order_by(User.name).all()
+    # grade_schema = GradeSchema()
+    # grades = grade_schema.dump(grades, many=True)
 
     # todo - remove me
-    session['users'] = [{'id': grade.user_id} for grade in grades]
+    # session['users'] = [{'id': grade.user_id} for grade in grades]
 
     # Base query
     base_query = OutcomeResult.query \
@@ -213,6 +220,8 @@ def course_dashboard(course_id, lti=lti):
     else:
         outcome_id_list = []
     outcomes = Outcome.query.filter(Outcome.id.in_(outcome_id_list)).all()
+    # outcome_schema = OutcomeSchema()
+    # outcomes = outcome_schema.dump(outcomes, many=True)
 
     #
     outcome_results = base_query.filter(
@@ -222,18 +231,31 @@ def course_dashboard(course_id, lti=lti):
     # res_schema = OutcomeResultSchema()
     # alignments = res_schema.dump(outcomes, many=True)
 
+    # outcome_results = OutcomeResult.query.options(
+    #     db.joinedload(OutcomeResult.outcome, innerjoin=True)).options(
+    #     db.joinedload(OutcomeResult.alignment, innerjoin=True)).options(
+    # ).filter(
+    #     OutcomeResult.score.isnot(None),
+    #     Course.enrollment_term_id == ENROLLMENT_TERM_ID,
+    #     Course.id == course_id
+    # ).order_by(
+    #     OutcomeResult.course_id, OutcomeResult.outcome_id).all()
+    # res_schema = OutcomeResultSchema()
+    # alignments = res_schema.dump(outcomes, many=True)
+
     # Create outcome average dictionaries todo - move to it's own function
-    outcome_averages = {}
+    outcome_averages = []
     for student_id, stu_aligns in itertools.groupby(outcome_results,
                                                     lambda t: t.user_id):
-        temp_dict = {}
+        temp_dict = {'user_id': student_id, 'outcome_avgs': []}
         for outcome_id, out_aligns in itertools.groupby(stu_aligns, lambda
                 x: x.outcome_id):
             aligns = list(out_aligns)
             full_sum = sum([o.score for o in aligns])
             num_of_aligns = len(aligns)
             full_avg = full_sum / num_of_aligns
-            temp_dict[outcome_id] = safe_round(full_avg, 2)
+            temp_avg = {'avg': safe_round(full_avg, 2),
+                        'outcome_id': outcome_id}
 
             filtered_align = [o.score for o in out_aligns if
                               o.submitted_or_assessed_at < CUTOFF_DATE]
@@ -241,13 +263,15 @@ def course_dashboard(course_id, lti=lti):
                 min_score = min(filtered_align)
                 drop_avg = (full_sum - min_score) / (num_of_aligns - 1)
                 if drop_avg > full_avg:
-                    temp_dict['outcome_id'] = safe_round(drop_avg, 2)
+                    temp_avg = {'avg': safe_round(drop_avg, 2),
+                                'outcome_id': outcome_id}
+            temp_dict['outcome_avgs'].append(temp_avg)
+        outcome_averages.append(temp_dict)
 
-        outcome_averages[student_id] = temp_dict
 
-    return render_template('course_dashboard.html', students=grades,
+    return render_template('course_dashboard.html', users=users, grades=grades,
                            calculation_dict=calculation_dictionaries,
-                           record=record,
+                           record=record, course_id=course_id,
                            outcomes=outcomes,
                            outcome_averages=outcome_averages)
 
@@ -258,10 +282,17 @@ def course_detail(course_id=357, user_id=384, lti=lti):
     prev_url = request.referrer
     record = Record.query.order_by(Record.id.desc()).first()
 
+    # Get user
+    user = User.query.filter(User.id == user_id).first()
+    # Get course
+    course = Course.query.filter(Course.id == course_id).first()
+
     # Get current grade
     grade = Grade.query.filter(Grade.user_id == user_id) \
         .filter(Grade.course_id == course_id) \
         .first()
+    if not grade:
+        grade = {'grade': 'n/a', 'threshold': 'n/a', 'min_score': 'n/a'}
 
     outcomes = OutcomeResult.query.options(
         db.joinedload(OutcomeResult.outcome, innerjoin=True)
@@ -275,12 +306,11 @@ def course_detail(course_id=357, user_id=384, lti=lti):
         Course.id == OutcomeResult.course_id
     ).order_by(
         OutcomeResult.course_id, OutcomeResult.outcome_id).all()
-    print('********')
-    print(outcomes)
+
     res_schema = OutcomeResultSchema()
     alignments = res_schema.dump(outcomes, many=True)
 
-    return render_template('course_detail.html', grade=grade,
+    return render_template('course_detail.html', user=user, grade=grade, course=course,
                            calculation_dict=calculation_dictionaries,
                            alignments=alignments, prev_url=prev_url)
 

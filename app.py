@@ -6,16 +6,15 @@ from flask_restful import Api
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 
-from pylti.flask import lti, LTI
+from pylti.flask import lti
 
 import settings
-import itertools
 import logging
-import time, json
+import time
 
-from utilities.cbl_calculator import calculation_dictionaries, CUTOFF_DATE
+from utilities.cbl_calculator import calculation_dictionaries
 from utilities.canvas_api import get_course_users, get_observees
-from utilities.helpers import safe_round
+from utilities.helpers import make_outcome_avg_dicts
 
 from logging.handlers import RotatingFileHandler
 
@@ -30,7 +29,7 @@ db = SQLAlchemy(app)
 ma = Marshmallow(app)
 api = Api(app)
 
-from models import Record, OutcomeAverage, Course, Grade, User, \
+from app.models import Record, OutcomeAverage, Course, Grade, User, \
     OutcomeResult, Outcome, Alignment, CourseUserLink, GradeSchema, UserSchema, \
     OutcomeSchema, AlignmentSchema, OutcomeResultSchema
 
@@ -115,6 +114,7 @@ def student_dashboard(lti=lti, user_id=None):
     :return: template or error message
     '''
     record = Record.query.order_by(Record.id.desc()).first()
+    print(lti.role)
 
     if user_id:  # Todo - this probably isn't needed
         # check user is NOT authorized to access this file
@@ -228,46 +228,9 @@ def course_dashboard(course_id, lti=lti):
         OutcomeResult.score.isnot(None)
     ).order_by(
         OutcomeResult.user_id, OutcomeResult.outcome_id).all()
-    # res_schema = OutcomeResultSchema()
-    # alignments = res_schema.dump(outcomes, many=True)
-
-    # outcome_results = OutcomeResult.query.options(
-    #     db.joinedload(OutcomeResult.outcome, innerjoin=True)).options(
-    #     db.joinedload(OutcomeResult.alignment, innerjoin=True)).options(
-    # ).filter(
-    #     OutcomeResult.score.isnot(None),
-    #     Course.enrollment_term_id == ENROLLMENT_TERM_ID,
-    #     Course.id == course_id
-    # ).order_by(
-    #     OutcomeResult.course_id, OutcomeResult.outcome_id).all()
-    # res_schema = OutcomeResultSchema()
-    # alignments = res_schema.dump(outcomes, many=True)
 
     # Create outcome average dictionaries todo - move to it's own function
-    outcome_averages = []
-    for student_id, stu_aligns in itertools.groupby(outcome_results,
-                                                    lambda t: t.user_id):
-        temp_dict = {'user_id': student_id, 'outcome_avgs': []}
-        for outcome_id, out_aligns in itertools.groupby(stu_aligns, lambda
-                x: x.outcome_id):
-            aligns = list(out_aligns)
-            full_sum = sum([o.score for o in aligns])
-            num_of_aligns = len(aligns)
-            full_avg = full_sum / num_of_aligns
-            temp_avg = {'avg': safe_round(full_avg, 2),
-                        'outcome_id': outcome_id}
-
-            filtered_align = [o.score for o in out_aligns if
-                              o.submitted_or_assessed_at < CUTOFF_DATE]
-            if len(filtered_align) > 0:
-                min_score = min(filtered_align)
-                drop_avg = (full_sum - min_score) / (num_of_aligns - 1)
-                if drop_avg > full_avg:
-                    temp_avg = {'avg': safe_round(drop_avg, 2),
-                                'outcome_id': outcome_id}
-            temp_dict['outcome_avgs'].append(temp_avg)
-        outcome_averages.append(temp_dict)
-
+    outcome_averages = make_outcome_avg_dicts(outcome_results)
 
     return render_template('course_dashboard.html', users=users, grades=grades,
                            calculation_dict=calculation_dictionaries,
@@ -310,7 +273,8 @@ def course_detail(course_id=357, user_id=384, lti=lti):
     res_schema = OutcomeResultSchema()
     alignments = res_schema.dump(outcomes, many=True)
 
-    return render_template('course_detail.html', user=user, grade=grade, course=course,
+    return render_template('course_detail.html', user=user, grade=grade,
+                           course=course,
                            calculation_dict=calculation_dictionaries,
                            alignments=alignments, prev_url=prev_url)
 

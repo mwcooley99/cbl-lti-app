@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-12 mb-3">
+                <input type="text" id="myFilter" class="form-control"
+                       onkeyup="myFunction()" placeholder="Search for names..">
+            </div>
+        </div>
+        <div class="row" id="myItems">
+            <div class="col-sm-12 mb-3">
+                {% for student in students %}
+                <div class="card">
+                    <a class="card-link" data-toggle="collapse"
+                       href="#collapse{{ loop.index }}">
+                        <div class="card-header">{{ student.name }}: {{ student.grade }}</div>
+                    </a>
+                    <div id="collapse{{ loop.index }}" class="collapse hide">
+                        <div class="card-body">
+                            <h5 class="card-title"><a href="#">Card One</a>
+                            </h5>
+                            <h6 class="card-subtitle mb-2 text-muted">Card
+                                subtitle</h6>
+                            <p class="card-text">Some text.</p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function myFunction() {
+            var input, filter, cards, cardContainer, h5, title, i;
+            input = document.getElementById("myFilter");
+            filter = input.value.toUpperCase();
+            cardContainer = document.getElementById("myItems");
+            cards = cardContainer.getElementsByClassName("card");
+            for (i = 0; i < cards.length; i++) {
+                title = cards[i].querySelector(".card-link .card-header");
+                if (title.innerText.toUpperCase().indexOf(filter) > -1) {
+                    cards[i].style.display = "";
+                } else {
+                    cards[i].style.display = "none";
+                }
+            }
+        }
+    </script>
+{% endblock %}

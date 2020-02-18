@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block content %}
+   <table id="table"
+       data-toolbar="#toolbar"
+  data-height="460"
+  data-detail-view="true"
+  data-detail-formatter="detailFormatter">
+  <thead>
+    <tr>
+      <th data-field="id">ID</th>
+      <th data-field="name">Item Name</th>
+      <th data-field="price">Item Price</th>
+    </tr>
+  </thead>
+</table>
+
+<table id="table2"
+       data-toolbar="#toolbar"
+  data-height="460"
+  data-detail-view="true"
+  data-detail-formatter="detailFormatter">
+  <thead>
+    <tr>
+      <th data-field="id">ID</th>
+      <th data-field="name">Item Name</th>
+      <th data-field="price">Item Price</th>
+    </tr>
+  </thead>
+</table>
+
+<script>
+  var $table = $('#table')
+  var $table2 = $('#table2')
+
+  $(function() {
+    var data = [
+      {
+        'id': 0,
+        'name': 'Item 0',
+        'price': '$0'
+      },
+      {
+        'id': 1,
+        'name': 'Item 1',
+        'price': '$1'
+      },
+      {
+        'id': 2,
+        'name': 'Item 2',
+        'price': '$2'
+      },
+      {
+        'id': 3,
+        'name': 'Item 3',
+        'price': '$3'
+      },
+      {
+        'id': 4,
+        'name': 'Item 4',
+        'price': '$4'
+      },
+      {
+        'id': 5,
+        'name': 'Item 5',
+        'price': '$5'
+      }
+    ]
+    $table.bootstrapTable({data: data})
+  })
+
+  $(function() {
+    var data = [
+      {
+        'id': 0,
+        'name': 'Item 2',
+        'price': '$0'
+      },
+      {
+        'id': 1,
+        'name': 'Item 1',
+        'price': '$1'
+      },
+      {
+        'id': 2,
+        'name': 'Item 2',
+        'price': '$2'
+      },
+      {
+        'id': 3,
+        'name': 'Item 3',
+        'price': '$3'
+      },
+      {
+        'id': 4,
+        'name': 'Item 4',
+        'price': '$4'
+      },
+      {
+        'id': 5,
+        'name': 'Item 5',
+        'price': '$5'
+      }
+    ]
+    $table2.bootstrapTable({data: data})
+  })
+function
+</script>
+
+{% endblock %}

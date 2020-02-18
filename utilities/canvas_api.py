@@ -1,6 +1,7 @@
 import requests, os
 import pandas as pd
 from pandas.io.json import json_normalize
+import json
 
 access_token = os.getenv('CANVAS_API_KEY')
 

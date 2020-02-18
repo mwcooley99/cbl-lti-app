@@ -1,4 +1,5 @@
-from app import db, ma
+# from app import db, ma
+from .extensions import db, ma
 
 
 class Record(db.Model):

@@ -14674,7 +14674,7 @@
      * [sourceURLs](http://www.html5rocks.com/en/tutorials/developertools/sourcemaps/#toc-sourceurl)
      * for easier debugging.
      *
-     * For more information on precompiling templates see
+     * For more information on precompiling templates_old see
      * [lodash's custom builds documentation](https://lodash.com/custom-builds).
      *
      * For more information on Chrome extension sandboxes see
@@ -14759,7 +14759,7 @@
      * compiled({ 'user': 'mustache' });
      * // => 'hello mustache!'
      *
-     * // Use the `source` property to inline compiled templates for meaningful
+     * // Use the `source` property to inline compiled templates_old for meaningful
      * // line numbers in error messages and stack traces.
      * fs.writeFileSync(path.join(process.cwd(), 'jst.js'), '\
      *   var JST = {\
@@ -14872,7 +14872,7 @@
       });
 
       // Provide the compiled function's source by its `toString` method or
-      // the `source` property as a convenience for inlining compiled templates.
+      // the `source` property as a convenience for inlining compiled templates_old.
       result.source = source;
       if (isError(result)) {
         throw result;

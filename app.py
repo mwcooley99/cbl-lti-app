@@ -232,7 +232,7 @@ def course_dashboard(course_id, lti=lti):
     # Create outcome average dictionaries todo - move to it's own function
     outcome_averages = make_outcome_avg_dicts(outcome_results)
 
-    return render_template('course_dashboard.html', users=users, grades=grades,
+    return render_template('courses/dashboard.html', users=users, grades=grades,
                            calculation_dict=calculation_dictionaries,
                            record=record, course_id=course_id,
                            outcomes=outcomes,
@@ -273,7 +273,7 @@ def course_detail(course_id=357, user_id=384, lti=lti):
     res_schema = OutcomeResultSchema()
     alignments = res_schema.dump(outcomes, many=True)
 
-    return render_template('course_detail.html', user=user, grade=grade,
+    return render_template('courses/detail.html', user=user, grade=grade,
                            course=course,
                            calculation_dict=calculation_dictionaries,
                            alignments=alignments, prev_url=prev_url)

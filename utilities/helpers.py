@@ -32,3 +32,9 @@ def make_outcome_avg_dicts(outcome_results):
             temp_dict['outcome_avgs'].append(temp_avg)
         outcome_averages.append(temp_dict)
     return outcome_averages
+
+
+def format_users(users):
+    keys = ['id', 'name']
+    users = [dict(zip(keys, (user['id'], user['name']))) for user in users]
+    return sorted(users, key=lambda x: x['name'])

@@ -105,7 +105,7 @@ def student_dashboard(lti=lti, user_id=None):
         alignments = res_schema.dump(outcomes, many=True)
 
         if grades:
-            return render_template('student_dashboard.html', record=record,
+            return render_template('users/user_dash.html', record=record,
                                    user=user,
                                    students=session['users'], grades=grades,
                                    calculation_dict=calculation_dictionaries,

@@ -48,7 +48,7 @@
                 {% endif %}
                 <tr>
                     <td>
-                        <a href="{{ url_for('course_detail', course_id=student.course_id, user_id=student.user.id) }}">{{ student.user.name }}</a>
+                        <a href="{{ url_for('course.detail', course_id=student.course_id, user_id=student.user.id) }}">{{ student.user.name }}</a>
                     </td>
                     <td>{{ grade.grade }}</td>
                     <td>{{ student.user.login_id }}</td>

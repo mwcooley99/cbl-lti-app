@@ -8,7 +8,7 @@ import pandas as pd
 from datetime import datetime
 import os
 
-from config import configuration
+from app.config import configuration
 
 from .db_models import Outcomes, OutcomeResults, Courses, Users, Alignments, \
     Records, Grades, CourseUserLink
@@ -47,14 +47,6 @@ def upsert_users(users):
     session.execute(update_stmt)
     session.commit()
 
-
-def update_users():
-    '''
-    Runs through functions to update Users table
-    :return: None
-    '''
-    users = get_users()
-    upsert_users(users)
 
 
 def upsert_courses(courses):

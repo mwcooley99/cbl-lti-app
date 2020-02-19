@@ -1,8 +1,10 @@
-from pytz import utc
 from datetime import datetime
-from apscheduler.schedulers.blocking import BlockingScheduler
 
-from data_pull import update_users, pull_outcome_results, insert_grades, update_courses, update_course_students
+from apscheduler.schedulers.blocking import BlockingScheduler
+from pytz import utc
+
+from utilities.data_pull import update_users, pull_outcome_results, \
+    insert_grades, update_courses, update_course_students
 
 sched = BlockingScheduler(timezone=utc)
 

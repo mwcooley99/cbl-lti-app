@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine, Integer, String, Table, Column, MetaData, \
     ForeignKey, DateTime, Float, JSON, Boolean
-from config import configuration
+from app.config import configuration
 
 import os
 

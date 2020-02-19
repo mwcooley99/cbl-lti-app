@@ -1,27 +1,22 @@
-import pandas as pd
-import numpy as np
-import json
-
 import re
+import time
 from datetime import datetime
 
-import time
+import numpy as np
+import pandas as pd
 
-from utilities.cbl_calculator import calculate_traditional_grade, weighted_avg, CUTOFF_DATE
 from utilities.canvas_api import get_courses, get_outcome_results, \
-    get_course_users_ids, create_outcome_dataframes, get_course_users
-
+    get_course_users, get_users
+from utilities.cbl_calculator import calculate_traditional_grade, CUTOFF_DATE
 from utilities.db_functions import insert_grades_to_db, create_record, \
-    update_users, delete_outcome_results, upsert_alignments, \
+    delete_outcome_results, upsert_alignments, upsert_users, \
     upsert_outcome_results, upsert_outcomes, upsert_courses, \
-    query_current_outcome_results, update_outcome_res_dropped, get_db_courses, \
+    query_current_outcome_results, get_db_courses, \
     insert_course_students, delete_course_students, delete_grades_current_term
 
 OUTCOMES_TO_FILTER = (
     2269, 2270, 2923, 2922, 2732,
     2733)
-
-
 
 
 def make_grade_object(grade, outcome_avgs, record_id, course, user_id):
@@ -59,7 +54,7 @@ def make_empty_grade(course, grades_list, record_id, user_id):
     :param grades_list: list to append empty grade to
     :param record_id: record ID
     :param user_id: user_id
-    :return: 
+    :return:
     '''
     empty_grade = {'grade': 'n/a', 'threshold': None,
                    'min_score': None}
@@ -209,7 +204,6 @@ def insert_grades(current_term=10):
         insert_grades_to_db(grades_list)
 
 
-
 def calc_outcome_avgs(outcome_results):
     '''
     Calculates outcome averages with both simple and weighted averages,
@@ -308,7 +302,6 @@ def update_course_students(current_term):
         student_dicts = [{'course_id': course_id, 'user_id': student['id']} for
                          student in students]
 
-
         if student_dicts:
             # delete previous course roster
             delete_course_students(course['id'])
@@ -321,13 +314,22 @@ def update_courses(current_term):
     upsert_courses(courses)
 
 
+def update_users():
+    '''
+    Runs through functions to update Users table
+    :return: None
+    '''
+    users = get_users()
+    upsert_users(users)
+
+
 if __name__ == '__main__':
     start = time.time()
     current_term = 11
-    # update_users()
-    # update_courses(current_term)
-    # update_course_students(current_term)
-    # pull_outcome_results(current_term)
+    update_users()
+    update_courses(current_term)
+    update_course_students(current_term)
+    pull_outcome_results(current_term)
     insert_grades(current_term)
 
     end = time.time()

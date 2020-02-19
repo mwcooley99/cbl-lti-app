@@ -1,6 +1,6 @@
-import settings
-import os
+import app.settings as settings
 from configparser import ConfigParser
+import os
 
 
 class Config(object):

@@ -1,17 +1,15 @@
+import time
+
 from flask import Blueprint, render_template, current_app, session, url_for, \
     request, redirect
 from pylti.flask import lti
 
 from app.extensions import db
-from app.models import Outcome, Course, Record, Grade, \
-    User, \
-    OutcomeResult, CourseUserLink, \
-    OutcomeResultSchema
+from app.models import Outcome, Course, Record, Grade, User, OutcomeResult, \
+    CourseUserLink, OutcomeResultSchema
 from utilities.canvas_api import get_course_users
 from utilities.cbl_calculator import calculation_dictionaries
 from utilities.helpers import make_outcome_avg_dicts, format_users
-
-import time
 
 ENROLLMENT_TERM_ID = 11
 
@@ -32,7 +30,7 @@ def error(exception=None):
 
 @blueprint.route('/launch', methods=['POST', 'GET'])
 @lti(error=error, request='initial', role='instructor', app=current_app)
-def course_navigation(lti=lti):
+def launch(lti=lti):
     '''
     Authorization for course navigation
     :param lti: pylti
@@ -108,7 +106,8 @@ def dashboard(course_id, lti=lti):
     # Create outcome average dictionaries
     outcome_averages = make_outcome_avg_dicts(outcome_results)
 
-    return render_template('courses/dashboard.html', users=users, grades=grades,
+    return render_template('courses/dashboard.html', users=users,
+                           grades=grades,
                            calculation_dict=calculation_dictionaries,
                            record=record, course_id=course_id,
                            outcomes=outcomes,

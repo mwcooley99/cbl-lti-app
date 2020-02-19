@@ -16,6 +16,7 @@ class BaseConfig(object):
 class DevelopmentConfig(BaseConfig):
     db_pass = os.getenv('DB_PASSWORD')
     username = 'TheDoctor'
+    SECRET_KEY = os.getenv('SECRET_FLASK')
     DEBUG = True
     TESTING = True
     PYLTI_CONFIG = settings.PYLTI_CONFIG

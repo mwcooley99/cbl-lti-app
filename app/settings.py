@@ -35,7 +35,7 @@ PYLTI_CONFIG = {
         'observer': ['Observer', 'urn:lti:role:ims/lis/Mentor']
     }
 }
-print(PYLTI_CONFIG)
+
 # Secret key used for Flask sessions, etc. Must stay named 'secret_key'.
 # Can be any randomized string, recommend generating one with os.urandom(24)
 secret_key = os.environ.get("SECRET_FLASK", "CHANGEME")
@@ -50,6 +50,7 @@ LOG_BACKUP_COUNT = 1
 # Config object settings
 # See config.py other environments and options
 configClass = os.getenv('CONFIG')
+
 
 # Store application wide settings here
 # For example: we could store our app's api keys for canvas

@@ -5,26 +5,31 @@ import sys
 
 from flask import Flask, render_template
 
-from app import commands, user  # Need to import modules that contain blueprints
+import app.settings as settings
+from app import commands, \
+    user  # Need to import modules that contain blueprints
 from app.extensions import (
     db,
     ma
 )
 
 
-def create_app(config_object="app.settings"):
+def create_app(config_object="app.settings.configClass"):
     """Create application factory, as explained here: http://flask.pocoo.org/docs/patterns/appfactories/.
 
     :param config_object: The configuration object to use.
     """
+    config_object = settings.configClass
     app = Flask(__name__.split(".")[0])
     app.config.from_object(config_object)
+
     register_extensions(app)
     register_blueprints(app)
     register_errorhandlers(app)
     register_shellcontext(app)
     register_commands(app)
     configure_logger(app)
+    register_filters(app)
     return app
 
 
@@ -34,10 +39,7 @@ def register_extensions(app):
     db.init_app(app)
     ma.init_app(app)
 
-    from app.models import Outcome, OutcomeAverage, Course, Record, Grade, \
-        User, \
-        UserSchema, GradeSchema, Alignment, OutcomeResult, CourseUserLink, \
-        OutcomeSchema, OutcomeResultSchema, AlignmentSchema
+    # Import models
     return None
 
 
@@ -67,18 +69,25 @@ def register_errorhandlers(app):
 def register_shellcontext(app):
     """Register shell context objects."""
     pass
-    # def shell_context():
-    #     """Shell context objects."""
-    #     return dict(db=db, Outcome=Outcome, OutcomeAverage=OutcomeAverage,
-    #                 Course=Course, Record=Record, Grade=Grade, User=User,
-    #                 UserSchema=UserSchema, GradeSchema=GradeSchema,
-    #                 Alignment=Alignment, OutcomeResult=OutcomeResult,
-    #                 CourseUserLink=CourseUserLink,
-    #                 OutcomeSchema=OutcomeSchema,
-    #                 OutcomeResultSchema=OutcomeResultSchema,
-    #                 AlignmentSchema=AlignmentSchema)
 
-    # app.shell_context_processor(shell_context)
+    def shell_context():
+        """Shell context objects."""
+        # TODO - move import...
+        from app.models import Outcome, OutcomeAverage, Course, Record, Grade, \
+            User, \
+            UserSchema, GradeSchema, Alignment, OutcomeResult, CourseUserLink, \
+            OutcomeSchema, OutcomeResultSchema, AlignmentSchema
+
+        return dict(db=db, Outcome=Outcome, OutcomeAverage=OutcomeAverage,
+                    Course=Course, Record=Record, Grade=Grade, User=User,
+                    UserSchema=UserSchema, GradeSchema=GradeSchema,
+                    Alignment=Alignment, OutcomeResult=OutcomeResult,
+                    CourseUserLink=CourseUserLink,
+                    OutcomeSchema=OutcomeSchema,
+                    OutcomeResultSchema=OutcomeResultSchema,
+                    AlignmentSchema=AlignmentSchema)
+
+    app.shell_context_processor(shell_context)
 
 
 def register_commands(app):
@@ -92,3 +101,9 @@ def configure_logger(app):
     handler = logging.StreamHandler(sys.stdout)
     if not app.logger.handlers:
         app.logger.addHandler(handler)
+
+
+def register_filters(app):
+    @app.template_filter('strftime')
+    def datetimeformat(value, format='%m-%d-%Y'):
+        return value.strftime(format)

@@ -27,7 +27,7 @@ PYLTI_CONFIG = {
         'observer': ['Observer', 'urn:lti:role:ims/lis/Mentor']
     }
 }
-print(PYLTI_CONFIG)
+
 # Secret key used for Flask sessions, etc. Must stay named 'secret_key'.
 # Can be any randomized string, recommend generating one with os.urandom(24)
 secret_key = os.environ.get("SECRET_FLASK", "CHANGEME")

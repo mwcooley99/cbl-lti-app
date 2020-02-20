@@ -316,7 +316,7 @@ def update_courses(current_term):
 
 def update_users():
     '''
-    Runs through functions to update Users table
+    Updates users table in database with all current account users
     :return: None
     '''
     users = get_users()

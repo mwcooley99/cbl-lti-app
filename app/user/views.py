@@ -1,21 +1,19 @@
 # -*- coding: utf-8 -*-
 """User views."""
-from flask import Blueprint, render_template, current_app, session, url_for, request, redirect
+from flask import Blueprint, render_template, current_app, session, url_for, \
+    request, redirect
 from pylti.flask import lti
 
-from app.models import Outcome, OutcomeAverage, Course, Record, Grade, \
-        User, \
-        UserSchema, GradeSchema, Alignment, OutcomeResult, CourseUserLink, \
-        OutcomeSchema, OutcomeResultSchema, AlignmentSchema
-
-from app.extensions import db, ma
-
+from app.extensions import db
+from app.models import Course, Record, User, \
+    OutcomeResult, OutcomeResultSchema
 from utilities.canvas_api import get_observees
 from utilities.cbl_calculator import calculation_dictionaries
 
 ENROLLMENT_TERM_ID = 11
 
-blueprint = Blueprint("user", __name__, url_prefix="/users", static_folder="../static")
+blueprint = Blueprint("user", __name__, url_prefix="/users",
+                      static_folder="../static")
 
 
 def return_error(msg):
@@ -64,6 +62,7 @@ def launch(lti=lti):
         user_id = session['users'][0]['id']
 
         return redirect(url_for('user.student_dashboard', user_id=user_id))
+
 
 @blueprint.route('/student_dashboard/<user_id>', methods=['GET'])
 @lti(error=error, request='session', role='any', app=current_app)

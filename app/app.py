@@ -9,7 +9,8 @@ import app.settings as settings
 from app import commands, course, user, public  # Need to import modules that contain blueprints
 from app.extensions import (
     db,
-    ma
+    ma,
+    migrate
 )
 
 
@@ -37,6 +38,7 @@ def register_extensions(app):
 
     db.init_app(app)
     ma.init_app(app)
+    migrate.init_app(app, db)
 
     # Import models
     return None

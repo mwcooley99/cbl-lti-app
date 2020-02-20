@@ -102,7 +102,7 @@ def pull_outcome_results(current_term=10):
 
     # get outcome result rollups for each course and list of outcomes
     pattern = '@dtech|Teacher Assistant|LAB Day|FIT|Innovation Diploma FIT'
-
+    count = 0
     for idx, course in enumerate(courses):
         print(course['id'])
         print(f'{course["name"]} is course {idx + 1} our of {len(courses)}')
@@ -139,16 +139,22 @@ def pull_outcome_results(current_term=10):
 
         # If there are results to upload
         if outcome_results:
-            print(f'deleting outcome_results for {course["name"]}')
-            delete_outcome_results(course['id'])
-            print(f'outcomes results to upload: {len(outcome_results)}')
-            upsert_outcome_results(outcome_results)
-            print('result upsert complete')
             upsert_outcomes(outcomes)
             print('outcome upsert complete')
             upsert_alignments(alignments)
             print('alignment upsert complete')
 
+            print(f'deleting outcome_results for {course["name"]}')
+            delete_outcome_results(course['id'])
+            print('old outcome results deleted')
+
+            print(f'outcomes results to upload: {len(outcome_results)}')
+            upsert_outcome_results(outcome_results)
+            print('result upsert complete')
+
+        # count = count + 1
+        # if count > 5:
+        #     break
 
 def insert_grades(current_term=10):
     print(f'Grade pull started at {datetime.now()}')
@@ -324,10 +330,12 @@ def update_users():
 
 if __name__ == '__main__':
     start = time.time()
+    # import os
+    # print(os.getenv('PULL_CONFIG'))
     current_term = 11
-    update_users()
-    update_courses(current_term)
-    update_course_students(current_term)
+    # update_users()
+    # update_courses(current_term)
+    # update_course_students(current_term)
     pull_outcome_results(current_term)
     insert_grades(current_term)
 

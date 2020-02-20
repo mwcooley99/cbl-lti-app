@@ -47,7 +47,7 @@ def launch(lti=lti):
         users = get_course_users({'id': session['course_id']})
         session['users'] = format_users(users)
         user = session['users'][0]
-        return redirect(url_for('student_dashboard', user_id=user['id']))
+        return redirect(url_for('user.student_dashboard', user_id=user['id']))
 
     return redirect(
         url_for('course.dashboard', course_id=session['course_id']))

@@ -107,6 +107,7 @@ class Outcome(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String, nullable=False)
     display_name = db.Column(db.String)
+    calculation_int = db.Column(db.Integer)
     outcome_averages = db.relationship('OutcomeAverage', backref='outcome')
     outcome_results = db.relationship('OutcomeResult', backref='outcome')
 

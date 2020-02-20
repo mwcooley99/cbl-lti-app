@@ -26,7 +26,7 @@
                                      aria-labelledby="dropdownMenuButton">
                                     {% for student in students %}
                                         <a class="dropdown-item"
-                                           href="{{ url_for('users/', user_id=student.id) }}">{{ student.name }}</a>
+                                           href="{{ url_for('user.student_dashboard', user_id=student.id) }}">{{ student.name }}</a>
                                     {% endfor %}
                                 </div>
                             </div>

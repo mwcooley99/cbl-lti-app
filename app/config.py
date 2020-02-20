@@ -1,6 +1,6 @@
-import app.settings as settings
-from configparser import ConfigParser
 import os
+
+import app.settings as settings
 
 
 class Config(object):
@@ -25,6 +25,19 @@ class DevelopmentConfig(BaseConfig):
     SQLALCHEMY_ECHO = True
 
 
+class StageConfig(BaseConfig):
+    db_pass = os.getenv('DB_PASSWORD')
+    username = 'TheDoctor'
+    SECRET_KEY = os.getenv('SECRET_FLASK')
+    DEBUG = False
+    TESTING = False
+    PYLTI_CONFIG = settings.PYLTI_CONFIG
+    SQLALCHEMY_DATABASE_URI = os.getenv('STAGE_DATABASE_URL')
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_HTTPONLY = True
+
+
 class ProductionConfig(BaseConfig):
     db_pass = os.getenv('DB_PASSWORD')
     username = 'TheDoctor'
@@ -46,5 +59,6 @@ class TestingConfig(BaseConfig):
 
 configuration = {
     'development': DevelopmentConfig,
-    'production': ProductionConfig
+    'production': ProductionConfig,
+    'stage': StageConfig
 }

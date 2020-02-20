@@ -50,7 +50,7 @@ LOG_BACKUP_COUNT = 1
 # Config object settings
 # See config.py other environments and options
 configClass = os.getenv('CONFIG')
-print(configClass)
+
 
 
 # Store application wide settings here

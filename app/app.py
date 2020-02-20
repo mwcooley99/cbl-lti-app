@@ -21,6 +21,7 @@ def create_app(config_object="app.settings.configClass"):
     config_object = settings.configClass
     app = Flask(__name__.split(".")[0])
     app.config.from_object(config_object)
+    print(config_object.__dict__)
 
     register_extensions(app)
     register_blueprints(app)

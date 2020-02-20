@@ -37,6 +37,7 @@ def launch(lti=lti):
     :return: redirects to course page or adviser page depending on the course type
     '''
     session['dash_type'] = 'course'
+    print(lti.role)
 
     course_title = request.form.get('context_title')
     session['course_id'] = None

@@ -31,7 +31,7 @@ PYLTI_CONFIG = {
         # Allows you to check LTI.is_role('admin') for your user
         'admin': ['Administrator', 'urn:lti:instrole:ims/lis/Administrator'],
         'student': ['Learner', 'urn:lti:instrole:ims/lis/Student', 'Instructor', 'Observer', 'urn:lti:sysrole:ims/lis/None'],
-        'instructor': ['Instructor'],
+        'instructor': ['Instructor', 'Administrator', 'urn:lti:instrole:ims/lis/Administrator'],
         'observer': ['Observer', 'urn:lti:role:ims/lis/Mentor']
     }
 }

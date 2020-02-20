@@ -73,12 +73,13 @@ def student_dashboard(lti=lti, user_id=None):
     :param user_id: users Canvas ID
     :return: template or error message
     '''
+    # TODO REMOVE ME - not using records anymore
     record = Record.query.order_by(Record.id.desc()).first()
 
     if user_id:  # Todo - this probably isn't needed
         # check user is NOT authorized to access this file
         auth_users_id = [user['id'] for user in session['users']]
-        if not (int(user_id) in auth_users_id):
+        if not (int(user_id) in auth_users_id):  # TODO - OR role = 'admin'
             return "You are not authorized to view this users information"
 
         # Get student, which is linked to user-courses relationship table

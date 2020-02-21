@@ -6,11 +6,12 @@ import sys
 from flask import Flask, render_template
 
 import app.settings as settings
-from app import commands, course, user, public  # Need to import modules that contain blueprints
+from app import commands, course, user, public, account  # Need to import modules that contain blueprints
 from app.extensions import (
     db,
     ma,
-    migrate
+    migrate,
+    admin
 )
 
 
@@ -39,6 +40,7 @@ def register_extensions(app):
     db.init_app(app)
     ma.init_app(app)
     migrate.init_app(app, db)
+    admin.init_app(app)
 
     # Import models
     return None
@@ -52,6 +54,7 @@ def register_blueprints(app):
     app.register_blueprint(user.views.blueprint)
     app.register_blueprint(course.views.blueprint)
     app.register_blueprint(public.views.blueprint)
+    app.register_blueprint(account.views.blueprint)
     return None
 
 

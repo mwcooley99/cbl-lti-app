@@ -37,7 +37,6 @@ def launch(lti=lti):
     :return: redirects to course page or adviser page depending on the course type
     '''
     session['dash_type'] = 'course'
-    print(lti.role)
 
     course_title = request.form.get('context_title')
     session['course_id'] = None
@@ -154,3 +153,12 @@ def detail(course_id=357, user_id=384, lti=lti):
                            course=course,
                            calculation_dict=calculation_dictionaries,
                            alignments=alignments, prev_url=prev_url)
+
+
+@blueprint.route('analytics')
+@lti(error=error, role='instructor', request='session', app=current_app)
+def analytics(course_id=None, lti=lti):
+    if not course_id:
+        course_id = session['course_id']
+    print(course_id)
+    return "Hello world"

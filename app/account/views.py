@@ -4,7 +4,8 @@ from flask import Blueprint, render_template, current_app, session, url_for, \
     request, redirect
 from pylti.flask import lti
 
-from flask_admin.contrib.pymongo import ModelView
+from flask_admin import BaseView
+from flask_admin.contrib.sqla import ModelView
 
 from app.extensions import db, admin
 from app.models import Outcome, Course, Record, Grade, User, OutcomeResult, \

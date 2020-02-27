@@ -4,3 +4,5 @@ venv/
 error.log
 *.DS_STORE
 test.db
+node_modules
+

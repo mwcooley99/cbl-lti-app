@@ -160,5 +160,5 @@ def detail(course_id=357, user_id=384, lti=lti):
 def analytics(course_id=None, lti=lti):
     if not course_id:
         course_id = session['course_id']
-    print(course_id)
-    return "Hello world"
+    print(Course.course_grades(course_id))
+    return render_template('courses/analytics.html')

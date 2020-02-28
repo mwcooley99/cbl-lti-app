@@ -26,6 +26,19 @@ class Course(db.Model):
     courses = db.relationship('CourseUserLink', backref='course')
     outcome_results = db.relationship('OutcomeResult', backref='course')
 
+    @staticmethod
+    def course_grades(course_id):
+        stmt = db.text('''
+        SELECT c.name AS "Course Name", COALESCE(left(g.grade, 1), 'N/A') AS GRADE, u.id
+	    FROM course_user_link cl
+            LEFT JOIN users u ON u.id = cl.user_id
+            LEFT JOIN courses c ON c.id = cl.course_id
+            LEFT JOIN grades g ON g.course_id = cl.course_id AND g.user_id = cl.user_id
+        WHERE c.enrollment_term_id = 11
+                AND c.id = :course_id;
+        ''')
+        return db.session.execute(stmt, dict(course_id=course_id))
+
     def __repr__(self):
         return str(self.name)
 
@@ -53,8 +66,6 @@ class Grade(db.Model):
     record_id = db.Column(db.Integer, db.ForeignKey('records.id'))
     threshold = db.Column(db.Numeric(asdecimal=False))
     min_score = db.Column(db.Numeric(asdecimal=False))
-
-
 
     def to_dict(self):
         '''
@@ -122,10 +133,13 @@ class Alignment(db.Model):
 
     outcome_results = db.relationship('OutcomeResult', backref='alignment')
 
+
 class CourseUserLink(db.Model):
     __tablename__ = 'course_user_link'
-    course_id = db.Column(db.Integer, db.ForeignKey('courses.id'), primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
+    course_id = db.Column(db.Integer, db.ForeignKey('courses.id'),
+                          primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'),
+                        primary_key=True)
 
 
 class CourseSchema(ma.Schema):

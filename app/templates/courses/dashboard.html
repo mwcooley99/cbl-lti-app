@@ -1,4 +1,7 @@
 {% extends 'base.html' %}
+{% block navbar %}
+{% include 'courses/navbar.html' %}
+{% endblock %}
 {% block content %}
     <div class="container-fluid">
         {#        <table id="outcomesTable"></table>#}
@@ -6,6 +9,7 @@
                data-height="600"
                data-search="true"
                data-show-search-clear-button="true"
+               data-filter-control="true"
                data-show-export="true"
                data-export-types="['csv']"
         >
@@ -15,7 +19,7 @@
                 <th data-width="12" data-width-unit="em" data-sortable="true">
                     Name
                 </th>
-                <th data-sortable="true" data-width="100">Grade</th>
+                <th data-sortable="true" data-filter-control="select" data-width="100">Grade</th>
                 <th data-sortable="true" data-width="100">Email</th>
                 {% for outcome in outcomes %}
                     {% if outcome.display_name %}

@@ -37,7 +37,6 @@ def launch(lti=lti):
     :return: redirects to course page or adviser page depending on the course type
     '''
     session['dash_type'] = 'course'
-    print(lti.role)
 
     course_title = request.form.get('context_title')
     session['course_id'] = None
@@ -51,19 +50,19 @@ def launch(lti=lti):
         return redirect(url_for('user.student_dashboard', user_id=user['id']))
 
     return redirect(
-        url_for('course.dashboard', course_id=session['course_id']))
+        url_for('course.dashboard'))
 
 
-@blueprint.route("/dashboard/<course_id>")
+@blueprint.route("/dashboard")
 @lti(error=error, request='session', role='instructor', app=current_app)
-def dashboard(course_id, lti=lti):
+def dashboard(lti=lti):
     '''
     Dashboard for core content teachers
     :param lti: pylti
     :return: template for a core content teacher
     '''
     record = Record.query.order_by(Record.id.desc()).first()
-
+    course_id = session['course_id']
     s = time.perf_counter()
     # Get the grades
 
@@ -154,3 +153,27 @@ def detail(course_id=357, user_id=384, lti=lti):
                            course=course,
                            calculation_dict=calculation_dictionaries,
                            alignments=alignments, prev_url=prev_url)
+
+
+@blueprint.route('analytics')
+@lti(error=error, role='instructor', request='session', app=current_app)
+def analytics(course_id=None, lti=lti):
+    if not course_id:
+        course_id = session['course_id']
+    results = [grade for grade in Course.course_grades(course_id)]
+    num_outcomes = OutcomeResult.query.filter(
+        OutcomeResult.course_id == course_id).with_entities(
+        OutcomeResult.outcome_id).distinct().count()
+    keys = ['title', 'max', 'min']
+    outcome_stats = [dict(zip(keys, out)) for out in Course.outcome_stats(course_id)]
+    print(outcome_stats)
+
+
+
+    graph = [{
+        'x': [grade[0] for grade in results],
+        'y': [grade[1] for grade in results],
+        'type': 'bar'
+    }]
+
+    return render_template('courses/analytics.html', graph=graph, outcome_stats=outcome_stats)

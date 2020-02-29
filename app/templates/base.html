@@ -26,19 +26,21 @@
           crossorigin="anonymous">
     <script src="https://unpkg.com/bootstrap-table@1.15.5/dist/bootstrap-table.min.js"></script>
 
-{#    Fixed column #}
-    <link href="https://unpkg.com/bootstrap-table@1.15.5/dist/extensions/fixed-columns/bootstrap-table-fixed-columns.css" rel="stylesheet">
+    {#    Fixed column #}
+    <link href="https://unpkg.com/bootstrap-table@1.15.5/dist/extensions/fixed-columns/bootstrap-table-fixed-columns.css"
+          rel="stylesheet">
     <script src="https://unpkg.com/bootstrap-table@1.15.5/dist/extensions/fixed-columns/bootstrap-table-fixed-columns.js"></script>
-{# Sticky Header #}
-    <link href="https://unpkg.com/bootstrap-table@1.15.5/dist/extensions/sticky-header/bootstrap-table-sticky-header.css" rel="stylesheet">
+    {# Sticky Header #}
+    <link href="https://unpkg.com/bootstrap-table@1.15.5/dist/extensions/sticky-header/bootstrap-table-sticky-header.css"
+          rel="stylesheet">
     <script src="https://unpkg.com/bootstrap-table@1.15.5/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.js"></script>
 
 
-{# for table exports #}
+    {# for table exports #}
     <script src="https://unpkg.com/tableexport.jquery.plugin/tableExport.min.js"></script>
 
     <script src="https://unpkg.com/bootstrap-table@1.15.5/dist/extensions/export/bootstrap-table-export.min.js"></script>
-{# Lodash#}
+
 
     <script type="text/javascript"
             src="{{ url_for('static', filename='js/bootstrap-table-filter-control.js') }}"></script>
@@ -50,13 +52,15 @@
     <link rel="stylesheet"
           href="{{ url_for('static', filename='css/main.css') }}">
 
+{#    Load plotyly #}
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
     <title>LTI Template</title>
 </head>
 
 <body>
 <header></header>
-
+{% block navbar %}{% endblock %}
 {% block content %}{% endblock %}
 
 

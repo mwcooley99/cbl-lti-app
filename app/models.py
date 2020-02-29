@@ -29,15 +29,33 @@ class Course(db.Model):
     @staticmethod
     def course_grades(course_id):
         stmt = db.text('''
-        SELECT c.name AS "Course Name", COALESCE(left(g.grade, 1), 'N/A') AS GRADE, u.id
-	    FROM course_user_link cl
-            LEFT JOIN users u ON u.id = cl.user_id
-            LEFT JOIN courses c ON c.id = cl.course_id
-            LEFT JOIN grades g ON g.course_id = cl.course_id AND g.user_id = cl.user_id
-        WHERE c.enrollment_term_id = 11
-                AND c.id = :course_id;
+            SELECT grade, cast( count(*) AS FLOAT)/cnt AS percent
+            FROM 
+                (SELECT u.id, COALESCE(left(g.grade, 1), 'N/A') AS GRADE, count(*) OVER() AS cnt
+                FROM course_user_link cl
+                    LEFT JOIN users u ON u.id = cl.user_id
+                    LEFT JOIN grades g ON g.course_id = cl.course_id AND g.user_id = cl.user_id
+                WHERE cl.course_id = :course_id) temp
+            GROUP BY grade, cnt;
         ''')
-        return db.session.execute(stmt, dict(course_id=course_id))
+        grades = db.session.execute(stmt, dict(course_id=course_id))
+        return grades
+
+    @staticmethod
+    def outcome_stats(course_id):
+        stmt = db.text('''
+            SELECT title, max(cnt) max, min(cnt) min
+            FROM
+                (SELECT o.title title, count(*) cnt
+                FROM outcome_results ores
+                    JOIN outcomes o ON o.id = ores.outcome_id
+                WHERE ores.course_id = :course_id
+                GROUP BY ores.user_id, o.title) temp
+            GROUP BY title
+            ORDER BY max desc;
+        ''')
+        results = db.session.execute(stmt, dict(course_id=course_id))
+        return results
 
     def __repr__(self):
         return str(self.name)

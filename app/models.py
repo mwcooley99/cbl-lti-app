@@ -26,6 +26,37 @@ class Course(db.Model):
     courses = db.relationship('CourseUserLink', backref='course')
     outcome_results = db.relationship('OutcomeResult', backref='course')
 
+    @staticmethod
+    def course_grades(course_id):
+        stmt = db.text('''
+            SELECT grade, cast( count(*) AS FLOAT)/cnt AS percent
+            FROM 
+                (SELECT u.id, COALESCE(left(g.grade, 1), 'N/A') AS GRADE, count(*) OVER() AS cnt
+                FROM course_user_link cl
+                    LEFT JOIN users u ON u.id = cl.user_id
+                    LEFT JOIN grades g ON g.course_id = cl.course_id AND g.user_id = cl.user_id
+                WHERE cl.course_id = :course_id) temp
+            GROUP BY grade, cnt;
+        ''')
+        grades = db.session.execute(stmt, dict(course_id=course_id))
+        return grades
+
+    @staticmethod
+    def outcome_stats(course_id):
+        stmt = db.text('''
+            SELECT title, max(cnt) max, min(cnt) min
+            FROM
+                (SELECT o.title title, count(*) cnt
+                FROM outcome_results ores
+                    JOIN outcomes o ON o.id = ores.outcome_id
+                WHERE ores.course_id = :course_id
+                GROUP BY ores.user_id, o.title) temp
+            GROUP BY title
+            ORDER BY max desc;
+        ''')
+        results = db.session.execute(stmt, dict(course_id=course_id))
+        return results
+
     def __repr__(self):
         return str(self.name)
 
@@ -53,8 +84,6 @@ class Grade(db.Model):
     record_id = db.Column(db.Integer, db.ForeignKey('records.id'))
     threshold = db.Column(db.Numeric(asdecimal=False))
     min_score = db.Column(db.Numeric(asdecimal=False))
-
-
 
     def to_dict(self):
         '''
@@ -122,10 +151,13 @@ class Alignment(db.Model):
 
     outcome_results = db.relationship('OutcomeResult', backref='alignment')
 
+
 class CourseUserLink(db.Model):
     __tablename__ = 'course_user_link'
-    course_id = db.Column(db.Integer, db.ForeignKey('courses.id'), primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
+    course_id = db.Column(db.Integer, db.ForeignKey('courses.id'),
+                          primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'),
+                        primary_key=True)
 
 
 class CourseSchema(ma.Schema):

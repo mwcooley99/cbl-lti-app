@@ -109,13 +109,13 @@
 
         $(function () {
             var alignments = {{ alignments|tojson|safe }};
-
+            var drop_date = "2020-05-01";
             var courses = groupBy(alignments, 'course');
             var course_ids = Object.keys(courses);
 
             course_ids.forEach(function (course_id, index) {
                 let $el = $(`#table-${course_id}`);
-                makeOutcomesTablev2(courses[course_id], $el);
+                makeOutcomesTablev2(courses[course_id], $el, drop_date);
             });
 
 

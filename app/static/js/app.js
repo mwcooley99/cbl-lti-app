@@ -10,7 +10,6 @@ function makeCourseTable(students, alignments) {
                 let link = `<a href="${row.course_id}/user/${row.user.id}">${value}</a>`
                 return link;
             }
-
         },
         {
             field: 'grade',
@@ -51,13 +50,18 @@ function makeCourseTable(students, alignments) {
 function makeMasteryTable(grades, alignments, outcomes, drop_date) {
     // Get unique outcomes
     var $tableOut = $('#outcomesTable');
-
+    console.log(drop_date);
     // Create the columns for the table
     const columns = outcomes.map(function (value, index) {
         let temp_dict = {
             field: value['id'],
             title: value['title'],
             sortable: true,
+            width: 100,
+            formatter: function (value, row) {
+                return `<div class="text-wrap">${value}</div>`
+            }
+
         };
         return temp_dict;
     });
@@ -70,7 +74,7 @@ function makeMasteryTable(grades, alignments, outcomes, drop_date) {
             width: 90,
             widthUnit: "px",
             formatter: function (value, row) {
-                let link = `<a href="${row.course_id}/user/${row.user_id}">${value}</a>`
+                let link = `<a href="${row.course_id}/user/${row.user_id}">${value}</a>`;
                 return link;
             }
         },
@@ -79,7 +83,8 @@ function makeMasteryTable(grades, alignments, outcomes, drop_date) {
             title: 'Grade',
             sortable: true,
             width: 90,
-            widthUnit: "px"
+            widthUnit: "px",
+            filterControl: 'select'
         },
         {
             field: 'email',
@@ -122,6 +127,7 @@ function makeMasteryTable(grades, alignments, outcomes, drop_date) {
         search: true,
         showColumns: true,
         showColumnsToggleAll: true,
+        filterControl: true,
         showSearchClearButton: true,
         showExport: true,
         exportTypes: ['csv'],
@@ -140,12 +146,14 @@ function calcOutcomeAvg(alignments, drop_date, outcome) {
     // calculate drop average
     let filtered_align = alignments.filter(a => a.submitted_or_assessed_at <= drop_date);
 
+
     // If there's more than one alignment after the filter, check to see if dropping lowest score will help
     if (filtered_align.length > 0) {
+        // Only check the filtered alignments for a min_score
         let min_score = filtered_align.reduce((min, val) => val.score < min ? val.score : min, filtered_align[0].score);
         let drop_avg = (align_sum - min_score) / (alignments.length - 1);
         // Check if average with low score dropped is better
-        if (drop_avg > outcome['outcome_avg']) {
+        if (drop_avg > outcome_avg) {
             outcome_avg = drop_avg;
             dropped = true;
         }

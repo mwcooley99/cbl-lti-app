@@ -18,4 +18,4 @@ ENROLLMENT_TERM_ID = 11
 
 blueprint = Blueprint('account', __name__, url_prefix='/account', static_folder='../static')
 
-admin.add_view(ModelView(Outcome, db.session))
+

@@ -108,11 +108,9 @@ def dashboard(lti=lti):
         OutcomeResult.course_id, OutcomeResult.outcome_id).all()
     res_schema = OutcomeResultSchema()
     alignments = res_schema.dump(outcome_results, many=True)
-    # print(alignments)
 
-
-    # Create outcome average dictionaries
-    outcome_averages = make_outcome_avg_dicts(outcome_results)
+    # # Create outcome average dictionaries
+    # outcome_averages = make_outcome_avg_dicts(outcome_results)
 
 
     return render_template('courses/dashboard.html', users=users,
@@ -120,7 +118,6 @@ def dashboard(lti=lti):
                            calculation_dict=calculation_dictionaries,
                            record=record, course_id=course_id,
                            outcomes=outcomes,
-                           outcome_averages=outcome_averages,
                            alignments=alignments
                            )
 

@@ -6,7 +6,7 @@ from pylti.flask import lti
 
 from app.extensions import db
 from app.models import Outcome, Course, Record, Grade, User, OutcomeResult, \
-    CourseUserLink, OutcomeResultSchema
+    CourseUserLink, OutcomeResultSchema, OutcomeSchema, GradeSchema
 from utilities.canvas_api import get_course_users
 from utilities.cbl_calculator import calculation_dictionaries
 from utilities.helpers import make_outcome_avg_dicts, format_users
@@ -76,8 +76,8 @@ def dashboard(lti=lti):
     ).filter(
         Grade.record_id == record.id, Grade.course_id == course_id
     ).order_by(User.name).all()
-    # grade_schema = GradeSchema()
-    # grades = grade_schema.dump(grades, many=True)
+    grade_schema = GradeSchema()
+    grades = grade_schema.dump(grades, many=True)
 
     # todo - remove me
     # session['users'] = [{'id': grade.user_id} for grade in grades]
@@ -94,24 +94,35 @@ def dashboard(lti=lti):
     else:
         outcome_id_list = []
     outcomes = Outcome.query.filter(Outcome.id.in_(outcome_id_list)).all()
-    # outcome_schema = OutcomeSchema()
-    # outcomes = outcome_schema.dump(outcomes, many=True)
+    outcome_schema = OutcomeSchema()
+    outcomes = outcome_schema.dump(outcomes, many=True)
 
     #
-    outcome_results = base_query.filter(
-        OutcomeResult.score.isnot(None)
+    outcome_results = OutcomeResult.query.options(
+        db.joinedload(OutcomeResult.course, innerjoin=True)
+    ).filter(
+        OutcomeResult.score.isnot(None),
+        Course.enrollment_term_id == ENROLLMENT_TERM_ID,
+        OutcomeResult.course_id == course_id
     ).order_by(
-        OutcomeResult.user_id, OutcomeResult.outcome_id).all()
+        OutcomeResult.course_id, OutcomeResult.outcome_id).all()
+    res_schema = OutcomeResultSchema()
+    alignments = res_schema.dump(outcome_results, many=True)
+    # print(alignments)
+
 
     # Create outcome average dictionaries
     outcome_averages = make_outcome_avg_dicts(outcome_results)
+
 
     return render_template('courses/dashboard.html', users=users,
                            grades=grades,
                            calculation_dict=calculation_dictionaries,
                            record=record, course_id=course_id,
                            outcomes=outcomes,
-                           outcome_averages=outcome_averages)
+                           outcome_averages=outcome_averages,
+                           alignments=alignments
+                           )
 
 
 @blueprint.route("<course_id>/user/<user_id>")

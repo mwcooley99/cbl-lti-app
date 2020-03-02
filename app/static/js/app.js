@@ -48,10 +48,9 @@ function makeCourseTable(students, alignments) {
     })
 }
 
-function makeMasteryTable(grades, alignments, outcomes, tableOut) {
+function makeMasteryTable(grades, alignments, outcomes, drop_date) {
     // Get unique outcomes
-    // var $tableOut = $('#outcomesTable');
-    console.log(outcomes);
+    var $tableOut = $('#outcomesTable');
 
     // Create the columns for the table
     const columns = outcomes.map(function (value, index) {
@@ -65,15 +64,33 @@ function makeMasteryTable(grades, alignments, outcomes, tableOut) {
 
     // Add in User Name
     columns.unshift({
-        field: 'user_name',
-        title: 'Student Name',
-        sortable: true,
-        width: 90,
-        widthUnit: "px"
-    });
+            field: 'user_name',
+            title: 'Student Name',
+            sortable: true,
+            width: 90,
+            widthUnit: "px",
+            formatter: function (value, row) {
+                let link = `<a href="${row.course_id}/user/${row.user_id}">${value}</a>`
+                return link;
+            }
+        },
+        {
+            field: 'grade',
+            title: 'Grade',
+            sortable: true,
+            width: 90,
+            widthUnit: "px"
+        },
+        {
+            field: 'email',
+            title: 'Email',
+            sortable: true,
+            width: 90,
+            widthUnit: "px"
+        }
+    );
 
-
-    const students = groupBy(alignments, 'user_id');
+    const students = groupBy(alignments, 'user');
 
     const student_outcomes = [];
     for (const student of grades) {
@@ -81,12 +98,17 @@ function makeMasteryTable(grades, alignments, outcomes, tableOut) {
         student_dict['user_name'] = student.user.name;
         student_dict['user_id'] = student.user.id;
         student_dict['grade'] = student.grade;
+        student_dict['email'] = student.user.login_id;
+        student_dict['course_id'] = student.course_id
+
+
         let outcome_avgs = groupBy(students[student.user.id], o => o.outcome.id);
         for (const outcome of Object.keys(outcome_avgs)) {
             let alignments = outcome_avgs[outcome];
-            let filtered_align = alignments.filter(a => !a.dropped);
-            let avg = filtered_align.reduce((a, {score}) => a + score, 0) / filtered_align.length;
-            student_dict[outcome] = avg.toFixed(2);
+            // let filtered_align = alignments.filter(a => !a.dropped);
+            // let avg = filtered_align.reduce((a, {score}) => a + score, 0) / filtered_align.length;
+            let {outcome_avg, dropped} = calcOutcomeAvg(alignments, drop_date, outcome);
+            student_dict[outcome] = outcome_avg.toFixed(2);
         }
         student_outcomes.push(student_dict);
 
@@ -110,39 +132,43 @@ function makeMasteryTable(grades, alignments, outcomes, tableOut) {
 
 }
 
+function calcOutcomeAvg(alignments, drop_date, outcome) {
+    let align_sum = alignments.reduce((a, {score}) => a + score, 0);
+    let outcome_avg = align_sum / alignments.length;
+    let dropped = false;
+
+    // calculate drop average
+    let filtered_align = alignments.filter(a => a.submitted_or_assessed_at <= drop_date);
+
+    // If there's more than one alignment after the filter, check to see if dropping lowest score will help
+    if (filtered_align.length > 0) {
+        let min_score = filtered_align.reduce((min, val) => val.score < min ? val.score : min, filtered_align[0].score);
+        let drop_avg = (align_sum - min_score) / (alignments.length - 1);
+        // Check if average with low score dropped is better
+        if (drop_avg > outcome['outcome_avg']) {
+            outcome_avg = drop_avg;
+            dropped = true;
+        }
+    }
+    return {outcome_avg, dropped};
+}
+
 function makeOutcomesTablev2(alignments, $table_el, drop_date) {
     // Check for a display name and use if available
     var outcomes = groupBy(alignments, a => a.outcome.id);
 
     // Calculate outcome averages, looping through the different outcome keys
-
     var outcome_avgs = Object.keys(outcomes).map(function (key) {
         let outcome = {};
         let alignments = outcomes[key];
         let outcome_detail = alignments[0]['outcome'];
 
         // calculate full average
-        let align_sum = alignments.reduce((a, {score}) => a + score, 0);
-        outcome['outcome_avg'] = align_sum / alignments.length;
-        outcome['dropped'] = false;
-
-        // calculate drop average
-        let filtered_align = alignments.filter(a => a.submitted_or_assessed_at <= drop_date);
-
-        // If there's more than one alignment after the filter, check to see if dropping lowest score will help
-        if (filtered_align.length > 0){
-            let min_score = filtered_align.reduce((min, val) => val.score < min ? val.score : min, filtered_align[0].score);
-            let drop_avg = (align_sum - min_score)/(alignments.length - 1);
-            // Check if average with low score dropped is better
-            if (drop_avg > outcome['outcome_avg']){
-                outcome['outcome_avg'] = drop_avg;
-                outcome['dropped'] = true;
-            }
-        }
-
+        let {outcome_avg, dropped} = calcOutcomeAvg(alignments, drop_date, outcome);
 
         // Format the outcome information
-        outcome['outcome_avg'] = outcome['outcome_avg'].toFixed(2);
+        outcome['outcome_avg'] = outcome_avg.toFixed(2);
+        outcome['dropped'] = dropped;
         outcome['title'] = outcome_detail['display_name'] ? outcome_detail['display_name'] : outcome_detail['title'];
         outcome['alignments'] = alignments;
 
@@ -180,7 +206,7 @@ function makeOutcomesTablev2(alignments, $table_el, drop_date) {
 }
 
 function expandTablev2($el, outcome) {
-    let alignments = outcome['alignments'].sort((a, b) => (a.submitted_or_assessed_at < b.submitted_or_assessed_at ? 1: -1));
+    let alignments = outcome['alignments'].sort((a, b) => (a.submitted_or_assessed_at < b.submitted_or_assessed_at ? 1 : -1));
 
     let $card = $el.html("<div class='card p-3'></div>").find('.card');
     let text = "";
@@ -225,6 +251,7 @@ function expandTablev2($el, outcome) {
 
 
 }
+
 //
 // function expandTable($el, outcome) {
 //     let alignments = outcome['alignments'];

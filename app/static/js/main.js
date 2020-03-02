@@ -31,6 +31,8 @@ $(document).ready(function () {
 });
 
 var groupBy = function (arr, criteria) {
+
+
     return arr.reduce(function (obj, item) {
 
         // Check if the criteria is a function to run on the item or a property of it

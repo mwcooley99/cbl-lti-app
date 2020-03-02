@@ -1,10 +1,10 @@
 {% extends 'base.html' %}
 {% block navbar %}
-{% include 'courses/navbar.html' %}
+    {% include 'courses/navbar.html' %}
 {% endblock %}
 {% block content %}
     <div class="container-fluid">
-        {#        <table id="outcomesTable"></table>#}
+        <table id="outcomesTable"></table>
         <table data-toggle="table"
                data-height="600"
                data-search="true"
@@ -19,7 +19,9 @@
                 <th data-width="12" data-width-unit="em" data-sortable="true">
                     Name
                 </th>
-                <th data-sortable="true"  data-filter-control="select" data-width="100">Grade</th>
+                <th data-sortable="true" data-filter-control="select"
+                    data-width="100">Grade
+                </th>
                 <th data-sortable="true" data-width="100">Email</th>
                 {% for outcome in outcomes %}
                     {% if outcome.display_name %}
@@ -59,7 +61,7 @@
                     {% set outcome_student = outcome_averages|selectattr('user_id', 'equalto', student.user.id)|list %}
                     {% if outcome_student %}
                         {% set outcome_student = outcome_student|first %}
-                        {% set outcome_avgs = outcome_student['outcome_avgs']  %}
+                        {% set outcome_avgs = outcome_student['outcome_avgs'] %}
                     {% else %}
                         {% set outcome_avgs = [] %}
                     {% endif %}
@@ -70,7 +72,7 @@
                         {% else %}
                             {% set avg = '' %}
                         {% endif %}
-                        <td>{{avg['avg']}}</td>
+                        <td>{{ avg['avg'] }}</td>
 
                     {% endfor %}
                 </tr>
@@ -81,7 +83,17 @@
     </div>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script>
-        var $courseTable = $('#courseTable');
+        const $courseTable = $('#courseTable');
+
+        $(function () {
+            let alignments = {{ alignments|tojson|safe }};
+            let grades = {{ grades|tojson|safe }};
+            let outcomes = {{ outcomes|tojson|safe }};
+             let drop_date = "2020-05-01";
+             let base_url = "{{ url_for('course.detail', course_id=1, user_id=1) }}"
+             console.log(base_url);
+            makeMasteryTable(grades, alignments, outcomes, drop_date);
+        })
 
 
     </script>

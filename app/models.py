@@ -36,7 +36,8 @@ class Course(db.Model):
                     LEFT JOIN users u ON u.id = cl.user_id
                     LEFT JOIN grades g ON g.course_id = cl.course_id AND g.user_id = cl.user_id
                 WHERE cl.course_id = :course_id) temp
-            GROUP BY grade, cnt;
+            GROUP BY grade, cnt
+            ORDER BY grade;
         ''')
         grades = db.session.execute(stmt, dict(course_id=course_id))
         return grades

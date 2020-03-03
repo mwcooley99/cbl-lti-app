@@ -36,7 +36,8 @@ class Course(db.Model):
                     LEFT JOIN users u ON u.id = cl.user_id
                     LEFT JOIN grades g ON g.course_id = cl.course_id AND g.user_id = cl.user_id
                 WHERE cl.course_id = :course_id) temp
-            GROUP BY grade, cnt;
+            GROUP BY grade, cnt
+            ORDER BY grade;
         ''')
         grades = db.session.execute(stmt, dict(course_id=course_id))
         return grades
@@ -112,6 +113,7 @@ class User(db.Model):
 
     grades = db.relationship('Grade', backref='user', lazy='dynamic')
     courses = db.relationship('CourseUserLink', backref='user')
+    outcome_results = db.relationship('OutcomeResult', backref='user')
 
     def __repr__(self):
         return f'Name: {self.name}'
@@ -122,7 +124,7 @@ class OutcomeResult(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     score = db.Column(db.Float)
     course_id = db.Column(db.Integer, db.ForeignKey('courses.id'))
-    user_id = db.Column(db.Integer)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     outcome_id = db.Column(db.Integer, db.ForeignKey('outcomes.id'))
     alignment_id = db.Column(db.String, db.ForeignKey('alignments.id'))
     submitted_or_assessed_at = db.Column(db.DateTime)
@@ -173,9 +175,11 @@ class UserSchema(ma.Schema):
 class GradeSchema(ma.Schema):
     class Meta:
         # Need to update with relevant fields
+        # fields = (
+        #     'id', 'course_id', 'grade', 'outcomes', 'record_id',
+        #     'user', 'threshold', 'min_score')
         fields = (
-            'id', 'course_id', 'grade', 'outcomes', 'course', 'record_id',
-            'user', 'threshold', 'min_score')
+            'id', 'course_id', 'grade', 'record_id', 'user', 'threshold', 'min_score')
 
     # course = ma.Nested(CourseSchema)
     user = ma.Nested(UserSchema)

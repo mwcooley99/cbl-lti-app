@@ -12,19 +12,14 @@ def safe_round(num, digits):
 
 def make_outcome_avg_dicts(outcome_results, grades):
     outcome_averages = []
-    # Group by user_id
 
-    # for student_id, stu_aligns in itertools.groupby(outcome_results,
-    #                                                 lambda t: t.user_id):
     for grade in grades:
-        temp_dict = {}
-        temp_dict['user_name'] = grade.user.name;
-        temp_dict['user_id'] = grade.user.id;
-        temp_dict['grade'] = grade.grade;
-        temp_dict['email'] = grade.user.login_id;
-        temp_dict['course_id'] = grade.course_id
+        student_dict = {'user_name': grade.user.name, 'user_id': grade.user.id,
+                        'grade': grade.grade, 'email': grade.user.login_id,
+                        'course_id': grade.course_id}
         user_id = grade.user.id
-        stu_aligns = list(filter(lambda student: student.user_id == user_id, outcome_results))
+        stu_aligns = list(filter(lambda student: student.user_id == user_id,
+                                 outcome_results))
         for outcome_id, out_aligns in itertools.groupby(stu_aligns, lambda
                 x: x.outcome_id):
             aligns = list(out_aligns)
@@ -42,11 +37,9 @@ def make_outcome_avg_dicts(outcome_results, grades):
                 if drop_avg > full_avg:
                     temp_avg = {'avg': safe_round(drop_avg, 2),
                                 'outcome_id': outcome_id}
-            temp_dict[str(outcome_id)] = temp_avg['avg']
+            student_dict[str(outcome_id)] = temp_avg['avg']
 
-
-
-        outcome_averages.append(temp_dict)
+        outcome_averages.append(student_dict)
 
     return outcome_averages
 

@@ -56,15 +56,7 @@ function makeMasteryTable(grades, outcomes, drop_date, masteryTable) {
             title: value['title'],
             sortable: true,
             width: 100,
-            cellStyle: function () {
-                return {
-                    css: {
-                        'word-wrap': "break-word",
-                        'min-width': '160px',
-                        'max-width': '160px'
-                    }
-                }
-            }
+
 
         };
         return temp_dict;
@@ -98,29 +90,6 @@ function makeMasteryTable(grades, outcomes, drop_date, masteryTable) {
             widthUnit: "px"
         }
     );
-
-    // const students = groupBy(alignments, 'user');
-
-    // const student_outcomes = [];
-    // for (const student of grades) {
-    //     let student_dict = {};
-    //     student_dict['user_name'] = student.user.name;
-    //     student_dict['user_id'] = student.user.id;
-    //     student_dict['grade'] = student.grade;
-    //     student_dict['email'] = student.user.login_id;
-    //     student_dict['course_id'] = student.course_id;
-    //
-    //
-    //     let outcome_avgs = groupBy(students[student.user.id], o => o.outcome.id);
-    //     for (const outcome of Object.keys(outcome_avgs)) {
-    //         let alignments = outcome_avgs[outcome];
-    //         let {outcome_avg, dropped} = calcOutcomeAvg(alignments, drop_date, outcome);
-    //         student_dict[outcome] = outcome_avg.toFixed(2);
-    //     }
-    //
-    //     student_outcomes.push(student_dict);
-    //
-    // }
 
 
     masteryTable.bootstrapTable({

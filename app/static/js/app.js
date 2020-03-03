@@ -47,9 +47,9 @@ function makeCourseTable(students, alignments) {
     })
 }
 
-function makeMasteryTable(grades, alignments, outcomes, drop_date) {
+function makeMasteryTable(grades, alignments, outcomes, drop_date, masteryTable) {
     // Get unique outcomes
-    var $tableOut = $('#outcomesTable');
+
     console.log(drop_date);
     // Create the columns for the table
     const columns = outcomes.map(function (value, index) {
@@ -58,8 +58,14 @@ function makeMasteryTable(grades, alignments, outcomes, drop_date) {
             title: value['title'],
             sortable: true,
             width: 100,
-            formatter: function (value, row) {
-                return `<div class="text-wrap">${value}</div>`
+            cellStyle: function () {
+                return {
+                    css: {
+                        'word-wrap': "break-word",
+                        'min-width': '160px',
+                        'max-width': '160px'
+                    }
+                }
             }
 
         };
@@ -120,7 +126,7 @@ function makeMasteryTable(grades, alignments, outcomes, drop_date) {
     }
 
 
-    $tableOut.bootstrapTable({
+    masteryTable.bootstrapTable({
         columns: columns,
         data: student_outcomes,
         height: 600,
@@ -131,7 +137,7 @@ function makeMasteryTable(grades, alignments, outcomes, drop_date) {
         showSearchClearButton: true,
         showExport: true,
         exportTypes: ['csv'],
-        fixedColumns: true,
+        // fixedColumns: true,
 
     });
 

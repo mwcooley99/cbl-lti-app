@@ -4,21 +4,22 @@
 {% endblock %}
 {% block content %}
     <div class="container-fluid">
-        <table id="outcomesTable"></table>
+    <table id="masteryTable"></table>
 
     </div>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script>
-        const $courseTable = $('#courseTable');
+        {#const $courseTable = $('#courseTable');#}
 
         $(function () {
+            let $masteryTable = $('#masteryTable');
             let alignments = {{ alignments|tojson|safe }};
             let grades = {{ grades|tojson|safe }};
             let outcomes = {{ outcomes|tojson|safe }};
              let drop_date = "2020-05-01";
-             let base_url = "{{ url_for('course.detail', course_id=1, user_id=1) }}"
-             console.log(base_url);
-            makeMasteryTable(grades, alignments, outcomes, drop_date);
+
+
+            makeMasteryTable(grades, alignments, outcomes, drop_date, $masteryTable);
         })
 
 

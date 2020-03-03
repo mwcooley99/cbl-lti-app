@@ -6,7 +6,7 @@ from pylti.flask import lti
 
 from app.extensions import db
 from app.models import Outcome, Course, Record, Grade, User, OutcomeResult, \
-    CourseUserLink, OutcomeResultSchema, OutcomeSchema, GradeSchema
+    CourseUserLink, OutcomeResultSchema, OutcomeSchema
 from utilities.canvas_api import get_course_users
 from utilities.cbl_calculator import calculation_dictionaries
 from utilities.helpers import make_outcome_avg_dicts, format_users
@@ -71,16 +71,14 @@ def dashboard(lti=lti):
         db.joinedload(CourseUserLink.user, innerjoin=True)).filter(
         CourseUserLink.course_id == course_id).order_by(User.name).all()
 
+    # Query Grades
     grades = Grade.query.join(Grade.user).options(
         db.joinedload(Grade.user, innerjoin=True)
     ).filter(
         Grade.record_id == record.id, Grade.course_id == course_id
     ).order_by(User.name).all()
-    grade_schema = GradeSchema()
-    grades = grade_schema.dump(grades, many=True)
-
-    # todo - remove me
-    # session['users'] = [{'id': grade.user_id} for grade in grades]
+    # grade_schema = GradeSchema()
+    # grades = grade_schema.dump(grades, many=True)
 
     # Base query
     base_query = OutcomeResult.query \
@@ -105,12 +103,12 @@ def dashboard(lti=lti):
         Course.enrollment_term_id == ENROLLMENT_TERM_ID,
         OutcomeResult.course_id == course_id
     ).order_by(
-        OutcomeResult.course_id, OutcomeResult.outcome_id).all()
-    res_schema = OutcomeResultSchema()
-    alignments = res_schema.dump(outcome_results, many=True)
+        OutcomeResult.user_id, OutcomeResult.outcome_id).all()
+    # res_schema = OutcomeResultSchema()
+    # alignments = res_schema.dump(outcome_results, many=True)
 
-    # # Create outcome average dictionaries
-    # outcome_averages = make_outcome_avg_dicts(outcome_results)
+    # grade dictionaries
+    grades = make_outcome_avg_dicts(outcome_results, grades)
 
 
     return render_template('courses/dashboard.html', users=users,
@@ -118,7 +116,7 @@ def dashboard(lti=lti):
                            calculation_dict=calculation_dictionaries,
                            record=record, course_id=course_id,
                            outcomes=outcomes,
-                           alignments=alignments
+                           # alignments=alignments
                            )
 
 
@@ -173,10 +171,9 @@ def analytics(course_id=None, lti=lti):
         OutcomeResult.course_id == course_id).with_entities(
         OutcomeResult.outcome_id).distinct().count()
     keys = ['title', 'max', 'min']
-    outcome_stats = [dict(zip(keys, out)) for out in Course.outcome_stats(course_id)]
+    outcome_stats = [dict(zip(keys, out)) for out in
+                     Course.outcome_stats(course_id)]
     print(outcome_stats)
-
-
 
     graph = [{
         'x': [grade[0] for grade in results],
@@ -184,4 +181,5 @@ def analytics(course_id=None, lti=lti):
         'type': 'bar'
     }]
 
-    return render_template('courses/analytics.html', graph=graph, outcome_stats=outcome_stats)
+    return render_template('courses/analytics.html', graph=graph,
+                           outcome_stats=outcome_stats)

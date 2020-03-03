@@ -9,24 +9,12 @@ from app.models import Outcome, Course, Record, Grade, User, OutcomeResult, \
     CourseUserLink, OutcomeResultSchema, OutcomeSchema
 from utilities.canvas_api import get_course_users
 from utilities.cbl_calculator import calculation_dictionaries
-from utilities.helpers import make_outcome_avg_dicts, format_users
+from utilities.helpers import make_outcome_avg_dicts, format_users, error, return_error
 
 ENROLLMENT_TERM_ID = 11
 
 blueprint = Blueprint("course", __name__, url_prefix="/courses",
                       static_folder="../static")
-
-
-def return_error(msg):
-    return render_template('500.html', msg=msg)
-
-
-def error(exception=None):
-    current_app.logger.error("PyLTI error: {}".format(exception))
-    return return_error('''Authentication error,
-        please refresh and try again. If this error persists,
-        please contact support.''')
-
 
 @blueprint.route('/launch', methods=['POST', 'GET'])
 @lti(error=error, request='initial', role='instructor', app=current_app)

@@ -1,7 +1,18 @@
 import itertools
+from flask import render_template, current_app
 
 from utilities.cbl_calculator import CUTOFF_DATE
 
+
+def return_error(msg):
+    return render_template('500.html', msg=msg)
+
+
+def error(exception=None):
+    current_app.logger.error("PyLTI error: {}".format(exception))
+    return return_error('''Authentication error,
+        please refresh and try again. If this error persists,
+        please contact support.''')
 
 def safe_round(num, digits):
     if num:

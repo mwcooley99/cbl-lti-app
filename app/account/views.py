@@ -33,3 +33,7 @@ def index():
 
     return render_template('account/incomplete_report.html',
                            incompletes=incompletes)
+
+@blueprint.route('student_dashboard/<user_id>')
+def student_dashboard(user_id):
+

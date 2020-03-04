@@ -79,30 +79,12 @@ def student_dashboard(lti=lti, user_id=None):
     if user_id:  # Todo - this probably isn't needed
         # check user is NOT authorized to access this file
         auth_users_id = [user['id'] for user in session['users']]
-        if not (int(user_id) in auth_users_id):  # TODO - OR role = 'admin'
+        if not (int(user_id) in auth_users_id or lti.is_role(
+                'admin') or lti.is_role(
+                'instructor')):  # TODO - OR role = 'admin'
             return "You are not authorized to view this users information"
 
-        # Get student, which is linked to user-courses relationship table
-        user = User.query.filter(User.id == user_id).first()
-
-        # get student grades
-        grades = user.grades.join(Course).filter(
-            Course.enrollment_term_id == ENROLLMENT_TERM_ID
-        ).all()
-
-        # Get outcome results
-        outcomes = OutcomeResult.query.options(
-            db.joinedload(OutcomeResult.outcome, innerjoin=True)).options(
-            db.joinedload(OutcomeResult.alignment, innerjoin=True)).options(
-            db.joinedload(OutcomeResult.course, innerjoin=True)
-        ).filter(
-            OutcomeResult.user_id == user_id, OutcomeResult.score.isnot(None),
-            Course.enrollment_term_id == ENROLLMENT_TERM_ID
-        ).order_by(
-            OutcomeResult.course_id, OutcomeResult.outcome_id).all()
-
-        res_schema = OutcomeResultSchema()
-        alignments = res_schema.dump(outcomes, many=True)
+        alignments, grades, user = get_user_dash_data(user_id)
 
         if grades:
             return render_template('users/dashboard.html', record=record,
@@ -112,3 +94,25 @@ def student_dashboard(lti=lti, user_id=None):
                                    alignments=alignments)
 
     return "You currently don't have any grades!"
+
+
+def get_user_dash_data(user_id):
+    # Get student, which is linked to user-courses relationship table
+    user = User.query.filter(User.id == user_id).first()
+    # get student grades
+    grades = user.grades.join(Course).filter(
+        Course.enrollment_term_id == ENROLLMENT_TERM_ID
+    ).all()
+    # Get outcome results
+    outcomes = OutcomeResult.query.options(
+        db.joinedload(OutcomeResult.outcome, innerjoin=True)).options(
+        db.joinedload(OutcomeResult.alignment, innerjoin=True)).options(
+        db.joinedload(OutcomeResult.course, innerjoin=True)
+    ).filter(
+        OutcomeResult.user_id == user_id, OutcomeResult.score.isnot(None),
+        Course.enrollment_term_id == ENROLLMENT_TERM_ID
+    ).order_by(
+        OutcomeResult.course_id, OutcomeResult.outcome_id).all()
+    res_schema = OutcomeResultSchema()
+    alignments = res_schema.dump(outcomes, many=True)
+    return alignments, grades, user

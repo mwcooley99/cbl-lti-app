@@ -3,8 +3,13 @@ from flask import Blueprint, render_template, current_app, session, url_for, \
 from pylti.flask import lti
 
 from app.extensions import db
+from app.models import Record
+from app.user.views import get_user_dash_data
 from utilities.canvas_api import get_course_users
+from utilities.cbl_calculator import calculation_dictionaries
 from utilities.helpers import format_users, error
+
+
 
 ENROLLMENT_TERM_ID = 11
 
@@ -64,6 +69,13 @@ def incompletes(lti=lti):
 
 
 @blueprint.route('student_dashboard/<user_id>')
-@lti(error=error, request='session', role='lti=lti', app=current_app)
-def student_dashboard(user_id):
-    return redirect(url_for('user.student_dashboard', user_id=user_id))
+@lti(error=error, request='session', role='admin', app=current_app)
+def student_dashboard(user_id, lti=lti):
+    record = Record.query.order_by(Record.id.desc()).first()
+    alignments, grades, user = get_user_dash_data(user_id)
+    print(request.referrer)
+    return render_template('account/student_dashboard.html', record=record,
+                                   user=user,
+                                   students=session['users'], grades=grades,
+                                   calculation_dict=calculation_dictionaries,
+                                   alignments=alignments, prev_url=request.referrer)

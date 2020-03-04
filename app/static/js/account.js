@@ -18,6 +18,7 @@ function makeIncompleteTable(incompletes, table){
         {
             field: 'incomplete_count',
             title: 'Incomplete Count',
+            filterControl: 'select',
             sortable: true
         },
     ];
@@ -27,6 +28,7 @@ function makeIncompleteTable(incompletes, table){
         data: incompletes,
         search: true,
         pagination: true,
+        filterControl: true,
         showSearchClearButton: true,
         showExport: true,
         exportTypes: ['csv'],

@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block content %}
+    <table id="incompleteTable"></table>
+    <script>
+        $(function(){
+            let incompletes = {{ incompletes|tojson|safe }};
+
+        })
+    </script>
+{% endblock %}

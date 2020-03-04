@@ -28,6 +28,12 @@
         <lticm:property name="enabled">true</lticm:property>
         <lticm:property name="display_type">default</lticm:property>
       </lticm:options>
+      <lticm:options name="account_navigation">
+        <lticm:property name="url">{{ url_for('account.launch', _external=True) }}</lticm:property>
+        <lticm:property name="text">CBL Grade Dashboard</lticm:property>
+        <lticm:property name="enabled">true</lticm:property>
+        <lticm:property name="display_type">default</lticm:property>
+      </lticm:options>
     </blti:extensions>
     <cartridge_bundle identifierref="BLTI001_Bundle"/>
     <cartridge_icon identifierref="BLTI001_Icon"/>

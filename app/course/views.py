@@ -9,12 +9,13 @@ from app.models import Outcome, Course, Record, Grade, User, OutcomeResult, \
     CourseUserLink, OutcomeResultSchema, OutcomeSchema
 from utilities.canvas_api import get_course_users
 from utilities.cbl_calculator import calculation_dictionaries
-from utilities.helpers import make_outcome_avg_dicts, format_users, error, return_error
+from utilities.helpers import make_outcome_avg_dicts, format_users, error
 
 ENROLLMENT_TERM_ID = 11
 
 blueprint = Blueprint("course", __name__, url_prefix="/courses",
                       static_folder="../static")
+
 
 @blueprint.route('/launch', methods=['POST', 'GET'])
 @lti(error=error, request='initial', role='instructor', app=current_app)
@@ -97,7 +98,6 @@ def dashboard(lti=lti):
 
     # grade dictionaries
     grades = make_outcome_avg_dicts(outcome_results, grades)
-
 
     return render_template('courses/dashboard.html', users=users,
                            grades=grades,

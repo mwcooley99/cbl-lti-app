@@ -104,6 +104,7 @@ function makeMasteryTable(grades, outcomes, drop_date, masteryTable) {
         showExport: true,
         exportTypes: ['csv'],
         fixedColumns: true,
+        pagination: true,
         // stickyHeader: true
 
     });

@@ -11,7 +11,6 @@ from app.extensions import (
     db,
     ma,
     migrate,
-    admin
 )
 
 

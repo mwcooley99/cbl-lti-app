@@ -40,7 +40,7 @@ def register_extensions(app):
     db.init_app(app)
     ma.init_app(app)
     migrate.init_app(app, db)
-    admin.init_app(app)
+    # admin.init_app(app)
 
     # Import models
     return None

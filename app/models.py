@@ -45,14 +45,14 @@ class Course(db.Model):
     @staticmethod
     def outcome_stats(course_id):
         stmt = db.text('''
-            SELECT title, max(cnt) max, min(cnt) min
+            SELECT title, id, max(cnt) max, min(cnt) min
             FROM
-                (SELECT o.title title, count(*) cnt
+                (SELECT o.id, o.title title, count(*) cnt
                 FROM outcome_results ores
                     JOIN outcomes o ON o.id = ores.outcome_id
                 WHERE ores.course_id = :course_id
-                GROUP BY ores.user_id, o.title) temp
-            GROUP BY title
+                GROUP BY ores.user_id, o.id, o.title) temp
+            GROUP BY id, title
             ORDER BY max desc;
         ''')
         results = db.session.execute(stmt, dict(course_id=course_id))

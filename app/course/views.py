@@ -158,7 +158,7 @@ def analytics(course_id=None, lti=lti):
     num_outcomes = OutcomeResult.query.filter(
         OutcomeResult.course_id == course_id).with_entities(
         OutcomeResult.outcome_id).distinct().count()
-    keys = ['title', 'max', 'min']
+    keys = ['title', 'id', 'max', 'min']
     outcome_stats = [dict(zip(keys, out)) for out in
                      Course.outcome_stats(course_id)]
     print(outcome_stats)

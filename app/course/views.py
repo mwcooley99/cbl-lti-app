@@ -50,10 +50,9 @@ def dashboard(lti=lti):
     :param lti: pylti
     :return: template for a core content teacher
     '''
+    s = time.perf_counter()
     record = Record.query.order_by(Record.id.desc()).first()
     course_id = session['course_id']
-    s = time.perf_counter()
-    # Get the grades
 
     # Query users
     users = CourseUserLink.query.join(User).options(
@@ -64,7 +63,8 @@ def dashboard(lti=lti):
     grades = Grade.query.join(Grade.user).options(
         db.joinedload(Grade.user, innerjoin=True)
     ).filter(
-        Grade.record_id == record.id, Grade.course_id == course_id
+        # Grade.record_id == record.id,
+        Grade.course_id == course_id
     ).order_by(User.name).all()
     # grade_schema = GradeSchema()
     # grades = grade_schema.dump(grades, many=True)
@@ -84,12 +84,12 @@ def dashboard(lti=lti):
     outcome_schema = OutcomeSchema()
     outcomes = outcome_schema.dump(outcomes, many=True)
 
-    #
+    # Get course outcome_results
     outcome_results = OutcomeResult.query.options(
         db.joinedload(OutcomeResult.course, innerjoin=True)
     ).filter(
         OutcomeResult.score.isnot(None),
-        Course.enrollment_term_id == ENROLLMENT_TERM_ID,
+        # Course.enrollment_term_id == ENROLLMENT_TERM_ID,
         OutcomeResult.course_id == course_id
     ).order_by(
         OutcomeResult.user_id, OutcomeResult.outcome_id).all()

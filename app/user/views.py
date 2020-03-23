@@ -38,6 +38,9 @@ def launch(lti=lti):
     session['user_id'] = request.form.get('custom_canvas_user_id')
     user_id = session['user_id']
 
+    # user_id = request.form.get('custom_canvas_user_id')
+    # resp
+
     # Check if they are a student
     # TODO - exclude Teachers
     # Check if it's a student (or teacher currently)

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """User views."""
 from flask import Blueprint, render_template, current_app, session, url_for, \
-    request, redirect
+    request, redirect, make_response
 from pylti.flask import lti
 
 from app.extensions import db
@@ -38,8 +38,7 @@ def launch(lti=lti):
     session['user_id'] = request.form.get('custom_canvas_user_id')
     user_id = session['user_id']
 
-    # user_id = request.form.get('custom_canvas_user_id')
-    # resp
+
 
     # Check if they are a student
     # TODO - exclude Teachers

@@ -23,6 +23,7 @@ class DevelopmentConfig(BaseConfig):
     SQLALCHEMY_DATABASE_URI = os.getenv('DEVELOPMENT_DB_URI')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = True
+    # SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_SAMESITE = "None"
 
 

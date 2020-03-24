@@ -25,18 +25,18 @@ def launch(lti=lti):
     :param lti: pylti
     :return: redirects to course page or adviser page depending on the course type
     '''
-    # session['dash_type'] = 'course'
-    #
-    # course_title = request.form.get('context_title')
-    # session['course_id'] = None
-    # session.modified = True
-    # session['course_id'] = request.form.get('custom_canvas_course_id')
-    # if course_title.startswith('@dtech'):
-    #     # Would be better to run this internally
-    #     users = get_course_users({'id': session['course_id']})
-    #     session['users'] = format_users(users)
-    #     user = session['users'][0]
-    #     return redirect(url_for('user.student_dashboard', user_id=user['id']))
+    session['dash_type'] = 'course'
+
+    course_title = request.form.get('context_title')
+    session['course_id'] = None
+    session.modified = True
+    session['course_id'] = request.form.get('custom_canvas_course_id')
+    if course_title.startswith('@dtech'):
+        # Would be better to run this internally
+        users = get_course_users({'id': session['course_id']})
+        session['users'] = format_users(users)
+        user = session['users'][0]
+        return redirect(url_for('user.student_dashboard', user_id=user['id']))
 
     return redirect(
         url_for('account.incompletes'))

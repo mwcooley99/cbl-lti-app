@@ -76,6 +76,6 @@ def student_dashboard(user_id, lti=lti):
     print(request.referrer)
     return render_template('account/student_dashboard.html', record=record,
                                    user=user,
-                                   students=session['users'], grades=grades,
+                                   grades=grades,
                                    calculation_dict=calculation_dictionaries,
                                    alignments=alignments, prev_url=request.referrer)

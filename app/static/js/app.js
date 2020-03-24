@@ -55,7 +55,7 @@ function makeMasteryTable(grades, outcomes, drop_date, masteryTable) {
             field: value['id'],
             title: value['title'],
             sortable: true,
-            width: 100,
+            // width: 100,
 
 
         };
@@ -78,16 +78,16 @@ function makeMasteryTable(grades, outcomes, drop_date, masteryTable) {
             field: 'grade',
             title: 'Grade',
             sortable: true,
-            width: 90,
-            widthUnit: "px",
+            // width: 90,
+            // widthUnit: "px",
             filterControl: 'select'
         },
         {
             field: 'email',
             title: 'Email',
-            sortable: true,
-            width: 90,
-            widthUnit: "px"
+            // sortable: true,
+            // width: 90,
+            // widthUnit: "px"
         }
     );
 

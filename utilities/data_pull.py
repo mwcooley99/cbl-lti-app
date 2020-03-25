@@ -156,6 +156,7 @@ def pull_outcome_results(current_term=10):
         # if count > 5:
         #     break
 
+
 def insert_grades(current_term=10):
     print(f'Grade pull started at {datetime.now()}')
 

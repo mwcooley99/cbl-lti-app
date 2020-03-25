@@ -2,6 +2,20 @@
 from .extensions import db, ma
 
 
+class EnrollemntTerm(db.Model):
+    __tablename__ = 'enrollment_terms'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    start_at = db.Column(db.DateTime)
+    end_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime)
+    workflow_state = db.Column(db.String)
+    sis_term_id = db.Column(db.String)
+    sis_import_id = db.Column(db.Integer)
+
+    current_term = db.Column(db.Boolean, nullable=False)
+
+
 class Record(db.Model):
     __tablename__ = 'records'
     id = db.Column(db.Integer, primary_key=True)
@@ -53,7 +67,7 @@ class Course(db.Model):
                 WHERE ores.course_id = :course_id
                 GROUP BY ores.user_id, o.id, o.title) temp
             GROUP BY id, title
-            ORDER BY max desc;
+            ORDER BY max DESC;
         ''')
         results = db.session.execute(stmt, dict(course_id=course_id))
         return results
@@ -78,7 +92,7 @@ class OutcomeAverage(db.Model):
 class Grade(db.Model):
     __tablename__ = 'grades'
     id = db.Column(db.Integer, primary_key=True)
-    course_id = db.Column(db.Integer, db.ForeignKey('courses.id'))
+    course_id = db.Column(db.Integer, db.ForeignKey('courses.id'), index=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     grade = db.Column(db.String)
     outcomes = db.Column(db.JSON)
@@ -123,7 +137,7 @@ class OutcomeResult(db.Model):
     __tablename__ = 'outcome_results'
     id = db.Column(db.Integer, primary_key=True)
     score = db.Column(db.Float)
-    course_id = db.Column(db.Integer, db.ForeignKey('courses.id'))
+    course_id = db.Column(db.Integer, db.ForeignKey('courses.id'), index=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     outcome_id = db.Column(db.Integer, db.ForeignKey('outcomes.id'))
     alignment_id = db.Column(db.String, db.ForeignKey('alignments.id'))
@@ -179,7 +193,8 @@ class GradeSchema(ma.Schema):
         #     'id', 'course_id', 'grade', 'outcomes', 'record_id',
         #     'user', 'threshold', 'min_score')
         fields = (
-            'id', 'course_id', 'grade', 'record_id', 'user', 'threshold', 'min_score')
+            'id', 'course_id', 'grade', 'record_id', 'user', 'threshold',
+            'min_score')
 
     # course = ma.Nested(CourseSchema)
     user = ma.Nested(UserSchema)
@@ -201,15 +216,3 @@ class OutcomeResultSchema(ma.ModelSchema):
 
     outcome = ma.Nested(OutcomeSchema)
     alignment = ma.Nested(AlignmentSchema)
-
-# users = User.query.all()
-# user_schema = UserSchema()
-# user_schema.dump(users[5])
-#
-# grades = Grade.query.limit(10)
-# grade_schema = GradeSchema()
-# grade_schema.dump(grades[3])
-#
-# outcome = OutcomeResult.query.first()
-# res_schema = OutcomeResultSchema()
-# res_schema.dump(outcome)

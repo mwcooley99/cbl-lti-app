@@ -25,6 +25,7 @@ def launch(lti=lti):
     :param lti: pylti
     :return: redirects to course page or adviser page depending on the course type
     '''
+    # todo - clean up this view
     session['dash_type'] = 'course'
 
     course_title = request.form.get('context_title')

@@ -1,7 +1,9 @@
-import requests, os
-import pandas as pd
-from pandas.io.json import json_normalize
 import json
+
+import os
+import pandas as pd
+import requests
+from pandas.io.json import json_normalize
 
 access_token = os.getenv('CANVAS_API_KEY')
 
@@ -122,7 +124,7 @@ def create_outcome_dataframes(course, user_ids=None):
     return outcome_results, alignments, outcomes
 
 
-# TODO - have this return the whole dictionary not just the ids
+# TODO - have this return the whole dictionary not just the ids (deprecated?)
 def get_course_users_ids(course):
     '''
     Gets list of users for a course
@@ -185,3 +187,25 @@ def get_user_courses(user_id):
     # courses = [{key: course[key] for key in keys} for course in courses]
     return courses
 
+
+def get_enrollment_terms():
+    url = "https://dtechhs.instructure.com/api/v1/accounts/1/terms"
+    querystring = {"per_page": "100"}
+    response = requests.request("GET", url, headers=headers,
+                                params=querystring)
+
+    terms = response.json()['enrollment_terms']
+
+    while response.links.get('next'):
+        url = response.links['next']['url']
+        response = requests.request("GET", url, headers=headers)
+        new_terms = response.json()['enrollment_terms']
+        terms += new_terms
+
+    return terms
+
+
+if __name__ == '__main__':
+    terms = get_enrollment_terms()
+    # terms['enrollment_terms'].append({'hello': 2})
+    print(json.dumps(terms, indent=2))

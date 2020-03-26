@@ -74,4 +74,4 @@ CourseUserLink = Table('course_user_link', metadata,
                               ForeignKey('users.id'), primary_key=True, nullable=False)
                        )
 
-metadata.create_all(engine, checkfirst=True)
+# metadata.create_all(engine, checkfirst=True)

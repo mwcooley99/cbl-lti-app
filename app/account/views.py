@@ -84,7 +84,7 @@ def student_dashboard(user_id, lti=lti):
 
 
 @blueprint.route('change_term',  methods=['GET', 'POST'])
-# @lti(error=error, request='session', role='admin', app=current_app)
+@lti(error=error, request='session', role='admin', app=current_app)
 def change_term(lti=lti):
     form = EnrollmentTermForm()
     terms = EnrollmentTerm.query.all()

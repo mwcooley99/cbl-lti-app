@@ -14,7 +14,7 @@ class EnrollmentTerm(db.Model):
     sis_term_id = db.Column(db.String)
     sis_import_id = db.Column(db.Integer)
 
-    current_term = db.Column(db.Boolean, server_default='true', nullable=False)
+    current_term = db.Column(db.Boolean, server_default='false', nullable=False)
 
 
 class Record(db.Model):

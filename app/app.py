@@ -39,7 +39,7 @@ def register_extensions(app):
 
     db.init_app(app)
     ma.init_app(app)
-    migrate.init_app(app, db)
+    migrate.init_app(app, db, compare_server_default=True)
     # admin.init_app(app)
 
     # Import models

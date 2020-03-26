@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block navbar %}
+{% include 'account/navbar.html' %}
+{% endblock %}
+{% block content %}
+    <div class="container">
+        <form method="POST" action="{{ url_for('account.change_term') }}">
+            {{ form.csrf_token }}
+            <p>
+                {{ form.term }}
+            </p>
+            <p>
+                {{ form.submit }}
+            </p>
+
+        </form>
+    </div>
+{% endblock %}

@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine, Integer, String, Table, Column, MetaData, \
     ForeignKey, DateTime, Float, JSON, Boolean
+from sqlalchemy.ext.automap import automap_base
 from app.config import configuration
 
 import os
@@ -12,6 +13,14 @@ engine = create_engine(
 # reflect the tables
 metadata = MetaData()
 metadata.bind = engine
+
+# automap base
+Base = automap_base()
+Base.prepare(engine, reflect=True)
+
+
+Enrollment_Terms = Base.classes.enrollment_terms.__table__
+
 
 Records = Table('records', metadata,
                 Column('id', Integer, primary_key=True, autoincrement=True),

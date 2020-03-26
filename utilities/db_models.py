@@ -19,7 +19,7 @@ Base = automap_base()
 Base.prepare(engine, reflect=True)
 
 
-Enrollment_Terms = Base.classes.enrollment_terms.__table__
+EnrollmentTerms = Base.classes.enrollment_terms.__table__
 
 
 Records = Table('records', metadata,

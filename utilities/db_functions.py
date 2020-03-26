@@ -1,18 +1,15 @@
-from sqlalchemy import create_engine, desc
-from sqlalchemy.orm import Session
-from sqlalchemy.dialects import postgresql
-from sqlalchemy.sql.expression import bindparam
+import os
+from datetime import datetime
 
 import pandas as pd
-
-from datetime import datetime
-import os
+from sqlalchemy import create_engine, desc
+from sqlalchemy.dialects import postgresql
+from sqlalchemy.orm import Session
+from sqlalchemy.sql.expression import bindparam
 
 from app.config import configuration
-
 from .db_models import Outcomes, OutcomeResults, Courses, Users, Alignments, \
-    Records, Grades, CourseUserLink
-from .canvas_api import get_users
+    Records, Grades, CourseUserLink, EnrollmentTerms
 
 config = configuration[os.getenv('PULL_CONFIG')]
 
@@ -46,7 +43,6 @@ def upsert_users(users):
     )
     session.execute(update_stmt)
     session.commit()
-
 
 
 def upsert_courses(courses):
@@ -173,6 +169,7 @@ def delete_grades_current_term(current_term):
     session.execute(delete_stmt)
     session.commit()
 
+
 def insert_grades_to_db(grades_list):
     session.execute(Grades.insert().values(grades_list))
     session.commit()
@@ -210,6 +207,25 @@ def get_db_courses(current_term=None):
     conn = session.connection()
     courses = conn.execute(stmt)
     return courses
+
+
+def upsert_enrollment_terms(enrollment_terms):
+    insert_stmt = postgresql.insert(EnrollmentTerms).values(enrollment_terms)
+    update_stmt = insert_stmt.on_conflict_do_update(
+        index_elements=['id'],
+        set_={
+            'name': insert_stmt.excluded.name,
+            'start_at': insert_stmt.excluded.start_at,
+            'end_at': insert_stmt.excluded.end_at,
+            'created_at': insert_stmt.excluded.created_at,
+            'workflow_state': insert_stmt.excluded.workflow_state,
+            'sis_term_id': insert_stmt.excluded.sis_term_id,
+            'sis_import_id': insert_stmt.excluded.sis_import_id,
+            'current_term': insert_stmt.excluded.current_term
+        }
+    )
+    session.execute(update_stmt)
+    session.commit()
 
 
 if __name__ == '__main__':

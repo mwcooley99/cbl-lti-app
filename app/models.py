@@ -2,7 +2,7 @@
 from .extensions import db, ma
 
 
-class EnrollemntTerm(db.Model):
+class EnrollmentTerm(db.Model):
     __tablename__ = 'enrollment_terms'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
@@ -13,7 +13,7 @@ class EnrollemntTerm(db.Model):
     sis_term_id = db.Column(db.String)
     sis_import_id = db.Column(db.Integer)
 
-    current_term = db.Column(db.Boolean, nullable=False)
+    current_term = db.Column(db.Boolean, default=False, nullable=False)
 
 
 class Record(db.Model):

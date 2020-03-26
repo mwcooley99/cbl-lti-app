@@ -5,6 +5,8 @@ import pandas as pd
 import requests
 from pandas.io.json import json_normalize
 
+from utilities.db_functions import upsert_enrollment_terms
+
 access_token = os.getenv('CANVAS_API_KEY')
 
 headers = {'Authorization': f'Bearer {access_token}'}
@@ -202,6 +204,9 @@ def get_enrollment_terms():
         new_terms = response.json()['enrollment_terms']
         terms += new_terms
 
+    for term in terms:
+        del term['grading_period_group_id']
+
     return terms
 
 
@@ -209,3 +214,4 @@ if __name__ == '__main__':
     terms = get_enrollment_terms()
     # terms['enrollment_terms'].append({'hello': 2})
     print(json.dumps(terms, indent=2))
+    upsert_enrollment_terms(terms)

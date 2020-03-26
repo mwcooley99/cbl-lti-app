@@ -228,5 +228,14 @@ def upsert_enrollment_terms(enrollment_terms):
     session.commit()
 
 
+def get_current_term():
+    stmt = EnrollmentTerms.select(EnrollmentTerms.c.current_term)
+    conn = session.connection()
+
+    # Should only return a single term
+    term = list(conn.execute(stmt))[0]
+    return term
+
+
 if __name__ == '__main__':
     delete_outcome_results(343)

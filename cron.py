@@ -6,12 +6,14 @@ from pytz import utc
 from utilities.data_pull import update_users, pull_outcome_results, \
     insert_grades, update_courses, update_course_students
 
+from utilities.db_functions import get_current_term
+
 sched = BlockingScheduler(timezone=utc)
 
 
 @sched.scheduled_job('cron', day_of_week="mon-fri", hour=8, minute=5)
 def timed_job():
-    current_term = 11
+    current_term = get_current_term()[0]
     print(f'job started at {datetime.now()}')
     update_users()
     print(f"users updated at {datetime.now()}")
@@ -25,4 +27,6 @@ def timed_job():
     print(f"grades inserted at {datetime.now()}")
 
 
-sched.start()
+if __name__ == '__main__':
+    print(get_current_term()[0])
+    sched.start()

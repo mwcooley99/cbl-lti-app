@@ -5,21 +5,24 @@ from pylti.flask import lti
 from app.extensions import db
 from app.models import Record, EnrollmentTerm
 from app.user.views import get_user_dash_data
+from app.utils import get_enrollment_term
+
 from utilities.canvas_api import get_course_users
 from utilities.cbl_calculator import calculation_dictionaries
 from utilities.helpers import format_users, error
 
+
 from . forms import EnrollmentTermForm
 
 
-ENROLLMENT_TERM_ID = 11
+
 
 blueprint = Blueprint('account', __name__, url_prefix='/account',
                       static_folder='../static')
 
 
 @blueprint.route('/launch', methods=['POST', 'GET'])
-@lti(error=error, request='initial', role='instructor', app=current_app)
+@lti(error=error, request='initial', role='admin', app=current_app)
 def launch(lti=lti):
     '''
     Authorization for course navigation
@@ -47,6 +50,7 @@ def launch(lti=lti):
 @blueprint.route('/incompletes')
 @lti(error=error, request='session', role='admin', app=current_app)
 def incompletes(lti=lti):
+    enrollment_term_id = get_enrollment_term()
     stmt = db.text('''
         SELECT DISTINCT u.id AS user_id, u.name, u.login_id, cnt.count
         FROM course_user_link cl
@@ -56,12 +60,11 @@ def incompletes(lti=lti):
                 FROM grades g
                     INNER JOIN courses c ON c.id = g.course_id
                 WHERE g.grade = 'I'
-                    AND c.enrollment_term_id = 11
+                    AND c.enrollment_term_id = :enrollment_term_id
                 GROUP BY g.user_id
             ) cnt ON cnt.user_id = cl.user_id
         ORDER BY name;
-        ''')
-
+        ''').bindparams(enrollment_term_id=enrollment_term_id.id)
     results = db.session.execute(stmt)
     keys = ['user_id', 'name', 'email', 'incomplete_count']
     incompletes = [dict(zip(keys, res)) for res in results]

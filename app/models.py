@@ -1,5 +1,6 @@
 # from app import db, ma
 from .extensions import db, ma
+from sqlalchemy.sql import expression
 
 
 class EnrollmentTerm(db.Model):
@@ -13,7 +14,7 @@ class EnrollmentTerm(db.Model):
     sis_term_id = db.Column(db.String)
     sis_import_id = db.Column(db.Integer)
 
-    current_term = db.Column(db.Boolean,server_default=False, nullable=False)
+    current_term = db.Column(db.Boolean, server_default='true', nullable=False)
 
 
 class Record(db.Model):

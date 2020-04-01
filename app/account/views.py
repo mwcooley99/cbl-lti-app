@@ -9,7 +9,7 @@ from app.utils import get_enrollment_term
 from utilities.canvas_api import get_course_users
 from utilities.cbl_calculator import calculation_dictionaries
 from utilities.helpers import format_users, error
-from .forms import EnrollmentTermForm
+# from .forms import EnrollmentTermForm
 
 blueprint = Blueprint('account', __name__, url_prefix='/account',
                       static_folder='../static')
@@ -80,14 +80,14 @@ def student_dashboard(user_id, lti=lti):
                            alignments=alignments, prev_url=request.referrer)
 
 
-@blueprint.route('change_term', methods=['GET', 'POST'])
-@lti(error=error, request='session', role='admin', app=current_app)
-def change_term(lti=lti):
-    form = EnrollmentTermForm()
-    terms = EnrollmentTerm.query.all()
-    terms_list = [(term.id, term.name) for term in terms]
-    form.term.choices = terms_list
-    if form.validate_on_submit():
-        print(form.term.data)
-        return render_template('account/change_term.html', form=form)
-    return render_template('account/change_term.html', form=form)
+# @blueprint.route('change_term', methods=['GET', 'POST'])
+# @lti(error=error, request='session', role='admin', app=current_app)
+# def change_term(lti=lti):
+#     form = EnrollmentTermForm()
+#     terms = EnrollmentTerm.query.all()
+#     terms_list = [(term.id, term.name) for term in terms]
+#     form.term.choices = terms_list
+#     if form.validate_on_submit():
+#         print(form.term.data)
+#         return render_template('account/change_term.html', form=form)
+#     return render_template('account/change_term.html', form=form)

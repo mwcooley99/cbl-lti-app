@@ -11,7 +11,7 @@ from utilities.canvas_api import get_course_users
 from utilities.cbl_calculator import calculation_dictionaries
 from utilities.helpers import make_outcome_avg_dicts, format_users, error
 
-ENROLLMENT_TERM_ID = 11
+
 
 blueprint = Blueprint("course", __name__, url_prefix="/courses",
                       static_folder="../static")
@@ -89,7 +89,6 @@ def dashboard(lti=lti):
         db.joinedload(OutcomeResult.course, innerjoin=True)
     ).filter(
         OutcomeResult.score.isnot(None),
-        # Course.enrollment_term_id == ENROLLMENT_TERM_ID,
         OutcomeResult.course_id == course_id
     ).order_by(
         OutcomeResult.user_id, OutcomeResult.outcome_id).all()
@@ -135,7 +134,6 @@ def detail(course_id=357, user_id=384, lti=lti):
         db.joinedload(OutcomeResult.course, innerjoin=True)
     ).filter(
         OutcomeResult.user_id == user_id, OutcomeResult.score.isnot(None),
-        Course.enrollment_term_id == ENROLLMENT_TERM_ID,
         Course.id == OutcomeResult.course_id
     ).order_by(
         OutcomeResult.course_id, OutcomeResult.outcome_id).all()

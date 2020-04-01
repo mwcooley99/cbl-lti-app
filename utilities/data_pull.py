@@ -14,10 +14,6 @@ from utilities.db_functions import insert_grades_to_db, create_record, \
     query_current_outcome_results, get_db_courses, \
     insert_course_students, delete_course_students, delete_grades_current_term
 
-OUTCOMES_TO_FILTER = (
-    2269, 2270, 2923, 2922, 2732,
-    2733)
-
 
 def make_grade_object(grade, outcome_avgs, record_id, course, user_id):
     '''

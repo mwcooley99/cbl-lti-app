@@ -23,7 +23,7 @@ class Record(db.Model):
     created_at = db.Column(db.DateTime)
     term_id = db.Column(db.Integer)
 
-    outcome_averages = db.relationship('OutcomeAverage', backref='record')
+    # outcome_averages = db.relationship('OutcomeAverage', backref='record')
     grades = db.relationship('Grade', backref='record')
 
     def __repr__(self):
@@ -37,7 +37,7 @@ class Course(db.Model):
     enrollment_term_id = db.Column(db.Integer,
                                    db.ForeignKey('enrollment_terms.id'))
 
-    outcome_averages = db.relationship('OutcomeAverage', backref='course')
+    # outcome_averages = db.relationship('OutcomeAverage', backref='course')
     grades = db.relationship('Grade', backref='course')
     courses = db.relationship('CourseUserLink', backref='course')
     outcome_results = db.relationship('OutcomeResult', backref='course')
@@ -78,17 +78,17 @@ class Course(db.Model):
         return str(self.name)
 
 
-class OutcomeAverage(db.Model):
-    __tablename__ = 'outcome_averages'
-    id = db.Column(db.Integer, primary_key=True)
-    outcome_avg = db.Column(db.Float)
-    user_id = db.Column(db.Integer)
-    outcome_id = db.Column(db.Integer, db.ForeignKey('outcomes.id'))
-    record_id = db.Column(db.Integer, db.ForeignKey('records.id'))
-    course_id = db.Column(db.Integer, db.ForeignKey('courses.id'))
-
-    def __repr__(self):
-        return str(self.__dict__)
+# class OutcomeAverage(db.Model):
+#     __tablename__ = 'outcome_averages'
+#     id = db.Column(db.Integer, primary_key=True)
+#     outcome_avg = db.Column(db.Float)
+#     user_id = db.Column(db.Integer)
+#     outcome_id = db.Column(db.Integer, db.ForeignKey('outcomes.id'))
+#     record_id = db.Column(db.Integer, db.ForeignKey('records.id'))
+#     course_id = db.Column(db.Integer, db.ForeignKey('courses.id'))
+#
+#     def __repr__(self):
+#         return str(self.__dict__)
 
 
 class Grade(db.Model):
@@ -155,7 +155,7 @@ class Outcome(db.Model):
     title = db.Column(db.String, nullable=False)
     display_name = db.Column(db.String)
     calculation_int = db.Column(db.Integer)
-    outcome_averages = db.relationship('OutcomeAverage', backref='outcome')
+    # outcome_averages = db.relationship('OutcomeAverage', backref='outcome')
     outcome_results = db.relationship('OutcomeResult', backref='outcome')
 
     def __repr__(self):

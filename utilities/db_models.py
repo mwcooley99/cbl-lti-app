@@ -7,9 +7,9 @@ import os
 
 config = configuration[os.getenv('PULL_CONFIG')]
 
-# engine = create_engine(
-#     config.SQLALCHEMY_DATABASE_URI)
-engine = create_engine(os.getenv('PROD_DATABASE_URL'))
+engine = create_engine(
+    config.SQLALCHEMY_DATABASE_URI)
+# engine = create_engine(os.getenv('PROD_DATABASE_URL'))
 # reflect the tables
 metadata = MetaData()
 metadata.bind = engine
@@ -19,7 +19,7 @@ Base = automap_base()
 Base.prepare(engine, reflect=True)
 
 
-EnrollmentTerms = Base.classes.enrollment_terms.__table__
+# EnrollmentTerms = Base.classes.enrollment_terms.__table__
 
 
 Records = Table('records', metadata,

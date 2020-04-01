@@ -34,7 +34,8 @@ class Course(db.Model):
     __tablename__ = 'courses'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
-    enrollment_term_id = db.Column(db.Integerquit)
+    enrollment_term_id = db.Column(db.Integer,
+                                   db.ForeignKey('enrollment_terms.id'))
 
     outcome_averages = db.relationship('OutcomeAverage', backref='course')
     grades = db.relationship('Grade', backref='course')

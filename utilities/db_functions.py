@@ -9,7 +9,7 @@ from sqlalchemy.sql.expression import bindparam
 
 from app.config import configuration
 from .db_models import Outcomes, OutcomeResults, Courses, Users, Alignments, \
-    Records, Grades, CourseUserLink, EnrollmentTerms
+    Records, Grades, CourseUserLink # todo, EnrollmentTerms
 
 config = configuration[os.getenv('PULL_CONFIG')]
 
@@ -209,31 +209,32 @@ def get_db_courses(current_term=None):
     return courses
 
 
-def upsert_enrollment_terms(enrollment_terms):
-    insert_stmt = postgresql.insert(EnrollmentTerms).values(enrollment_terms)
-    update_stmt = insert_stmt.on_conflict_do_update(
-        index_elements=['id'],
-        set_={
-            'name': insert_stmt.excluded.name,
-            'start_at': insert_stmt.excluded.start_at,
-            'end_at': insert_stmt.excluded.end_at,
-            'created_at': insert_stmt.excluded.created_at,
-            'workflow_state': insert_stmt.excluded.workflow_state,
-            'sis_term_id': insert_stmt.excluded.sis_term_id,
-            'sis_import_id': insert_stmt.excluded.sis_import_id,
-            'current_term': insert_stmt.excluded.current_term
-        }
-    )
-    session.execute(update_stmt)
-    session.commit()
+# def upsert_enrollment_terms(enrollment_terms):
+#     insert_stmt = postgresql.insert(EnrollmentTerms).values(enrollment_terms)
+#     update_stmt = insert_stmt.on_conflict_do_update(
+#         index_elements=['id'],
+#         set_={
+#             'name': insert_stmt.excluded.name,
+#             'start_at': insert_stmt.excluded.start_at,
+#             'end_at': insert_stmt.excluded.end_at,
+#             'created_at': insert_stmt.excluded.created_at,
+#             'workflow_state': insert_stmt.excluded.workflow_state,
+#             'sis_term_id': insert_stmt.excluded.sis_term_id,
+#             'sis_import_id': insert_stmt.excluded.sis_import_id,
+#             'current_term': insert_stmt.excluded.current_term
+#         }
+#     )
+#     session.execute(update_stmt)
+#     session.commit()
 
 
 def get_current_term():
-    stmt = EnrollmentTerms.select(EnrollmentTerms.c.current_term)
-    conn = session.connection()
-
-    # Should only return a single term
-    term = list(conn.execute(stmt))[0]
+    term =11
+    # stmt = EnrollmentTerms.select(EnrollmentTerms.c.current_term)
+    # conn = session.connection()
+    #
+    # # Should only return a single term
+    # term = list(conn.execute(stmt))[0]
     return term
 
 

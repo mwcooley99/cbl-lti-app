@@ -6,13 +6,14 @@ import numpy as np
 import pandas as pd
 
 from utilities.canvas_api import get_courses, get_outcome_results, \
-    get_course_users, get_users
+    get_course_users, get_users, get_enrollment_terms
 from utilities.cbl_calculator import calculate_traditional_grade, CUTOFF_DATE
 from utilities.db_functions import insert_grades_to_db, create_record, \
     delete_outcome_results, upsert_alignments, upsert_users, \
     upsert_outcome_results, upsert_outcomes, upsert_courses, \
     query_current_outcome_results, get_db_courses, \
-    insert_course_students, delete_course_students, delete_grades_current_term
+    insert_course_students, delete_course_students, delete_grades_current_term, \
+    upsert_enrollment_terms
 
 
 def make_grade_object(grade, outcome_avgs, record_id, course, user_id):
@@ -323,6 +324,11 @@ def update_users():
     '''
     users = get_users()
     upsert_users(users)
+
+
+def update_terms():
+    terms = get_enrollment_terms()
+    upsert_enrollment_terms(terms)
 
 
 if __name__ == '__main__':

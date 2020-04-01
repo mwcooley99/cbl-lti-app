@@ -4,7 +4,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from pytz import utc
 
 from utilities.data_pull import update_users, pull_outcome_results, \
-    insert_grades, update_courses, update_course_students
+    insert_grades, update_courses, update_course_students, update_terms
 
 from utilities.db_functions import get_current_term
 
@@ -13,8 +13,13 @@ sched = BlockingScheduler(timezone=utc)
 
 @sched.scheduled_job('cron', day_of_week="mon-fri", hour=8, minute=5)
 def timed_job():
-    current_term = get_current_term()[0]
+
     print(f'job started at {datetime.now()}')
+    update_terms()
+    print(f"terms updated at {datetime.now()}")
+    # get current term
+    current_term = get_current_term()[0]
+
     update_users()
     print(f"users updated at {datetime.now()}")
     update_courses(current_term)

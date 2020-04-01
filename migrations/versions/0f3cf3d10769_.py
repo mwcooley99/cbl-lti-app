@@ -1,7 +1,7 @@
 """empty message
 
 Revision ID: 0f3cf3d10769
-Revises: 
+Revises:
 Create Date: 2020-03-25 11:33:16.558678
 
 """
@@ -53,20 +53,20 @@ def upgrade():
     op.create_foreign_key(None, 'grades', 'users', ['user_id'], ['id'])
     op.create_foreign_key(None, 'grades', 'records', ['record_id'], ['id'])
     op.create_foreign_key(None, 'grades', 'courses', ['course_id'], ['id'])
-    op.alter_column('outcome_averages', 'course_id',
-               existing_type=sa.INTEGER(),
-               nullable=True)
-    op.alter_column('outcome_averages', 'outcome_avg',
-               existing_type=postgresql.DOUBLE_PRECISION(precision=53),
-               nullable=True)
-    op.alter_column('outcome_averages', 'outcome_id',
-               existing_type=sa.INTEGER(),
-               nullable=True)
-    op.alter_column('outcome_averages', 'user_id',
-               existing_type=sa.INTEGER(),
-               nullable=True)
-    op.create_foreign_key(None, 'outcome_averages', 'outcomes', ['outcome_id'], ['id'])
-    op.create_foreign_key(None, 'outcome_averages', 'courses', ['course_id'], ['id'])
+    # op.alter_column('outcome_averages', 'course_id',
+    #            existing_type=sa.INTEGER(),
+    #            nullable=True)
+    # op.alter_column('outcome_averages', 'outcome_avg',
+    #            existing_type=postgresql.DOUBLE_PRECISION(precision=53),
+    #            nullable=True)
+    # op.alter_column('outcome_averages', 'outcome_id',
+    #            existing_type=sa.INTEGER(),
+    #            nullable=True)
+    # op.alter_column('outcome_averages', 'user_id',
+    #            existing_type=sa.INTEGER(),
+    #            nullable=True)
+    # op.create_foreign_key(None, 'outcome_averages', 'outcomes', ['outcome_id'], ['id'])
+    # op.create_foreign_key(None, 'outcome_averages', 'courses', ['course_id'], ['id'])
     op.alter_column('outcome_results', 'alignment_id',
                existing_type=sa.VARCHAR(),
                nullable=True)
@@ -146,20 +146,20 @@ def downgrade():
     op.alter_column('outcome_results', 'alignment_id',
                existing_type=sa.VARCHAR(),
                nullable=False)
-    op.drop_constraint(None, 'outcome_averages', type_='foreignkey')
-    op.drop_constraint(None, 'outcome_averages', type_='foreignkey')
-    op.alter_column('outcome_averages', 'user_id',
-               existing_type=sa.INTEGER(),
-               nullable=False)
-    op.alter_column('outcome_averages', 'outcome_id',
-               existing_type=sa.INTEGER(),
-               nullable=False)
-    op.alter_column('outcome_averages', 'outcome_avg',
-               existing_type=postgresql.DOUBLE_PRECISION(precision=53),
-               nullable=False)
-    op.alter_column('outcome_averages', 'course_id',
-               existing_type=sa.INTEGER(),
-               nullable=False)
+    # op.drop_constraint(None, 'outcome_averages', type_='foreignkey')
+    # op.drop_constraint(None, 'outcome_averages', type_='foreignkey')
+    # op.alter_column('outcome_averages', 'user_id',
+    #            existing_type=sa.INTEGER(),
+    #            nullable=False)
+    # op.alter_column('outcome_averages', 'outcome_id',
+    #            existing_type=sa.INTEGER(),
+    #            nullable=False)
+    # op.alter_column('outcome_averages', 'outcome_avg',
+    #            existing_type=postgresql.DOUBLE_PRECISION(precision=53),
+    #            nullable=False)
+    # op.alter_column('outcome_averages', 'course_id',
+    #            existing_type=sa.INTEGER(),
+    #            nullable=False)
     op.drop_constraint(None, 'grades', type_='foreignkey')
     op.drop_constraint(None, 'grades', type_='foreignkey')
     op.drop_constraint(None, 'grades', type_='foreignkey')

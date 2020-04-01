@@ -1,6 +1,5 @@
 # from app import db, ma
 from .extensions import db, ma
-from sqlalchemy.sql import expression
 
 
 class EnrollmentTerm(db.Model):
@@ -14,7 +13,8 @@ class EnrollmentTerm(db.Model):
     sis_term_id = db.Column(db.String)
     sis_import_id = db.Column(db.Integer)
 
-    current_term = db.Column(db.Boolean, server_default='false', nullable=False)
+    current_term = db.Column(db.Boolean, server_default='false',
+                             nullable=False)
 
 
 class Record(db.Model):
@@ -34,7 +34,7 @@ class Course(db.Model):
     __tablename__ = 'courses'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
-    enrollment_term_id = db.Column(db.Integer)
+    enrollment_term_id = db.Column(db.Integerquit)
 
     outcome_averages = db.relationship('OutcomeAverage', backref='course')
     grades = db.relationship('Grade', backref='course')

@@ -1,16 +1,14 @@
 # -*- coding: utf-8 -*-
 """User views."""
 from flask import Blueprint, render_template, current_app, session, url_for, \
-    request, redirect, make_response
+    request, redirect
 from pylti.flask import lti
 
 from app.extensions import db
 from app.models import Course, Record, User, \
-    OutcomeResult, OutcomeResultSchema
+    OutcomeResult, OutcomeResultSchema, EnrollmentTerm
 from utilities.canvas_api import get_observees
 from utilities.cbl_calculator import calculation_dictionaries
-
-ENROLLMENT_TERM_ID = 11
 
 blueprint = Blueprint("user", __name__, url_prefix="/users",
                       static_folder="../static")
@@ -37,8 +35,6 @@ def launch(lti=lti):
     # store some of the user data in the session
     session['user_id'] = request.form.get('custom_canvas_user_id')
     user_id = session['user_id']
-
-
 
     # Check if they are a student
     # TODO - exclude Teachers
@@ -83,7 +79,7 @@ def student_dashboard(lti=lti, user_id=None):
         auth_users_id = [user['id'] for user in session['users']]
         if not (int(user_id) in auth_users_id or lti.is_role(
                 'admin') or lti.is_role(
-                'instructor')):  # TODO - OR role = 'admin'
+            'instructor')):  # TODO - OR role = 'admin'
             return "You are not authorized to view this users information"
 
         alignments, grades, user = get_user_dash_data(user_id)
@@ -101,9 +97,13 @@ def student_dashboard(lti=lti, user_id=None):
 def get_user_dash_data(user_id):
     # Get student, which is linked to user-courses relationship table
     user = User.query.filter(User.id == user_id).first()
+
+    current_term = EnrollmentTerm.query.filter(
+        EnrollmentTerm.current_term).first()
+
     # get student grades
     grades = user.grades.join(Course).filter(
-        Course.enrollment_term_id == ENROLLMENT_TERM_ID
+        Course.enrollment_term_id == current_term.id
     ).all()
     # Get outcome results
     outcomes = OutcomeResult.query.options(
@@ -112,7 +112,7 @@ def get_user_dash_data(user_id):
         db.joinedload(OutcomeResult.course, innerjoin=True)
     ).filter(
         OutcomeResult.user_id == user_id, OutcomeResult.score.isnot(None),
-        Course.enrollment_term_id == ENROLLMENT_TERM_ID
+        Course.enrollment_term_id == current_term.id
     ).order_by(
         OutcomeResult.course_id, OutcomeResult.outcome_id).all()
     res_schema = OutcomeResultSchema()

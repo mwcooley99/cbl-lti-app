@@ -6,16 +6,10 @@ from app.extensions import db
 from app.models import Record, EnrollmentTerm
 from app.user.views import get_user_dash_data
 from app.utils import get_enrollment_term
-
 from utilities.canvas_api import get_course_users
 from utilities.cbl_calculator import calculation_dictionaries
 from utilities.helpers import format_users, error
-
-
-from . forms import EnrollmentTermForm
-
-
-
+from .forms import EnrollmentTermForm
 
 blueprint = Blueprint('account', __name__, url_prefix='/account',
                       static_folder='../static')
@@ -80,13 +74,13 @@ def student_dashboard(user_id, lti=lti):
     alignments, grades, user = get_user_dash_data(user_id)
     print(request.referrer)
     return render_template('account/student_dashboard.html', record=record,
-                                   user=user,
-                                   grades=grades,
-                                   calculation_dict=calculation_dictionaries,
-                                   alignments=alignments, prev_url=request.referrer)
+                           user=user,
+                           grades=grades,
+                           calculation_dict=calculation_dictionaries,
+                           alignments=alignments, prev_url=request.referrer)
 
 
-@blueprint.route('change_term',  methods=['GET', 'POST'])
+@blueprint.route('change_term', methods=['GET', 'POST'])
 @lti(error=error, request='session', role='admin', app=current_app)
 def change_term(lti=lti):
     form = EnrollmentTermForm()

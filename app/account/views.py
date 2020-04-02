@@ -13,7 +13,6 @@ from utilities.helpers import format_users, error
 # from .forms import EnrollmentTermForm
 
 
-
 blueprint = Blueprint('account', __name__, url_prefix='/account',
                       static_folder='../static')
 
@@ -28,6 +27,8 @@ def launch(lti=lti):
     '''
     # todo - clean up this view
     session['dash_type'] = 'course'
+    session['role'] = 'Admin'
+    # session['role'] = 'Teacher'
 
     course_title = request.form.get('context_title')
     session['course_id'] = None

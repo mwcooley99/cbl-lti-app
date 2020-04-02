@@ -12,6 +12,7 @@ from app.extensions import (
     db,
     ma,
     migrate,
+    admin
 )
 
 
@@ -40,7 +41,7 @@ def register_extensions(app):
     db.init_app(app)
     ma.init_app(app)
     migrate.init_app(app, db, compare_server_default=True)
-    # admin.init_app(app)
+    admin.init_app(app)
 
     # Import models
     return None
@@ -48,9 +49,6 @@ def register_extensions(app):
 
 def register_blueprints(app):
     """Register Flask blueprints."""
-    # app.register_blueprint(public.views.blueprint)
-    # app.register_blueprint(user.views.blueprint)
-    # app.register_blueprint(launch.views.blueprint)
     app.register_blueprint(user.views.blueprint)
     app.register_blueprint(course.views.blueprint)
     app.register_blueprint(public.views.blueprint)

@@ -23,7 +23,6 @@ class Record(db.Model):
     created_at = db.Column(db.DateTime)
     term_id = db.Column(db.Integer)
 
-    # outcome_averages = db.relationship('OutcomeAverage', backref='record')
     grades = db.relationship('Grade', backref='record')
 
     def __repr__(self):
@@ -37,7 +36,6 @@ class Course(db.Model):
     enrollment_term_id = db.Column(db.Integer,
                                    db.ForeignKey('enrollment_terms.id'))
 
-    # outcome_averages = db.relationship('OutcomeAverage', backref='course')
     grades = db.relationship('Grade', backref='course')
     courses = db.relationship('CourseUserLink', backref='course')
     outcome_results = db.relationship('OutcomeResult', backref='course')
@@ -76,19 +74,6 @@ class Course(db.Model):
 
     def __repr__(self):
         return str(self.name)
-
-
-# class OutcomeAverage(db.Model):
-#     __tablename__ = 'outcome_averages'
-#     id = db.Column(db.Integer, primary_key=True)
-#     outcome_avg = db.Column(db.Float)
-#     user_id = db.Column(db.Integer)
-#     outcome_id = db.Column(db.Integer, db.ForeignKey('outcomes.id'))
-#     record_id = db.Column(db.Integer, db.ForeignKey('records.id'))
-#     course_id = db.Column(db.Integer, db.ForeignKey('courses.id'))
-#
-#     def __repr__(self):
-#         return str(self.__dict__)
 
 
 class Grade(db.Model):
@@ -146,7 +131,6 @@ class OutcomeResult(db.Model):
     submitted_or_assessed_at = db.Column(db.DateTime)
     last_updated = db.Column(db.DateTime)
     enrollment_term = db.Column(db.Integer)
-    # dropped = db.Column(db.Boolean)
 
 
 class Outcome(db.Model):
@@ -155,7 +139,6 @@ class Outcome(db.Model):
     title = db.Column(db.String, nullable=False)
     display_name = db.Column(db.String)
     calculation_int = db.Column(db.Integer)
-    # outcome_averages = db.relationship('OutcomeAverage', backref='outcome')
     outcome_results = db.relationship('OutcomeResult', backref='outcome')
 
     def __repr__(self):
@@ -178,6 +161,15 @@ class CourseUserLink(db.Model):
                         primary_key=True)
 
 
+class GradeCriteria(db.Model):
+    __tablename__ = 'grade_criteria'
+    grade_rank = db.Column(db.Integer, primary_key=True)
+    grade = db.Column(db.String, nullable=False)
+    threshold = db.Column(db.Float, nullable=False)
+    min_score = db.Column(db.Float, nullable=False)
+
+
+# JSON Serialization
 class CourseSchema(ma.Schema):
     class Meta:
         fields = ('id', 'name', 'enrollment_term_id')
@@ -190,15 +182,10 @@ class UserSchema(ma.Schema):
 
 class GradeSchema(ma.Schema):
     class Meta:
-        # Need to update with relevant fields
-        # fields = (
-        #     'id', 'course_id', 'grade', 'outcomes', 'record_id',
-        #     'user', 'threshold', 'min_score')
         fields = (
             'id', 'course_id', 'grade', 'record_id', 'user', 'threshold',
             'min_score')
 
-    # course = ma.Nested(CourseSchema)
     user = ma.Nested(UserSchema)
 
 

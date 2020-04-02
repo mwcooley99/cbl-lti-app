@@ -1,5 +1,5 @@
 # from app import db, ma
-from .extensions import db, ma
+from app.extensions import db, ma
 
 
 class EnrollmentTerm(db.Model):
@@ -205,3 +205,16 @@ class OutcomeResultSchema(ma.ModelSchema):
 
     outcome = ma.Nested(OutcomeSchema)
     alignment = ma.Nested(AlignmentSchema)
+
+
+class GradeCriteriaSchema(ma.ModelSchema):
+    class Meta:
+        # model = GradeCriteria
+        fields = ('grade_rank', 'grade', 'threshold', 'min_score')
+
+
+if __name__ == '__main__':
+    grades = GradeCriteria.query.all()
+    schema = GradeCriteriaSchema()
+    g = schema.dump(grades)
+    print(g)

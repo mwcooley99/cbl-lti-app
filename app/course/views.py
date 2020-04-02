@@ -6,9 +6,11 @@ from pylti.flask import lti
 
 from app.extensions import db
 from app.models import Outcome, Course, Record, Grade, User, OutcomeResult, \
-    CourseUserLink, OutcomeResultSchema, OutcomeSchema
+    CourseUserLink, GradeCriteria, GradeCriteriaSchema, OutcomeResultSchema, OutcomeSchema
+from app.queries import get_calculation_dictionaries
+
 from utilities.canvas_api import get_course_users
-from utilities.cbl_calculator import calculation_dictionaries
+# from utilities.cbl_calculator import calculation_dictionaries
 from utilities.helpers import make_outcome_avg_dicts, format_users, error
 
 
@@ -98,6 +100,9 @@ def dashboard(lti=lti):
     # grade dictionaries
     grades = make_outcome_avg_dicts(outcome_results, grades)
 
+    calculation_dictionaries = get_calculation_dictionaries()
+
+
     return render_template('courses/dashboard.html', users=users,
                            grades=grades,
                            calculation_dict=calculation_dictionaries,
@@ -140,6 +145,8 @@ def detail(course_id=357, user_id=384, lti=lti):
 
     res_schema = OutcomeResultSchema()
     alignments = res_schema.dump(outcomes, many=True)
+
+    calculation_dictionaries = get_calculation_dictionaries()
 
     return render_template('courses/detail.html', user=user, grade=grade,
                            course=course,

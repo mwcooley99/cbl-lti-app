@@ -7,8 +7,8 @@ from pylti.flask import lti
 from app.extensions import db
 from app.models import Course, Record, User, \
     OutcomeResult, OutcomeResultSchema, EnrollmentTerm
+from app.queries import get_calculation_dictionaries
 from utilities.canvas_api import get_observees
-from utilities.cbl_calculator import calculation_dictionaries
 
 blueprint = Blueprint("user", __name__, url_prefix="/users",
                       static_folder="../static")
@@ -83,6 +83,9 @@ def student_dashboard(lti=lti, user_id=None):
             return "You are not authorized to view this users information"
 
         alignments, grades, user = get_user_dash_data(user_id)
+
+        # calculation dictionaries
+        calculation_dictionaries = get_calculation_dictionaries()
 
         if grades:
             return render_template('users/dashboard.html', record=record,

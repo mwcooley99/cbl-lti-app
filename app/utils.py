@@ -11,6 +11,3 @@ def flash_errors(form, category="warning"):
             flash(f"{getattr(form, field).label.text} - {error}", category)
 
 
-def get_enrollment_term():
-    term = EnrollmentTerm.query.filter(EnrollmentTerm.current_term).first()
-    return term

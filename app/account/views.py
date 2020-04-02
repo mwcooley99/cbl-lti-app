@@ -3,13 +3,16 @@ from flask import Blueprint, render_template, current_app, session, url_for, \
 from pylti.flask import lti
 
 from app.extensions import db
-from app.models import Record, EnrollmentTerm
+from app.models import Record
+from app.queries import get_calculation_dictionaries, get_enrollment_term
 from app.user.views import get_user_dash_data
-from app.utils import get_enrollment_term
 from utilities.canvas_api import get_course_users
-from utilities.cbl_calculator import calculation_dictionaries
+# from utilities.cbl_calculator import calculation_dictionaries
 from utilities.helpers import format_users, error
+
 # from .forms import EnrollmentTermForm
+
+
 
 blueprint = Blueprint('account', __name__, url_prefix='/account',
                       static_folder='../static')
@@ -72,13 +75,13 @@ def incompletes(lti=lti):
 def student_dashboard(user_id, lti=lti):
     record = Record.query.order_by(Record.id.desc()).first()
     alignments, grades, user = get_user_dash_data(user_id)
-    print(request.referrer)
+
+    calculation_dictionaries = get_calculation_dictionaries()
     return render_template('account/student_dashboard.html', record=record,
                            user=user,
                            grades=grades,
                            calculation_dict=calculation_dictionaries,
                            alignments=alignments, prev_url=request.referrer)
-
 
 # @blueprint.route('change_term', methods=['GET', 'POST'])
 # @lti(error=error, request='session', role='admin', app=current_app)

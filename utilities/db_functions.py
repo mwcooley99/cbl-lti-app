@@ -8,9 +8,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import bindparam
 
 from app.config import configuration
-from .db_models import Outcomes, OutcomeResults, Courses, Users, Alignments, \
-    Records, Grades, CourseUserLink, EnrollmentTerms
-
+from utilities.db_models import Outcomes, OutcomeResults, Courses, Users, Alignments, \
+    Records, Grades, CourseUserLink, EnrollmentTerms, GradeCriteria
 
 config = configuration[os.getenv('PULL_CONFIG')]
 
@@ -237,5 +236,17 @@ def get_current_term():
     return term
 
 
+def get_calculation_dictionaries():
+    stmt = GradeCriteria.select().order_by(GradeCriteria.c.grade_rank)
+    conn = session.connection()
+    res = conn.execute(stmt)
+
+    # Turn into grade dictionaries
+    keys = ['grade', 'threshold', 'min_score']
+    calculation_dictionaries = [dict(zip(keys, r[1:])) for r in res]
+
+    return calculation_dictionaries
+
+
 if __name__ == '__main__':
-    delete_outcome_results(343)
+    print(get_calculation_dictionaries())

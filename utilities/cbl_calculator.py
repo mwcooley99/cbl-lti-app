@@ -1,51 +1,52 @@
+import json
 import math
+from datetime import datetime
+
 import pandas as pd
 
-import json
-import itertools
-
-from datetime import datetime
+from utilities.db_functions import get_calculation_dictionaries
 
 CUTOFF_DATE = datetime(2020, 5, 1)
 
 # todo - add to database
-calculation_dictionaries = [
-    {
-        'grade': 'A',
-        'threshold': 3.3,
-        'min_score': 3
-    },
-    {
-        'grade': 'A-',
-        'threshold': 3.3,
-        'min_score': 2.5
-    },
-    {
-        'grade': 'B+',
-        'threshold': 2.6,
-        'min_score': 2.2
-    },
-    {
-        'grade': 'B',
-        'threshold': 2.6,
-        'min_score': 1.8
-    },
-    {
-        'grade': 'B-',
-        'threshold': 2.6,
-        'min_score': 1.5
-    },
-    {
-        'grade': 'C',
-        'threshold': 2.2,
-        'min_score': 1.5
-    },
-    {
-        'grade': 'I',
-        'threshold': 0,
-        'min_score': 0
-    }
-]
+# calculation_dictionaries = [
+#     {
+#         'grade': 'A',
+#         'threshold': 3.3,
+#         'min_score': 3
+#     },
+#     {
+#         'grade': 'A-',
+#         'threshold': 3.3,
+#         'min_score': 2.5
+#     },
+#     {
+#         'grade': 'B+',
+#         'threshold': 2.6,
+#         'min_score': 2.2
+#     },
+#     {
+#         'grade': 'B',
+#         'threshold': 2.6,
+#         'min_score': 1.8
+#     },
+#     {
+#         'grade': 'B-',
+#         'threshold': 2.6,
+#         'min_score': 1.5
+#     },
+#     {
+#         'grade': 'C',
+#         'threshold': 2.2,
+#         'min_score': 1.5
+#     },
+#     {
+#         'grade': 'I',
+#         'threshold': 0,
+#         'min_score': 0
+#     }
+# ]
+
 
 # calculation_dictionaries = [
 #     {
@@ -97,21 +98,21 @@ def weighted_avg(scores):
     w_avg = first_weight * s.iloc[:-1, 0].mean() + final_weight * s.iloc[-1, 0]
     return w_avg
 
+
 def outcome_avg(alignments=None):
     pass
 
 
-
-def calculate_traditional_grade(scores):
+def calculate_traditional_grade(scores, calculation_dictionaries):
     # check if the outcome is assessed.
     scores = scores.to_list()
     # print(scores)
     if len(scores) == 0 or scores[0] == -1:
         return {
-                   'grade': 'n/a',
-                   'threshold': None,
-                   'min_score': None,
-               }
+            'grade': 'n/a',
+            'threshold': None,
+            'min_score': None,
+        }
 
     scores_sorted = sorted(scores, reverse=True)
 

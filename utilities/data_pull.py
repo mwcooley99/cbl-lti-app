@@ -13,7 +13,7 @@ from utilities.db_functions import insert_grades_to_db, create_record, \
     upsert_outcome_results, upsert_outcomes, upsert_courses, \
     query_current_outcome_results, get_db_courses, \
     insert_course_students, delete_course_students, delete_grades_current_term, \
-    upsert_enrollment_terms
+    upsert_enrollment_terms, get_calculation_dictionaries
 
 
 def make_grade_object(grade, outcome_avgs, record_id, course, user_id):
@@ -156,7 +156,7 @@ def pull_outcome_results(current_term=10):
 
 def insert_grades(current_term=10):
     print(f'Grade pull started at {datetime.now()}')
-
+    calculation_dictionaries = get_calculation_dictionaries()
     outcome_results = query_current_outcome_results(current_term)
     drop_eligible_results = outcome_results.loc[
         outcome_results['submitted_or_assessed_at'] < CUTOFF_DATE]
@@ -181,7 +181,7 @@ def insert_grades(current_term=10):
     # calculate the grades
     group_cols = ['links.user', 'course_id']
     grades = outcome_avgs.groupby(group_cols).agg(
-        grade_dict=('outcome_avg', calculate_traditional_grade))
+        grade_dict=('outcome_avg', lambda x: calculate_traditional_grade(x, calculation_dictionaries)))
     grades.reset_index(inplace=True)
 
     # format the grades
@@ -339,7 +339,7 @@ if __name__ == '__main__':
     # update_users()
     # update_courses(current_term)
     # update_course_students(current_term)
-    pull_outcome_results(current_term)
+    # pull_outcome_results(current_term)
     insert_grades(current_term)
 
     end = time.time()

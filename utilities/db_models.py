@@ -20,6 +20,7 @@ Base.prepare(engine, reflect=True)
 
 
 EnrollmentTerms = Base.classes.enrollment_terms.__table__
+GradeCriteria = Base.classes.grade_criteria.__table__
 
 
 Records = Table('records', metadata,
@@ -83,4 +84,4 @@ CourseUserLink = Table('course_user_link', metadata,
                               ForeignKey('users.id'), primary_key=True, nullable=False)
                        )
 
-# metadata.create_all(engine, checkfirst=True)
+

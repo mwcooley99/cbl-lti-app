@@ -9,7 +9,7 @@ from sqlalchemy.sql.expression import bindparam
 
 from app.config import configuration
 from utilities.db_models import Outcomes, OutcomeResults, Courses, Users, Alignments, \
-    Records, Grades, CourseUserLink, EnrollmentTerms, GradeCriteria
+    Records, Grades, CourseUserLink, EnrollmentTerms#, GradeCriteria
 
 config = configuration[os.getenv('PULL_CONFIG')]
 
@@ -237,13 +237,14 @@ def get_current_term():
 
 
 def get_calculation_dictionaries():
-    stmt = GradeCriteria.select().order_by(GradeCriteria.c.grade_rank)
-    conn = session.connection()
-    res = conn.execute(stmt)
-
-    # Turn into grade dictionaries
-    keys = ['grade', 'threshold', 'min_score']
-    calculation_dictionaries = [dict(zip(keys, r[1:])) for r in res]
+    # stmt = GradeCriteria.select().order_by(GradeCriteria.c.grade_rank)
+    # conn = session.connection()
+    # res = conn.execute(stmt)
+    #
+    # # Turn into grade dictionaries
+    # keys = ['grade', 'threshold', 'min_score']
+    # calculation_dictionaries = [dict(zip(keys, r[1:])) for r in res]
+    calculation_dictionaries = []
 
     return calculation_dictionaries
 

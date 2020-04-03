@@ -19,8 +19,8 @@ class CblModelView(ModelView):
 class EnrollmentTermView(CblModelView):
     can_create = False
     can_delete = False
-    column_list = ('name', 'current_term')
-    column_editable_list = ['current_term']
+    column_list = ('name', 'current_term', 'cut_off_date')
+    column_editable_list = ['current_term', 'cut_off_date']
 
     form_excluded_columns = ['id', 'name', 'start_at', 'end_at', 'created_at',
                              'workflow_state', 'sis_term_id', 'sis_import_id']
@@ -31,7 +31,6 @@ class GradeCriteriaView(CblModelView):
     column_descriptions = dict(
         grade_rank='1 = Highest grade. This order must be correct for grades to calculate correctly'
     )
-
 
 
 admin.add_view(EnrollmentTermView(EnrollmentTerm, db.session))

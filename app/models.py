@@ -12,6 +12,7 @@ class EnrollmentTerm(db.Model):
     workflow_state = db.Column(db.String)
     sis_term_id = db.Column(db.String)
     sis_import_id = db.Column(db.Integer)
+    cut_off_date = db.Column(db.DateTime)
 
     current_term = db.Column(db.Boolean, server_default='false',
                              nullable=False)

@@ -7,7 +7,7 @@ from app.models import Record
 from app.queries import get_calculation_dictionaries, get_enrollment_term
 from app.user.views import get_user_dash_data
 from utilities.canvas_api import get_course_users
-# from utilities.cbl_calculator import calculation_dictionaries
+
 from utilities.helpers import format_users, error
 
 # from .forms import EnrollmentTermForm

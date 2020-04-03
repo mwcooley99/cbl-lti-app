@@ -6,7 +6,7 @@ from pylti.flask import lti
 
 from app.extensions import db
 from app.models import Outcome, Course, Record, Grade, User, OutcomeResult, \
-    CourseUserLink, GradeCriteria, GradeCriteriaSchema, OutcomeResultSchema, OutcomeSchema
+    CourseUserLink, OutcomeResultSchema, OutcomeSchema
 from app.queries import get_calculation_dictionaries
 
 from utilities.canvas_api import get_course_users

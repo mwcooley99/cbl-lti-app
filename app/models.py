@@ -107,7 +107,7 @@ class Grade(db.Model):
 
 class User(db.Model):
     __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String)
     sis_user_id = db.Column(db.String)
     login_id = db.Column(db.String)
@@ -161,9 +161,10 @@ class CourseUserLink(db.Model):
                         primary_key=True)
 
 
-class GradeCriteria(db.Model):
-    __tablename__ = 'grade_criteria'
-    grade_rank = db.Column(db.Integer, primary_key=True)
+class GradeCalculation(db.Model):
+    __tablename__ = 'grade_calculation'
+    id = db.Column(db.Integer, primary_key=True)
+    grade_rank = db.Column(db.Integer, unique=True, nullable=False)
     grade = db.Column(db.String, nullable=False)
     threshold = db.Column(db.Float, nullable=False)
     min_score = db.Column(db.Float, nullable=False)
@@ -213,8 +214,3 @@ class GradeCriteriaSchema(ma.ModelSchema):
         fields = ('grade_rank', 'grade', 'threshold', 'min_score')
 
 
-if __name__ == '__main__':
-    grades = GradeCriteria.query.all()
-    schema = GradeCriteriaSchema()
-    g = schema.dump(grades)
-    print(g)

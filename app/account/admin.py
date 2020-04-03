@@ -2,7 +2,7 @@ from flask import session
 from flask_admin.contrib.sqla import ModelView
 
 from app.extensions import admin, db
-from app.models import EnrollmentTerm, GradeCriteria
+from app.models import EnrollmentTerm, GradeCalculation
 
 
 class CblModelView(ModelView):
@@ -16,5 +16,23 @@ class CblModelView(ModelView):
         return "You're not supposed to be here."
 
 
-admin.add_view(CblModelView(EnrollmentTerm, db.session))
-admin.add_view(CblModelView(GradeCriteria, db.session))
+class EnrollmentTermView(CblModelView):
+    can_create = False
+    can_delete = False
+    column_list = ('name', 'current_term')
+    column_editable_list = ['current_term']
+
+    form_excluded_columns = ['id', 'name', 'start_at', 'end_at', 'created_at',
+                             'workflow_state', 'sis_term_id', 'sis_import_id']
+
+
+class GradeCriteriaView(CblModelView):
+    column_display_pk = True
+    column_descriptions = dict(
+        grade_rank='1 = Highest grade. This order must be correct for grades to calculate correctly'
+    )
+
+
+
+admin.add_view(EnrollmentTermView(EnrollmentTerm, db.session))
+admin.add_view(GradeCriteriaView(GradeCalculation, db.session))

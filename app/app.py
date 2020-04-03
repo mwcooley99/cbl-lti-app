@@ -78,7 +78,7 @@ def register_shellcontext(app):
         """Shell context objects."""
         # TODO - move import...
         from app.models import Outcome, Course, Record, Grade, \
-            User, EnrollmentTerm, GradeCriteria, \
+            User, EnrollmentTerm, GradeCalculation, \
             UserSchema, GradeSchema, Alignment, OutcomeResult, CourseUserLink, \
             OutcomeSchema, OutcomeResultSchema, AlignmentSchema
 
@@ -87,7 +87,7 @@ def register_shellcontext(app):
                     UserSchema=UserSchema, GradeSchema=GradeSchema,
                     Alignment=Alignment, OutcomeResult=OutcomeResult,
                     CourseUserLink=CourseUserLink,
-                    EnrollmentTerm=EnrollmentTerm, GradeCriteria=GradeCriteria,
+                    EnrollmentTerm=EnrollmentTerm, GradeCriteria=GradeCalculation,
                     OutcomeSchema=OutcomeSchema,
                     OutcomeResultSchema=OutcomeResultSchema,
                     AlignmentSchema=AlignmentSchema)

@@ -48,7 +48,7 @@ def launch(lti=lti):
 @blueprint.route('/incompletes')
 @lti(error=error, request='session', role='admin', app=current_app)
 def incompletes(lti=lti):
-    enrollment_term_id = get_enrollment_term()
+    enrollment_term = get_enrollment_term()
     stmt = db.text('''
         SELECT DISTINCT u.id AS user_id, u.name, u.login_id, cnt.count
         FROM course_user_link cl
@@ -62,13 +62,13 @@ def incompletes(lti=lti):
                 GROUP BY g.user_id
             ) cnt ON cnt.user_id = cl.user_id
         ORDER BY name;
-        ''').bindparams(enrollment_term_id=enrollment_term_id.id)
+        ''').bindparams(enrollment_term_id=enrollment_term.id)
     results = db.session.execute(stmt)
     keys = ['user_id', 'name', 'email', 'incomplete_count']
     incompletes = [dict(zip(keys, res)) for res in results]
 
     return render_template('account/incomplete_report.html',
-                           incompletes=incompletes)
+                           incompletes=incompletes, enrollment_term_id=enrollment_term.id)
 
 
 @blueprint.route('student_dashboard/<user_id>')

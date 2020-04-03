@@ -14,4 +14,10 @@ def get_calculation_dictionaries():
 
 def get_enrollment_term():
     term = EnrollmentTerm.query.filter(EnrollmentTerm.current_term).first()
-    return term
+
+    # Check to see if a current term has been chosen
+    if term:
+        return term
+    # if it hasn't, return the default term
+    else:
+        return EnrollmentTerm.query.filter(EnrollmentTerm.id == 1).first()

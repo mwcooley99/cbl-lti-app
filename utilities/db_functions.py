@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
-
 import pandas as pd
+
 from sqlalchemy import create_engine, desc
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Session
@@ -9,7 +9,7 @@ from sqlalchemy.sql.expression import bindparam
 
 from app.config import configuration
 from utilities.db_models import Outcomes, OutcomeResults, Courses, Users, Alignments, \
-    Records, Grades, CourseUserLink, EnrollmentTerms#, GradeCriteria
+    Records, Grades, CourseUserLink, EnrollmentTerms, GradeCalculation
 
 config = configuration[os.getenv('PULL_CONFIG')]
 
@@ -220,7 +220,6 @@ def upsert_enrollment_terms(enrollment_terms):
             'workflow_state': insert_stmt.excluded.workflow_state,
             'sis_term_id': insert_stmt.excluded.sis_term_id,
             'sis_import_id': insert_stmt.excluded.sis_import_id,
-            'current_term': insert_stmt.excluded.current_term
         }
     )
     session.execute(update_stmt)
@@ -237,17 +236,16 @@ def get_current_term():
 
 
 def get_calculation_dictionaries():
-    # stmt = GradeCriteria.select().order_by(GradeCriteria.c.grade_rank)
-    # conn = session.connection()
-    # res = conn.execute(stmt)
-    #
-    # # Turn into grade dictionaries
-    # keys = ['grade', 'threshold', 'min_score']
-    # calculation_dictionaries = [dict(zip(keys, r[1:])) for r in res]
-    calculation_dictionaries = []
+    stmt = GradeCalculation.select().order_by(GradeCalculation.c.grade_rank)
+    conn = session.connection()
+    res = conn.execute(stmt)
+
+    # Turn into grade dictionaries
+    keys = ['grade', 'threshold', 'min_score']
+    calculation_dictionaries = [dict(zip(keys, r[1:])) for r in res]
 
     return calculation_dictionaries
 
 
 if __name__ == '__main__':
-    print(get_calculation_dictionaries())
+    pass

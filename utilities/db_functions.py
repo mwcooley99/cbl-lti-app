@@ -6,6 +6,7 @@ from sqlalchemy import create_engine, desc
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import bindparam
+from sqlalchemy.sql import select
 
 from app.config import configuration
 from utilities.db_models import Outcomes, OutcomeResults, Courses, Users, Alignments, \
@@ -236,15 +237,17 @@ def get_current_term():
 
 
 def get_calculation_dictionaries():
-    stmt = GradeCalculation.select().order_by(GradeCalculation.c.grade_rank)
+    cols = [GradeCalculation.c.grade, GradeCalculation.c.threshold, GradeCalculation.c.min_score]
+    stmt = select(cols).order_by(GradeCalculation.c.grade_rank)
     conn = session.connection()
     res = conn.execute(stmt)
 
     # Turn into grade dictionaries
     keys = ['grade', 'threshold', 'min_score']
-    calculation_dictionaries = [dict(zip(keys, r[1:])) for r in res]
+    calculation_dictionaries = [dict(zip(keys, r)) for r in res]
 
     return calculation_dictionaries
+    return [r for r in res]
 
 
 if __name__ == '__main__':

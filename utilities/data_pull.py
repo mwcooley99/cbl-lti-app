@@ -1,6 +1,7 @@
 import re
 import time
 from datetime import datetime
+import json
 
 import numpy as np
 import pandas as pd
@@ -341,6 +342,6 @@ if __name__ == '__main__':
     # update_course_students(current_term)
     # pull_outcome_results(current_term)
     insert_grades(current_term)
-
+    
     end = time.time()
     print(f'pull took: {end - start} seconds')

@@ -1,0 +1,35 @@
+{% extends 'admin/master.html' %}
+
+{% block body %}
+    <div class="container">
+        <p>The section of the app provides the ability to edit the following
+            tables of the database:</p>
+        <ul>
+            <li><strong>Enrollment Term</strong>:
+                <ul>
+                    <li>Please only edit the <em>current term</em>.</li>
+                    <li>There <strong>must</strong> be <em>one and only
+                        one</em> tagged as the current term.
+                    </li>
+                    <li>This must be updated <strong>every semester</strong>.
+                    </li>
+                    <li>The list will update every night, there should be no
+                        need to add or remove any terms.
+                    </li>
+                </ul>
+            </li>
+            <li><strong>Grade Calculation</strong>:
+                <ul>
+                    <li>Grade Rank: Ordered from Highest grade to Lowest</li>
+                    <li>Grade: The letter grade</li>
+                    <li>Threshold: Criteria 1 of the grade table</li>
+                    <li>Min Score: Criteria 2 of the grade table</li>
+                </ul>
+            </li>
+        </ul>
+        <p><strong><em>*Please exercise caution when you are editing any of
+            these values. There is little data validation built
+            in.</em></strong></p>
+    </div>
+
+{% endblock %}

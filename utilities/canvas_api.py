@@ -1,16 +1,16 @@
-import json
-
 import os
+
 import pandas as pd
 import requests
 from pandas.io.json import json_normalize
 
 from utilities.db_functions import upsert_enrollment_terms
 
-access_token = os.getenv('CANVAS_API_KEY')
 
-headers = {'Authorization': f'Bearer {access_token}'}
-url = 'https://dtechhs.instructure.com'
+def get_headers():
+    access_token = os.getenv('CANVAS_API_KEY')
+    headers = {'Authorization': f'Bearer {access_token}'}
+    return headers
 
 
 def get_users():
@@ -18,6 +18,7 @@ def get_users():
     Roll up current Users into a list of dictionaries (Canvas API /api/v1/accounts/:account_id/users)
     :return: List of user dictionaries
     '''
+    headers = get_headers()
     url = "https://dtechhs.instructure.com/api/v1/accounts/1/users"
 
     querystring = {"enrollment_type": "student", "per_page": "100"}
@@ -41,6 +42,7 @@ def get_courses(current_term):
     :param current_term: Canvas Term to filter courses
     :return: list of course dictionaries
     '''
+    headers = get_headers()
     url = "https://dtechhs.instructure.com/api/v1/accounts/1/courses"
     querystring = {'enrollment_term_id': current_term, 'published': True,
                    'per_page': 100}
@@ -59,6 +61,7 @@ def get_courses(current_term):
 
 
 def get_outcome_results(course, user_ids=None):
+    headers = get_headers()
     url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/outcome_results"
     querystring = {
         "include[]": ["alignments", "outcomes.alignments", "outcomes"],
@@ -96,6 +99,7 @@ def create_outcome_dataframes(course, user_ids=None):
     :param user_ids: Limit User ids mostly for testing
     :return: Dataframes with outcome_results, assignment alignments, and outcome details
     '''
+    headers = get_headers()
     url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/outcome_results"
     querystring = {
         "include[]": ["alignments", "outcomes.alignments", "outcomes"],
@@ -133,6 +137,7 @@ def get_course_users_ids(course):
     :param course: course dictionary
     :return: user id's for course
     '''
+    headers = get_headers()
     url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/users"
 
     querystring = {"enrollment_type[]": "student",
@@ -156,6 +161,7 @@ def get_course_users(course):
     :param course: course dictionary
     :return: user id's for course
     '''
+    headers = get_headers()
     url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/users"
 
     querystring = {"enrollment_type[]": "student",
@@ -174,6 +180,7 @@ def get_course_users(course):
 
 
 def get_observees(user_id):
+    headers = get_headers()
     url = f"https://dtechhs.instructure.com/api/v1/users/{user_id}/observees"
     response = requests.request("GET", url, headers=headers)
 
@@ -181,6 +188,7 @@ def get_observees(user_id):
 
 
 def get_user_courses(user_id):
+    headers = get_headers()
     url = f"https://dtechhs.instructure.com/api/v1/users/{user_id}/courses"
     querystring = {"enrollment_type[]": "student",
                    "per_page": "100"}
@@ -191,6 +199,7 @@ def get_user_courses(user_id):
 
 
 def get_enrollment_terms():
+    headers = get_headers()
     url = "https://dtechhs.instructure.com/api/v1/accounts/1/terms"
     querystring = {"per_page": "100"}
     response = requests.request("GET", url, headers=headers,

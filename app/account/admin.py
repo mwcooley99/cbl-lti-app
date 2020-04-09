@@ -2,7 +2,7 @@ from flask import session
 from flask_admin.contrib.sqla import ModelView
 
 from app.extensions import admin, db
-from app.models import EnrollmentTerm, GradeCalculation
+from app.models import EnrollmentTerm, GradeCalculation, CanvasApiToken
 
 
 class CblModelView(ModelView):
@@ -32,9 +32,10 @@ class GradeCriteriaView(CblModelView):
     )
 
 
-class CanvasApiKeyView(CblModelView):
+class CanvasApiTokenView(CblModelView):
     pass
 
 
 admin.add_view(EnrollmentTermView(EnrollmentTerm, db.session))
 admin.add_view(GradeCriteriaView(GradeCalculation, db.session))
+admin.add_view(CanvasApiTokenView(CanvasApiToken, db.session))

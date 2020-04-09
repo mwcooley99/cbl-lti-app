@@ -38,4 +38,4 @@ class CanvasApiTokenView(CblModelView):
 
 admin.add_view(EnrollmentTermView(EnrollmentTerm, db.session))
 admin.add_view(GradeCriteriaView(GradeCalculation, db.session))
-admin.add_view(CanvasApiTokenView(CanvasApiToken, db.session))
+# admin.add_view(CanvasApiTokenView(CanvasApiToken, db.session))

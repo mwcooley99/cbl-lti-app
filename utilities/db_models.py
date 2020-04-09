@@ -21,6 +21,7 @@ Base.prepare(engine, reflect=True)
 
 EnrollmentTerms = Base.classes.enrollment_terms.__table__
 GradeCalculation = Base.classes.grade_calculation.__table__
+CanvasApiToken = Base.classes.canvas_api_tokens.__table__
 
 
 Records = Table('records', metadata,

@@ -1,16 +1,18 @@
 import os
 from datetime import datetime
-import pandas as pd
 
+import pandas as pd
 from sqlalchemy import create_engine, desc
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Session
-from sqlalchemy.sql.expression import bindparam
 from sqlalchemy.sql import select
+from sqlalchemy.sql.expression import bindparam
 
 from app.config import configuration
-from utilities.db_models import Outcomes, OutcomeResults, Courses, Users, Alignments, \
-    Records, Grades, CourseUserLink, EnrollmentTerms, GradeCalculation
+from utilities.db_models import Outcomes, OutcomeResults, Courses, Users, \
+    Alignments, \
+    Records, Grades, CourseUserLink, EnrollmentTerms, GradeCalculation, \
+    CanvasApiToken
 
 config = configuration[os.getenv('PULL_CONFIG')]
 
@@ -237,7 +239,8 @@ def get_current_term():
 
 
 def get_calculation_dictionaries():
-    cols = [GradeCalculation.c.grade, GradeCalculation.c.threshold, GradeCalculation.c.min_score]
+    cols = [GradeCalculation.c.grade, GradeCalculation.c.threshold,
+            GradeCalculation.c.min_score]
     stmt = select(cols).order_by(GradeCalculation.c.grade_rank)
     conn = session.connection()
     res = conn.execute(stmt)
@@ -250,5 +253,14 @@ def get_calculation_dictionaries():
     return [r for r in res]
 
 
+def get_token():
+    stmt = select([CanvasApiToken.c.token])
+    conn = session.connection()
+    res = conn.execute(stmt)
+    token = [r for r in res][0][0]
+
+    return token
+
+
 if __name__ == '__main__':
-    pass
+    print(get_token())

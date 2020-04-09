@@ -8,8 +8,8 @@ from utilities.db_functions import upsert_enrollment_terms, get_token
 
 
 def get_headers():
-    # access_token = os.getenv('CANVAS_API_KEY')
-    access_token = get_token()
+    access_token = os.getenv('CANVAS_API_KEY')
+    # access_token = get_token()
     headers = {'Authorization': f'Bearer {access_token}'}
     return headers
 

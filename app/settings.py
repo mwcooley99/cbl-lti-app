@@ -57,6 +57,6 @@ configClass = os.getenv('CONFIG')
 # For example: we could store our app's api keys for canvas
 #
 CANVAS_API_URL = os.environ.get('CANVAS_API_URL')
-# CANVAS_API_KEY = os.environ.get('CANVAS_API_KEY')
+CANVAS_API_KEY = os.environ.get('CANVAS_API_KEY')
 
 

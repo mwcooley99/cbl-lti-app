@@ -27,10 +27,13 @@ class EnrollmentTermView(CblModelView):
 
 
 class GradeCriteriaView(CblModelView):
-    column_display_pk = True
     column_descriptions = dict(
         grade_rank='1 = Highest grade. This order must be correct for grades to calculate correctly'
     )
+
+
+class CanvasApiKeyView(CblModelView):
+    pass
 
 
 admin.add_view(EnrollmentTermView(EnrollmentTerm, db.session))

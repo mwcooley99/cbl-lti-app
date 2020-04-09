@@ -257,9 +257,9 @@ def get_token():
     stmt = select([CanvasApiToken.c.token])
     conn = session.connection()
     res = conn.execute(stmt)
-    token = [r for r in res][0][0]
-
-    return token
+    token = [r for r in res]
+    print(token)
+    return token[0][0]
 
 
 if __name__ == '__main__':

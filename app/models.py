@@ -171,6 +171,12 @@ class GradeCalculation(db.Model):
     min_score = db.Column(db.Float, nullable=False)
 
 
+class CanvasApiToken(db.Model):
+    __tablename__ = 'canvas_api_tokens'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    token = db.Column(db.String, unique=True, nullable=False)
+
+
 # JSON Serialization
 class CourseSchema(ma.Schema):
     class Meta:
@@ -213,5 +219,3 @@ class GradeCriteriaSchema(ma.ModelSchema):
     class Meta:
         # model = GradeCriteria
         fields = ('grade_rank', 'grade', 'threshold', 'min_score')
-
-

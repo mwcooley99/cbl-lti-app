@@ -7,7 +7,10 @@ For local development, use a .env file to set
 environment variables.
 """
 import os
+from dotenv import load_dotenv
 
+# load environmental variables
+load_dotenv()
 
 # Declare your consumer key and shared secret. If you end
 # up having multiple consumers, you may want to add separate

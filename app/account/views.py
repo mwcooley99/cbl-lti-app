@@ -14,8 +14,7 @@ from utilities.canvas_api import get_course_users
 from utilities.helpers import format_users, error
 
 
-
-from .forms import GradeReportForm
+# from .forms import GradeReportForm
 
 
 blueprint = Blueprint('account', __name__, url_prefix='/account',
@@ -89,11 +88,13 @@ def student_dashboard(user_id, lti=lti):
                            calculation_dict=calculation_dictionaries,
                            alignments=alignments, prev_url=request.referrer)
 
-@blueprint.route('reports')
-@lti(error=error, request='session', role='admin', app=current_app)
-def reports(lti=lti):
-    form = GradeReportForm()
-    return render_template('account/reports.html', form=form)
+
+# @blueprint.route('reports')
+# @lti(error=error, request='session', role='admin', app=current_app)
+# def reports(lti=lti):
+#     form = GradeReportForm()
+#     return render_template('account/reports.html', form=form)
+
 
 @blueprint.route('grade_report', methods=['POST', 'GET'])
 @lti(error=error, request='session', role='admin', app=current_app)

@@ -1,21 +1,21 @@
-{% extends 'base.html' %}
-{% block navbar %}
-{% include 'account/navbar.html' %}
-{% endblock %}
-{% block content %}
-    <div class="container">
-        {% if enrollment_term_id == 1 %}
-            <p>The current term is either not set OR it is set to the default term. If the current term is not set, please use the settings to set a current term.</p>
-        {% endif %}
-        <table id="incompleteTable"></table>
-    </div>
+{% extends 'base.html' %} {% block navbar %} {% include 'account/navbar.html' %}
+{% endblock %} {% block content %}
+<div class="container">
+  {% if enrollment_term_id == 1 %}
+  <p>
+    The current term is either not set OR it is set to the default term. If the
+    current term is not set, please use the settings to set a current term.
+  </p>
+  {% endif %}
+  <table id="incompleteTable"></table>
+</div>
 
-    <script src="{{ url_for('static', filename='js/account.js')}}"></script>
-    <script>
-        $(function(){
-            let incompletes = {{ incompletes|tojson|safe }};
-            let $tbl = $('#incompleteTable');
-            makeIncompleteTable(incompletes, $tbl)
-        })
-    </script>
+<script src="{{ url_for('static', filename='js/account.js')}}"></script>
+<script>
+  $(function(){
+      let incompletes = {{ incompletes|tojson|safe }};
+      let $tbl = $('#incompleteTable');
+      makeIncompleteTable(incompletes, $tbl)
+  })
+</script>
 {% endblock %}

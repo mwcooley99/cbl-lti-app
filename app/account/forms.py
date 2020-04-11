@@ -10,5 +10,5 @@ from app.models import EnrollmentTerm
 #     term = SelectField('Term', coerce=int)
 #     submit = SubmitField('Change Current Term')
 
-class GradeReportForm(FlaskForm):
-    submit = SubmitField('Download Current Term Grade Report')
+# class GradeReportForm(FlaskForm):
+#     submit = SubmitField('Download Current Term Grade Report')

@@ -1,5 +1,13 @@
-from flask import Blueprint, render_template, current_app, session, url_for, \
-    request, redirect, make_response
+from flask import (
+    Blueprint,
+    render_template,
+    current_app,
+    session,
+    url_for,
+    request,
+    redirect,
+    make_response,
+)
 
 import pandas as pd
 
@@ -17,43 +25,44 @@ from utilities.helpers import format_users, error
 # from .forms import GradeReportForm
 
 
-blueprint = Blueprint('account', __name__, url_prefix='/account',
-                      static_folder='../static')
+blueprint = Blueprint(
+    "account", __name__, url_prefix="/account", static_folder="../static"
+)
 
 
-@blueprint.route('/launch', methods=['POST', 'GET'])
-@lti(error=error, request='initial', role='admin', app=current_app)
+@blueprint.route("/launch", methods=["POST", "GET"])
+@lti(error=error, request="initial", role="admin", app=current_app)
 def launch(lti=lti):
-    '''
+    """
     Authorization for course navigation
     :param lti: pylti
     :return: redirects to course page or adviser page depending on the course type
-    '''
+    """
     # todo - clean up this view
-    session['dash_type'] = 'course'
-    session['role'] = 'Admin'
+    session["dash_type"] = "course"
+    session["role"] = "Admin"
     # session['role'] = 'Teacher'
 
-    course_title = request.form.get('context_title')
-    session['course_id'] = None
+    course_title = request.form.get("context_title")
+    session["course_id"] = None
     session.modified = True
-    session['course_id'] = request.form.get('custom_canvas_course_id')
-    if course_title.startswith('@dtech'):
+    session["course_id"] = request.form.get("custom_canvas_course_id")
+    if course_title.startswith("@dtech"):
         # Would be better to run this internally
-        users = get_course_users({'id': session['course_id']})
-        session['users'] = format_users(users)
-        user = session['users'][0]
-        return redirect(url_for('user.student_dashboard', user_id=user['id']))
+        users = get_course_users({"id": session["course_id"]})
+        session["users"] = format_users(users)
+        user = session["users"][0]
+        return redirect(url_for("user.student_dashboard", user_id=user["id"]))
 
-    return redirect(
-        url_for('account.incompletes'))
+    return redirect(url_for("account.incompletes"))
 
 
-@blueprint.route('/incompletes')
-@lti(error=error, request='session', role='admin', app=current_app)
+@blueprint.route("/incompletes")
+@lti(error=error, request="session", role="admin", app=current_app)
 def incompletes(lti=lti):
     enrollment_term = get_enrollment_term()
-    stmt = db.text('''
+    stmt = db.text(
+        """
         SELECT DISTINCT u.id AS user_id, u.name, u.login_id, cnt.count
         FROM course_user_link cl
             INNER JOIN users u ON cl.user_id = u.id
@@ -66,27 +75,35 @@ def incompletes(lti=lti):
                 GROUP BY g.user_id
             ) cnt ON cnt.user_id = cl.user_id
         ORDER BY name;
-        ''').bindparams(enrollment_term_id=enrollment_term.id)
+        """
+    ).bindparams(enrollment_term_id=enrollment_term.id)
     results = db.session.execute(stmt)
-    keys = ['user_id', 'name', 'email', 'incomplete_count']
+    keys = ["user_id", "name", "email", "incomplete_count"]
     incompletes = [dict(zip(keys, res)) for res in results]
 
-    return render_template('account/incomplete_report.html',
-                           incompletes=incompletes, enrollment_term_id=enrollment_term.id)
+    return render_template(
+        "account/incomplete_report.html",
+        incompletes=incompletes,
+        enrollment_term_id=enrollment_term.id,
+    )
 
 
-@blueprint.route('student_dashboard/<user_id>')
-@lti(error=error, request='session', role='admin', app=current_app)
+@blueprint.route("student_dashboard/<user_id>")
+@lti(error=error, request="session", role="admin", app=current_app)
 def student_dashboard(user_id, lti=lti):
     record = Record.query.order_by(Record.id.desc()).first()
     alignments, grades, user = get_user_dash_data(user_id)
 
     calculation_dictionaries = get_calculation_dictionaries()
-    return render_template('account/student_dashboard.html', record=record,
-                           user=user,
-                           grades=grades,
-                           calculation_dict=calculation_dictionaries,
-                           alignments=alignments, prev_url=request.referrer)
+    return render_template(
+        "account/student_dashboard.html",
+        record=record,
+        user=user,
+        grades=grades,
+        calculation_dict=calculation_dictionaries,
+        alignments=alignments,
+        prev_url=request.referrer,
+    )
 
 
 # @blueprint.route('reports')
@@ -96,10 +113,10 @@ def student_dashboard(user_id, lti=lti):
 #     return render_template('account/reports.html', form=form)
 
 
-@blueprint.route('grade_report', methods=['POST', 'GET'])
-@lti(error=error, request='session', role='admin', app=current_app)
+@blueprint.route("grade_report", methods=["POST", "GET"])
+@lti(error=error, request="session", role="admin", app=current_app)
 def grade_report(lti=lti):
-    stmt = '''
+    stmt = """
         SELECT 	u.name student_name,
 		right(u.sis_user_id, length(u.sis_user_id) -8) as studentid,
 		u.login_id as email,
@@ -113,7 +130,7 @@ def grade_report(lti=lti):
         Left JOIN users u on u.id = g.user_id
         LEFT JOIN enrollment_terms et on et.id = c.enrollment_term_id
     WHERE et.current_term;
-    '''
+    """
     df = pd.read_sql(stmt, db.session.connection())
     resp = make_response(df.to_csv(index=False))
     resp.headers["Content-Disposition"] = "attachment; filename=export.csv"

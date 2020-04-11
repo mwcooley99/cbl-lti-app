@@ -100,17 +100,18 @@ def reports(lti=lti):
 def grade_report(lti=lti):
     stmt = '''
         SELECT 	u.name student_name,
-            right(u.sis_user_id, length(u.sis_user_id) -8) as studentid,
-            u.login_id as email,
-            c.name as course_name, 
-            g.grade,
-            g.course_id,
-            g.threshold,
-            g.min_score
-        FROM grades g
-            LEFT JOIN courses c on c.id = g.course_id
-            Left JOIN users u on u.id = g.user_id
-            LEFT JOIN enrollment_terms et on et.current_term = True;
+		right(u.sis_user_id, length(u.sis_user_id) -8) as studentid,
+		u.login_id as email,
+		c.name as course_name, 
+		g.grade,
+		g.course_id,
+		g.threshold,
+		g.min_score
+    FROM grades g
+        LEFT JOIN courses c on c.id = g.course_id
+        Left JOIN users u on u.id = g.user_id
+        LEFT JOIN enrollment_terms et on et.id = c.enrollment_term_id
+    WHERE et.current_term;
     '''
     df = pd.read_sql(stmt, db.session.connection())
     resp = make_response(df.to_csv(index=False))

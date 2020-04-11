@@ -135,6 +135,7 @@ def grade_report(lti=lti):
         LEFT JOIN enrollment_terms et on et.id = c.enrollment_term_id
     WHERE et.current_term;
     """
+
     df = pd.read_sql(stmt, db.session.connection())
     resp = make_response(df.to_csv(index=False))
     resp.headers["Content-Disposition"] = "attachment; filename=export.csv"

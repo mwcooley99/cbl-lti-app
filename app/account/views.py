@@ -98,9 +98,22 @@ def reports(lti=lti):
 @blueprint.route('grade_report', methods=['POST', 'GET'])
 @lti(error=error, request='session', role='admin', app=current_app)
 def grade_report(lti=lti):
-    d = [{'a': 2}]
-    df = pd.DataFrame(d)
-    resp = make_response(df.to_csv())
+    stmt = '''
+        SELECT 	u.name student_name,
+            right(u.sis_user_id, length(u.sis_user_id) -8) as studentid,
+            u.login_id as email,
+            c.name as course_name, 
+            g.grade,
+            g.course_id,
+            g.threshold,
+            g.min_score
+        FROM grades g
+            LEFT JOIN courses c on c.id = g.course_id
+            Left JOIN users u on u.id = g.user_id
+            LEFT JOIN enrollment_terms et on et.current_term = True;
+    '''
+    df = pd.read_sql(stmt, db.session.connection())
+    resp = make_response(df.to_csv(index=False))
     resp.headers["Content-Disposition"] = "attachment; filename=export.csv"
     resp.headers["Content-Type"] = "text/csv"
     return resp

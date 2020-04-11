@@ -1,18 +1,19 @@
-{% extends 'base.html' %}
-{% block navbar %}
-{% include 'account/navbar.html' %}
-{% endblock %}
-{% block content %}
-    <div class="container">
-        <form method="POST" action="{{ url_for('account.grade_report') }}">
-            {{ form.csrf_token }}
-            <p>
-                Use the button below to download a csv with all students grades for the current term.
-            </p>
-            <p>
-                {{ form.submit }}
-            </p>
-
-        </form>
+{% extends 'base.html' %} {% block navbar %} {% include 'account/navbar.html' %}
+{% endblock %} {% block content %}
+<div class="container">
+  <div class="card mt-3 center">
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('account.grade_report') }}">
+        {{ form.csrf_token }}
+        <p>
+          Use the button below to download a csv with all students grades for
+          the current term.
+        </p>
+        <p>
+          {{ form.submit }}
+        </p>
+      </form>
     </div>
+  </div>
+</div>
 {% endblock %}

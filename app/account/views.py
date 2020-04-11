@@ -1,5 +1,8 @@
 from flask import Blueprint, render_template, current_app, session, url_for, \
-    request, redirect
+    request, redirect, make_response
+
+import pandas as pd
+
 from pylti.flask import lti
 
 from app.extensions import db
@@ -10,7 +13,9 @@ from utilities.canvas_api import get_course_users
 
 from utilities.helpers import format_users, error
 
-# from .forms import EnrollmentTermForm
+
+
+from .forms import GradeReportForm
 
 
 blueprint = Blueprint('account', __name__, url_prefix='/account',
@@ -84,14 +89,18 @@ def student_dashboard(user_id, lti=lti):
                            calculation_dict=calculation_dictionaries,
                            alignments=alignments, prev_url=request.referrer)
 
-# @blueprint.route('change_term', methods=['GET', 'POST'])
-# @lti(error=error, request='session', role='admin', app=current_app)
-# def change_term(lti=lti):
-#     form = EnrollmentTermForm()
-#     terms = EnrollmentTerm.query.all()
-#     terms_list = [(term.id, term.name) for term in terms]
-#     form.term.choices = terms_list
-#     if form.validate_on_submit():
-#         print(form.term.data)
-#         return render_template('account/change_term.html', form=form)
-#     return render_template('account/change_term.html', form=form)
+@blueprint.route('reports')
+@lti(error=error, request='session', role='admin', app=current_app)
+def reports(lti=lti):
+    form = GradeReportForm()
+    return render_template('account/reports.html', form=form)
+
+@blueprint.route('grade_report', methods=['POST', 'GET'])
+@lti(error=error, request='session', role='admin', app=current_app)
+def grade_report(lti=lti):
+    d = [{'a': 2}]
+    df = pd.DataFrame(d)
+    resp = make_response(df.to_csv())
+    resp.headers["Content-Disposition"] = "attachment; filename=export.csv"
+    resp.headers["Content-Type"] = "text/csv"
+    return resp

@@ -4,10 +4,10 @@
 {% endblock %}
 {% block content %}
     <div class="container">
-        <form method="POST" action="{{ url_for('account.change_term') }}">
+        <form method="POST" action="{{ url_for('account.grade_report') }}">
             {{ form.csrf_token }}
             <p>
-                {{ form.term }}
+                Use the button below to download a csv with all students grades for the current term.
             </p>
             <p>
                 {{ form.submit }}

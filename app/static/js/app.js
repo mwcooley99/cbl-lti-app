@@ -47,7 +47,7 @@ function makeCourseTable(students, alignments) {
     })
 }
 
-function makeMasteryTable(grades, outcomes, drop_date, masteryTable) {
+function makeMasteryTable(grades, outcomes, masteryTable) {
 
     // Create the columns for the table
     const columns = outcomes.map(function (value, index) {

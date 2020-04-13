@@ -211,8 +211,9 @@
 
         $(function () {
             var alignments = {{ alignments|tojson|safe }};
-            {# todo - use date from database #}
-            var drop_date = "2020-05-01";
+            var drop_date = "{{ cut_off_date }}";
+        
+            console.log(drop_date);
 
 
             var courses = groupBy(alignments, 'course');

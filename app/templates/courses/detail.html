@@ -5,8 +5,6 @@
 {% block content %}
 
     <div class="container">
-
-
         <div class="card mt-3">
             <div class="card-header">
                 <div class="row">
@@ -110,7 +108,9 @@
 
         $(function () {
             var alignments = {{ alignments|tojson|safe }};
-            var drop_date = "2020-05-01";
+            var drop_date = "{{ cut_off_date }}";
+            console.log("***")
+            console.log(drop_date);
             var courses = groupBy(alignments, 'course');
             var course_ids = Object.keys(courses);
 

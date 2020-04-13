@@ -74,6 +74,16 @@ def student_dashboard(lti=lti, user_id=None):
     # TODO REMOVE ME - not using records anymore
     record = Record.query.order_by(Record.id.desc()).first()
 
+    # get current term
+    current_term = EnrollmentTerm.query.filter(EnrollmentTerm.current_term).first()
+    if current_term.cut_off_date:
+        cut_off_date = current_term.cut_off_date
+    else:
+        cut_off_date = current_term.end_at
+
+    # format as a string
+    cut_off_date = cut_off_date.strftime("%Y-%m-%d")
+    
     if user_id:  # Todo - this probably isn't needed
         # check user is NOT authorized to access this file
         auth_users_id = [user['id'] for user in session['users']]
@@ -89,7 +99,7 @@ def student_dashboard(lti=lti, user_id=None):
 
         if grades:
             return render_template('users/dashboard.html', record=record,
-                                   user=user,
+                                   user=user, cut_off_date=cut_off_date,
                                    students=session['users'], grades=grades,
                                    calculation_dict=calculation_dictionaries,
                                    alignments=alignments)

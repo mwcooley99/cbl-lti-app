@@ -13,13 +13,12 @@
 
         $(function () {
             let $masteryTable = $('#masteryTable');
-            {#let alignments = {{ alignments|tojson|safe }};#}
+
             let grades = {{ grades|tojson|safe }};
             let outcomes = {{ outcomes|tojson|safe }};
-             let drop_date = "2020-05-01";
              let base_url = "{{ url_for('course.detail', course_id=1, user_id=1) }}"
 
-            makeMasteryTable(grades,  outcomes, drop_date, $masteryTable);
+            makeMasteryTable(grades,  outcomes, $masteryTable);
         })
 
 

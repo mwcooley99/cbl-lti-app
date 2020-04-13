@@ -124,6 +124,16 @@ def detail(course_id=357, user_id=384, lti=lti):
     # Get course
     course = Course.query.filter(Course.id == course_id).first()
 
+    # get current term
+    current_term = EnrollmentTerm.query.filter(EnrollmentTerm.current_term).first()
+    if current_term.cut_off_date:
+        cut_off_date = current_term.cut_off_date
+    else:
+        cut_off_date = current_term.end_at
+
+    # format as a string
+    cut_off_date = cut_off_date.strftime("%Y-%m-%d")
+
     # Get current grade
     grade = Grade.query.filter(Grade.user_id == user_id) \
         .filter(Grade.course_id == course_id) \
@@ -150,7 +160,7 @@ def detail(course_id=357, user_id=384, lti=lti):
     calculation_dictionaries = get_calculation_dictionaries()
 
     return render_template('courses/detail.html', user=user, grade=grade,
-                           course=course,
+                           course=course, cut_off_date=cut_off_date,
                            calculation_dict=calculation_dictionaries,
                            alignments=alignments, prev_url=prev_url)
 

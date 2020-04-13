@@ -233,8 +233,15 @@ def get_current_term():
     stmt = EnrollmentTerms.select(EnrollmentTerms.c.current_term)
     conn = session.connection()
 
+    # Get columns for dict conversion
+    columns = EnrollmentTerms.c
+    columns = [col.key for col in columns]
+
+    
     # Should only return a single term
     term = list(conn.execute(stmt))[0]
+    term = dict(zip(columns, term))
+    
     return term
 
 

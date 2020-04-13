@@ -10,5 +10,4 @@ from flask_admin import Admin
 db = SQLAlchemy()
 ma = Marshmallow()
 migrate = Migrate()
-admin = Admin(template_mode='bootstrap3')
-
+admin = Admin(template_mode="bootstrap3")

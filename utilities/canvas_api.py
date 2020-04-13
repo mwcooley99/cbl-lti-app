@@ -8,29 +8,28 @@ from utilities.db_functions import upsert_enrollment_terms, get_token
 
 
 def get_headers():
-    access_token = os.getenv('CANVAS_API_KEY')
+    access_token = os.getenv("CANVAS_API_KEY")
     # access_token = get_token()
-    headers = {'Authorization': f'Bearer {access_token}'}
+    headers = {"Authorization": f"Bearer {access_token}"}
     return headers
 
 
 def get_users():
-    '''
+    """
     Roll up current Users into a list of dictionaries (Canvas API /api/v1/accounts/:account_id/users)
     :return: List of user dictionaries
-    '''
+    """
     headers = get_headers()
     url = "https://dtechhs.instructure.com/api/v1/accounts/1/users"
 
     querystring = {"enrollment_type": "student", "per_page": "100"}
-    response = requests.request("GET", url, headers=headers,
-                                params=querystring)
+    response = requests.request("GET", url, headers=headers, params=querystring)
 
     users = response.json()
 
     # pagination
-    while response.links.get('next'):
-        url = response.links['next']['url']
+    while response.links.get("next"):
+        url = response.links["next"]["url"]
         response = requests.request("GET", url, headers=headers)
         users += response.json()
 
@@ -38,24 +37,26 @@ def get_users():
 
 
 def get_courses(current_term):
-    '''
+    """
     Roll up current Users into a list of dictionaries (Canvas API /api/v1/accounts/:account_id/courses)
     :param current_term: Canvas Term to filter courses
     :return: list of course dictionaries
-    '''
+    """
     headers = get_headers()
     url = "https://dtechhs.instructure.com/api/v1/accounts/1/courses"
-    querystring = {'enrollment_term_id': current_term, 'published': True,
-                   'per_page': 100}
+    querystring = {
+        "enrollment_term_id": current_term,
+        "published": True,
+        "per_page": 100,
+    }
     # initial request
-    response = requests.request("GET", url, headers=headers,
-                                params=querystring)
+    response = requests.request("GET", url, headers=headers, params=querystring)
 
     courses = response.json()
 
     # pagination
-    while response.links.get('next'):
-        url = response.links['next']['url']
+    while response.links.get("next"):
+        url = response.links["next"]["url"]
         response = requests.request("GET", url, headers=headers)
         courses += response.json()
     return courses
@@ -63,117 +64,119 @@ def get_courses(current_term):
 
 def get_outcome_results(course, user_ids=None):
     headers = get_headers()
-    url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/outcome_results"
+    url = (
+        f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/outcome_results"
+    )
     querystring = {
         "include[]": ["alignments", "outcomes.alignments", "outcomes"],
-        "per_page": "100"}
+        "per_page": "100",
+    }
     if user_ids:
-        querystring['user_ids[]'] = user_ids
+        querystring["user_ids[]"] = user_ids
 
-    response = requests.request("GET", url, headers=headers,
-                                params=querystring)
+    response = requests.request("GET", url, headers=headers, params=querystring)
 
     data = response.json()
 
-    outcome_results = data['outcome_results']
-    alignments = data['linked']['alignments']
-    outcomes = data['linked']['outcomes']
+    outcome_results = data["outcome_results"]
+    alignments = data["linked"]["alignments"]
+    outcomes = data["linked"]["outcomes"]
 
     # Pagination
-    while response.links.get('next'):
-        url = response.links['next']['url']
+    while response.links.get("next"):
+        url = response.links["next"]["url"]
         response = requests.request("GET", url, headers=headers)
 
         data = response.json()
-        outcome_results += data['outcome_results']
-        alignments += data['linked']['alignments']
-        outcomes += data['linked']['outcomes']
+        outcome_results += data["outcome_results"]
+        alignments += data["linked"]["alignments"]
+        outcomes += data["linked"]["outcomes"]
 
     return outcome_results, alignments, outcomes
 
 
 def create_outcome_dataframes(course, user_ids=None):
-    '''
+    """
     Creates DataFrames of the  outcome results data pulled from Canvas API:
         /api/v1/courses/:course_id/outcome_results
     :param course: course dictionaries
     :param user_ids: Limit User ids mostly for testing
     :return: Dataframes with outcome_results, assignment alignments, and outcome details
-    '''
+    """
     headers = get_headers()
-    url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/outcome_results"
+    url = (
+        f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/outcome_results"
+    )
     querystring = {
         "include[]": ["alignments", "outcomes.alignments", "outcomes"],
-        "per_page": "100"}
+        "per_page": "100",
+    }
     if user_ids:
-        querystring['user_ids[]'] = user_ids
+        querystring["user_ids[]"] = user_ids
 
     response = requests.request("GET", url, headers=headers)
     data = response.json()
 
-    outcome_results = json_normalize(data['outcome_results'])
-    alignments = json_normalize(data['linked']['alignments'])
-    outcomes = json_normalize(data['linked']['outcomes'])
+    outcome_results = json_normalize(data["outcome_results"])
+    alignments = json_normalize(data["linked"]["alignments"])
+    outcomes = json_normalize(data["linked"]["outcomes"])
 
     # Pagination
-    while response.links.get('next'):
-        url = response.links['next']['url']
+    while response.links.get("next"):
+        url = response.links["next"]["url"]
         response = requests.request("GET", url, headers=headers)
         data = response.json()
         outcome_results = pd.concat(
-            [outcome_results, json_normalize(data['outcome_results'])])
+            [outcome_results, json_normalize(data["outcome_results"])]
+        )
         alignments = pd.concat(
-            [alignments, json_normalize(data['linked']['alignments'])])
-        outcomes = pd.concat(
-            [outcomes, json_normalize(data['linked']['outcomes'])])
+            [alignments, json_normalize(data["linked"]["alignments"])]
+        )
+        outcomes = pd.concat([outcomes, json_normalize(data["linked"]["outcomes"])])
 
-    outcome_results['course_id'] = course['id']
+    outcome_results["course_id"] = course["id"]
     return outcome_results, alignments, outcomes
 
 
 # TODO - have this return the whole dictionary not just the ids (deprecated?)
 def get_course_users_ids(course):
-    '''
+    """
     Gets list of users for a course
     :param course: course dictionary
     :return: user id's for course
-    '''
+    """
     headers = get_headers()
     url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/users"
 
-    querystring = {"enrollment_type[]": "student",
-                   "per_page": "100"}
-    response = requests.request("GET", url, headers=headers,
-                                params=querystring)
-    students = [user['id'] for user in response.json()]
+    querystring = {"enrollment_type[]": "student", "per_page": "100"}
+    response = requests.request("GET", url, headers=headers, params=querystring)
+    students = [user["id"] for user in response.json()]
 
     # Pagination
-    while response.links.get('next'):
-        url = response.links['next']['url']
+    while response.links.get("next"):
+        url = response.links["next"]["url"]
         response = requests.request("GET", url, headers=headers)
-        students += [user['id'] for user in response.json()]
+        students += [user["id"] for user in response.json()]
 
     return students
 
 
 def get_course_users(course):
-    '''
+    """
     Gets list of users for a course
     :param course: course dictionary
     :return: user id's for course
-    '''
+    """
     headers = get_headers()
     url = f"https://dtechhs.instructure.com/api/v1/courses/{course['id']}/users"
 
-    querystring = {"enrollment_type[]": "student",
-                   "per_page": "100"}
-    response = requests.request("GET", url, headers=headers,
-                                params=querystring)
+    querystring = {"enrollment_type[]": "student", "per_page": "100"}
+    response = requests.request("GET", url, headers=headers, params=querystring)
     students = response.json()
 
     # Pagination
-    while response.links.get('next'):
-        url = response.links['next']['url']
+    while response.links.get("next"):
+        url = response.links["next"]["url"]
         response = requests.request("GET", url, headers=headers)
         students += response.json()
 
@@ -191,10 +194,9 @@ def get_observees(user_id):
 def get_user_courses(user_id):
     headers = get_headers()
     url = f"https://dtechhs.instructure.com/api/v1/users/{user_id}/courses"
-    querystring = {"enrollment_type[]": "student",
-                   "per_page": "100"}
+    querystring = {"enrollment_type[]": "student", "per_page": "100"}
     courses = requests.request("GET", url, headers=headers).json()
-    keys = ['id', 'name', 'enrollment_term_id']
+    keys = ["id", "name", "enrollment_term_id"]
     # courses = [{key: course[key] for key in keys} for course in courses]
     return courses
 
@@ -203,24 +205,23 @@ def get_enrollment_terms():
     headers = get_headers()
     url = "https://dtechhs.instructure.com/api/v1/accounts/1/terms"
     querystring = {"per_page": "100"}
-    response = requests.request("GET", url, headers=headers,
-                                params=querystring)
+    response = requests.request("GET", url, headers=headers, params=querystring)
 
-    terms = response.json()['enrollment_terms']
+    terms = response.json()["enrollment_terms"]
 
-    while response.links.get('next'):
-        url = response.links['next']['url']
+    while response.links.get("next"):
+        url = response.links["next"]["url"]
         response = requests.request("GET", url, headers=headers)
-        new_terms = response.json()['enrollment_terms']
+        new_terms = response.json()["enrollment_terms"]
         terms += new_terms
 
     for term in terms:
-        del term['grading_period_group_id']
+        del term["grading_period_group_id"]
 
     return terms
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     terms = get_enrollment_terms()
     upsert_enrollment_terms(terms)
     print(terms)

@@ -14,13 +14,13 @@ class BaseConfig(object):
 
 
 class DevelopmentConfig(BaseConfig):
-    db_pass = os.getenv('DB_PASSWORD')
-    username = 'TheDoctor'
-    SECRET_KEY = os.getenv('SECRET_FLASK')
+    db_pass = os.getenv("DB_PASSWORD")
+    username = "TheDoctor"
+    SECRET_KEY = os.getenv("SECRET_FLASK")
     DEBUG = True
     TESTING = True
     PYLTI_CONFIG = settings.PYLTI_CONFIG
-    SQLALCHEMY_DATABASE_URI = os.getenv('DEVELOPMENT_DB_URI')
+    SQLALCHEMY_DATABASE_URI = os.getenv("DEVELOPMENT_DB_URI")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = True
     # SESSION_COOKIE_SECURE = True
@@ -28,13 +28,13 @@ class DevelopmentConfig(BaseConfig):
 
 
 class StageConfig(BaseConfig):
-    db_pass = os.getenv('DB_PASSWORD')
-    username = 'TheDoctor'
-    SECRET_KEY = os.getenv('SECRET_FLASK')
+    db_pass = os.getenv("DB_PASSWORD")
+    username = "TheDoctor"
+    SECRET_KEY = os.getenv("SECRET_FLASK")
     DEBUG = False
     TESTING = False
     PYLTI_CONFIG = settings.PYLTI_CONFIG
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
@@ -42,13 +42,13 @@ class StageConfig(BaseConfig):
 
 
 class ProductionConfig(BaseConfig):
-    db_pass = os.getenv('DB_PASSWORD')
-    username = 'TheDoctor'
-    SECRET_KEY = os.getenv('SECRET_FLASK')
+    db_pass = os.getenv("DB_PASSWORD")
+    username = "TheDoctor"
+    SECRET_KEY = os.getenv("SECRET_FLASK")
     DEBUG = False
     TESTING = False
     PYLTI_CONFIG = settings.PYLTI_CONFIG
-    SQLALCHEMY_DATABASE_URI = os.getenv('HEROKU_POSTGRESQL_OLIVE_URL')
+    SQLALCHEMY_DATABASE_URI = os.getenv("HEROKU_POSTGRESQL_OLIVE_URL")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
@@ -62,7 +62,7 @@ class TestingConfig(BaseConfig):
 
 
 configuration = {
-    'development': DevelopmentConfig,
-    'production': ProductionConfig,
-    'stage': StageConfig
+    "development": DevelopmentConfig,
+    "production": ProductionConfig,
+    "stage": StageConfig,
 }

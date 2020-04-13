@@ -1,7 +1,8 @@
 import itertools
 from flask import render_template, current_app
 
-from utilities.cbl_calculator import CUTOFF_DATE
+# from utilities.cbl_calculator import CUTOFF_DATE
+from utilities.db_functions import get_current_term
 
 
 def return_error(msg):
@@ -21,8 +22,14 @@ def safe_round(num, digits):
         return num
 
 
-def make_outcome_avg_dicts(outcome_results, grades):
+def make_outcome_avg_dicts(outcome_results, grades, current_term):
     outcome_averages = []
+    # check if the cut off date has been set
+    if current_term.cut_off_date:
+        cut_off_date = current_term.cut_off_date
+    # if not, set it to the last day of the term
+    else:
+        cut_off_date = current_term.end_at
 
     for grade in grades:
         student_dict = {'user_name': grade.user.name, 'user_id': grade.user.id,
@@ -41,7 +48,7 @@ def make_outcome_avg_dicts(outcome_results, grades):
                         'outcome_id': outcome_id}
 
             filtered_align = [o.score for o in out_aligns if
-                              o.submitted_or_assessed_at < CUTOFF_DATE]
+                              o.submitted_or_assessed_at < cut_off_date]
             if len(filtered_align) > 0:
                 min_score = min(filtered_align)
                 drop_avg = (full_sum - min_score) / (num_of_aligns - 1)

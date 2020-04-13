@@ -6,7 +6,7 @@ from pylti.flask import lti
 
 from app.extensions import db
 from app.models import Outcome, Course, Record, Grade, User, OutcomeResult, \
-    CourseUserLink, OutcomeResultSchema, OutcomeSchema
+    CourseUserLink, OutcomeResultSchema, OutcomeSchema, EnrollmentTerm
 from app.queries import get_calculation_dictionaries
 
 from utilities.canvas_api import get_course_users
@@ -54,6 +54,7 @@ def dashboard(lti=lti):
     '''
     s = time.perf_counter()
     record = Record.query.order_by(Record.id.desc()).first()
+    current_term = EnrollmentTerm.query.filter(EnrollmentTerm.current_term).first()
     course_id = session['course_id']
 
     # Query users
@@ -98,7 +99,7 @@ def dashboard(lti=lti):
     # alignments = res_schema.dump(outcome_results, many=True)
 
     # grade dictionaries
-    grades = make_outcome_avg_dicts(outcome_results, grades)
+    grades = make_outcome_avg_dicts(outcome_results, grades, current_term)
 
     calculation_dictionaries = get_calculation_dictionaries()
 

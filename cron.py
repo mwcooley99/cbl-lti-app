@@ -18,7 +18,7 @@ def timed_job():
     update_terms()
     print(f"terms updated at {datetime.now()}")
     # get current term
-    current_term = get_current_term()['id']
+    current_term = get_current_term()
 
     update_users()
     print(f"users updated at {datetime.now()}")
@@ -33,5 +33,5 @@ def timed_job():
 
 
 if __name__ == '__main__':
-    print(get_current_term()['id'])
+    print(get_current_term())
     sched.start()

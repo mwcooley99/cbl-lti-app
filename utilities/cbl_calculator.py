@@ -6,86 +6,6 @@ import pandas as pd
 
 from utilities.db_functions import get_calculation_dictionaries
 
-CUTOFF_DATE = datetime(2020, 5, 1)
-
-# todo - add to database
-# calculation_dictionaries = [
-#     {
-#         'grade': 'A',
-#         'threshold': 3.3,
-#         'min_score': 3
-#     },
-#     {
-#         'grade': 'A-',
-#         'threshold': 3.3,
-#         'min_score': 2.5
-#     },
-#     {
-#         'grade': 'B+',
-#         'threshold': 2.6,
-#         'min_score': 2.2
-#     },
-#     {
-#         'grade': 'B',
-#         'threshold': 2.6,
-#         'min_score': 1.8
-#     },
-#     {
-#         'grade': 'B-',
-#         'threshold': 2.6,
-#         'min_score': 1.5
-#     },
-#     {
-#         'grade': 'C',
-#         'threshold': 2.2,
-#         'min_score': 1.5
-#     },
-#     {
-#         'grade': 'I',
-#         'threshold': 0,
-#         'min_score': 0
-#     }
-# ]
-
-
-# calculation_dictionaries = [
-#     {
-#         'grade': 'A',
-#         'threshold': 3.3,
-#         'min_score': 3
-#     },
-#     {
-#         'grade': 'A-',
-#         'threshold': 3.3,
-#         'min_score': 2.5
-#     },
-#     {
-#         'grade': 'B+',
-#         'threshold': 2.6,
-#         'min_score': 2.5
-#     },
-#     {
-#         'grade': 'B',
-#         'threshold': 2.6,
-#         'min_score': 0
-#     },
-#     {
-#         'grade': 'B-',
-#         'threshold': 2.6,
-#         'min_score': 0
-#     },
-#     {
-#         'grade': 'C',
-#         'threshold': 2.2,
-#         'min_score': 0
-#     },
-#     {
-#         'grade': 'I',
-#         'threshold': 0,
-#         'min_score': 0
-#     }
-# ]
-
 
 def weighted_avg(scores):
     s = scores.apply(pd.Series)
@@ -93,7 +13,7 @@ def weighted_avg(scores):
         return s.iloc[0, 0]
 
     # need check that there's more than 1 outcome alignment
-    first_weight = ((100 - s.iloc[0, 1]) / 100)
+    first_weight = (100 - s.iloc[0, 1]) / 100
     final_weight = s.iloc[0, 1] / 100
     w_avg = first_weight * s.iloc[:-1, 0].mean() + final_weight * s.iloc[-1, 0]
     return w_avg
@@ -109,9 +29,9 @@ def calculate_traditional_grade(scores, calculation_dictionaries):
     # print(scores)
     if len(scores) == 0 or scores[0] == -1:
         return {
-            'grade': 'n/a',
-            'threshold': None,
-            'min_score': None,
+            "grade": "n/a",
+            "threshold": None,
+            "min_score": None,
         }
 
     scores_sorted = sorted(scores, reverse=True)
@@ -122,23 +42,19 @@ def calculate_traditional_grade(scores, calculation_dictionaries):
     # Calculate the threshold scores to generate grade
     threshold_score = scores_sorted[threshold_index]
     min_score = scores_sorted[-1]
-    traditional_grade = dict(
-        threshold=threshold_score,
-        min_score=min_score
-    )
+    traditional_grade = dict(threshold=threshold_score, min_score=min_score)
 
     for _i in range(len(calculation_dictionaries)):
         grade = calculation_dictionaries[_i]
-        if threshold_score >= grade['threshold'] and min_score >= grade[
-            'min_score']:
-            traditional_grade['grade'] = grade['grade']
+        if threshold_score >= grade["threshold"] and min_score >= grade["min_score"]:
+            traditional_grade["grade"] = grade["grade"]
             return traditional_grade
 
     return calculation_dictionaries[-1]
 
 
-if __name__ == '__main__':
-    with open('../out/alignments.json', 'r') as fp:
+if __name__ == "__main__":
+    with open("../out/alignments.json", "r") as fp:
         alignments = json.load(fp)
 
     # courses = []

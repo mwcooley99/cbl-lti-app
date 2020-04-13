@@ -13,7 +13,7 @@ from utilities.canvas_api import (
     get_users,
     get_enrollment_terms,
 )
-from utilities.cbl_calculator import calculate_traditional_grade, CUTOFF_DATE
+from utilities.cbl_calculator import calculate_traditional_grade
 from utilities.db_functions import (
     insert_grades_to_db,
     create_record,
@@ -171,7 +171,7 @@ def pull_outcome_results(current_term):
             print("result upsert complete")
 
         # count = count + 1
-        # if count > 5:
+        # if count > 1:
         #     break
 
 
@@ -397,15 +397,12 @@ def update_terms():
 
 if __name__ == "__main__":
     start = time.time()
-    # import os
-    # print(os.getenv('PULL_CONFIG'))
     current_term = get_current_term()
     # update_users()
-    # update_courses(current_term['id])
-    # update_course_students(current_term['id'])
-    # pull_outcome_results(current_term['id'])
-    insert_grades(current_term)
+    # update_courses(current_term)
+    # update_course_students(current_term)
+    # pull_outcome_results(current_term)
+    # insert_grades(current_term)
 
     end = time.time()
     print(f"pull took: {end - start} seconds")
-

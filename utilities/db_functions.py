@@ -263,4 +263,4 @@ def get_token():
 
 
 if __name__ == '__main__':
-    print(get_token())
+    print(get_current_term())

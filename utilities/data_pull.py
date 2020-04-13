@@ -14,7 +14,7 @@ from utilities.db_functions import insert_grades_to_db, create_record, \
     upsert_outcome_results, upsert_outcomes, upsert_courses, \
     query_current_outcome_results, get_db_courses, \
     insert_course_students, delete_course_students, delete_grades_current_term, \
-    upsert_enrollment_terms, get_calculation_dictionaries
+    upsert_enrollment_terms, get_calculation_dictionaries, get_current_term
 
 
 def make_grade_object(grade, outcome_avgs, record_id, course, user_id):
@@ -158,6 +158,7 @@ def pull_outcome_results(current_term=10):
 def insert_grades(current_term=10):
     print(f'Grade pull started at {datetime.now()}')
     calculation_dictionaries = get_calculation_dictionaries()
+    current_term = get_current_term()
     outcome_results = query_current_outcome_results(current_term)
     drop_eligible_results = outcome_results.loc[
         outcome_results['submitted_or_assessed_at'] < CUTOFF_DATE]

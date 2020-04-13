@@ -9,15 +9,23 @@ from sqlalchemy.sql import select
 from sqlalchemy.sql.expression import bindparam
 
 from app.config import configuration
-from utilities.db_models import Outcomes, OutcomeResults, Courses, Users, \
-    Alignments, \
-    Records, Grades, CourseUserLink, EnrollmentTerms, GradeCalculation, \
-    CanvasApiToken
+from utilities.db_models import (
+    Outcomes,
+    OutcomeResults,
+    Courses,
+    Users,
+    Alignments,
+    Records,
+    Grades,
+    CourseUserLink,
+    EnrollmentTerms,
+    GradeCalculation,
+    CanvasApiToken,
+)
 
-config = configuration[os.getenv('PULL_CONFIG')]
+config = configuration[os.getenv("PULL_CONFIG")]
 
-engine = create_engine(
-    config.SQLALCHEMY_DATABASE_URI)
+engine = create_engine(config.SQLALCHEMY_DATABASE_URI)
 
 session = Session(engine)
 
@@ -26,43 +34,43 @@ session = Session(engine)
 # Database Functions
 ####################################
 def upsert_users(users):
-    '''
+    """
     Upserts users into the Users table
     :param users: list of user dictionaries from Canvas API (/api/v1/accounts/:account_id/users)
     :param session: database session
     :return: None
-    '''
-    keys = ['id', 'name', 'sis_user_id', 'login_id']
+    """
+    keys = ["id", "name", "sis_user_id", "login_id"]
     values = [{key: user[key] for key in keys} for user in users]
     insert_stmt = postgresql.insert(Users).values(values)
     update_stmt = insert_stmt.on_conflict_do_update(
-        index_elements=['id'],
+        index_elements=["id"],
         set_={
-            'name': insert_stmt.excluded.name,
-            'sis_user_id': insert_stmt.excluded.sis_user_id,
-            'login_id': insert_stmt.excluded.login_id
-        }
+            "name": insert_stmt.excluded.name,
+            "sis_user_id": insert_stmt.excluded.sis_user_id,
+            "login_id": insert_stmt.excluded.login_id,
+        },
     )
     session.execute(update_stmt)
     session.commit()
 
 
 def upsert_courses(courses):
-    '''
+    """
     Updates courses table
     :param courses: List of courses dictionaries from (/api/v1/accounts/:account_id/courses)
     :param session: DB session
     :return: None
-    '''
-    keys = ['id', 'name', 'enrollment_term_id']
+    """
+    keys = ["id", "name", "enrollment_term_id"]
     values = [{key: course[key] for key in keys} for course in courses]
     insert_stmt = postgresql.insert(Courses).values(values)
     update_stmt = insert_stmt.on_conflict_do_update(
-        index_elements=['id'],
+        index_elements=["id"],
         set_={
-            'name': insert_stmt.excluded.name,
-            'enrollment_term_id': insert_stmt.excluded.enrollment_term_id
-        }
+            "name": insert_stmt.excluded.name,
+            "enrollment_term_id": insert_stmt.excluded.enrollment_term_id,
+        },
     )
     session.execute(update_stmt)
     session.commit()
@@ -71,12 +79,12 @@ def upsert_courses(courses):
 def upsert_outcomes(outcomes):
     insert_stmt = postgresql.insert(Outcomes).values(outcomes)
     update_stmt = insert_stmt.on_conflict_do_update(
-        index_elements=['id'],
+        index_elements=["id"],
         set_={
-            'title': insert_stmt.excluded.title,
-            'display_name': insert_stmt.excluded.display_name,
-            'calculation_int': insert_stmt.excluded.calculation_int
-        }
+            "title": insert_stmt.excluded.title,
+            "display_name": insert_stmt.excluded.display_name,
+            "calculation_int": insert_stmt.excluded.calculation_int,
+        },
     )
     session.execute(update_stmt)
     session.commit()
@@ -85,10 +93,7 @@ def upsert_outcomes(outcomes):
 def upsert_alignments(alignments):
     insert_stmt = postgresql.insert(Alignments).values(alignments)
     update_stmt = insert_stmt.on_conflict_do_update(
-        index_elements=['id'],
-        set_={
-            'name': insert_stmt.excluded.name,
-        }
+        index_elements=["id"], set_={"name": insert_stmt.excluded.name,}
     )
     session.execute(update_stmt)
     session.commit()
@@ -97,44 +102,40 @@ def upsert_alignments(alignments):
 def upsert_outcome_results(outcome_results):
     insert_stmt = postgresql.insert(OutcomeResults).values(outcome_results)
     update_stmt = insert_stmt.on_conflict_do_update(
-        index_elements=['id'],
+        index_elements=["id"],
         set_={
-            'score': insert_stmt.excluded.score,
-            'course_id': insert_stmt.excluded.course_id,
-            'user_id': insert_stmt.excluded.user_id,
-            'outcome_id': insert_stmt.excluded.outcome_id,
-            'alignment_id': insert_stmt.excluded.alignment_id,
-            'submitted_or_assessed_at': insert_stmt.excluded.submitted_or_assessed_at,
-            'last_updated': insert_stmt.excluded.last_updated,
-            'enrollment_term': insert_stmt.excluded.enrollment_term
-        }
+            "score": insert_stmt.excluded.score,
+            "course_id": insert_stmt.excluded.course_id,
+            "user_id": insert_stmt.excluded.user_id,
+            "outcome_id": insert_stmt.excluded.outcome_id,
+            "alignment_id": insert_stmt.excluded.alignment_id,
+            "submitted_or_assessed_at": insert_stmt.excluded.submitted_or_assessed_at,
+            "last_updated": insert_stmt.excluded.last_updated,
+            "enrollment_term": insert_stmt.excluded.enrollment_term,
+        },
     )
     session.execute(update_stmt)
     session.commit()
 
 
 def update_outcome_res_dropped(values):
-    stmt = OutcomeResults.update(). \
-        where(OutcomeResults.c.id == bindparam('_id')). \
-        values({
-        'dropped': bindparam('dropped'),
-
-    })
+    stmt = (
+        OutcomeResults.update()
+        .where(OutcomeResults.c.id == bindparam("_id"))
+        .values({"dropped": bindparam("dropped"),})
+    )
     session.execute(stmt, values)
     session.commit()
 
 
 def delete_outcome_results(course_id):
-    delete_stmt = OutcomeResults.delete().where(
-        OutcomeResults.c.course_id == course_id)
+    delete_stmt = OutcomeResults.delete().where(OutcomeResults.c.course_id == course_id)
     session.execute(delete_stmt)
     session.commit()
 
 
 def delete_course_students(course_id):
-    delete_stmt = CourseUserLink.delete().where(
-        CourseUserLink.c.course_id == course_id
-    )
+    delete_stmt = CourseUserLink.delete().where(CourseUserLink.c.course_id == course_id)
     session.execute(delete_stmt)
     session.commit()
 
@@ -145,14 +146,14 @@ def insert_course_students(students):
 
 
 def create_record(current_term):
-    '''
+    """
     Creates new record
     :param current_term:
     :param session:
     :return: record_id for newly created record
-    '''
+    """
     timestamp = datetime.utcnow()
-    values = {'created_at': timestamp, 'term_id': current_term}
+    values = {"created_at": timestamp, "term_id": current_term}
 
     # Make new record
     session.execute(Records.insert().values(values))
@@ -164,9 +165,10 @@ def create_record(current_term):
 
 
 def delete_grades_current_term(current_term):
-    delete_stmt = delete_stmt = Grades.delete().where(
-        Grades.c.course_id == Courses.c.id).where(
-        Courses.c.enrollment_term_id == current_term
+    delete_stmt = delete_stmt = (
+        Grades.delete()
+        .where(Grades.c.course_id == Courses.c.id)
+        .where(Courses.c.enrollment_term_id == current_term)
     )
     session.execute(delete_stmt)
     session.commit()
@@ -214,16 +216,16 @@ def get_db_courses(current_term=None):
 def upsert_enrollment_terms(enrollment_terms):
     insert_stmt = postgresql.insert(EnrollmentTerms).values(enrollment_terms)
     update_stmt = insert_stmt.on_conflict_do_update(
-        index_elements=['id'],
+        index_elements=["id"],
         set_={
-            'name': insert_stmt.excluded.name,
-            'start_at': insert_stmt.excluded.start_at,
-            'end_at': insert_stmt.excluded.end_at,
-            'created_at': insert_stmt.excluded.created_at,
-            'workflow_state': insert_stmt.excluded.workflow_state,
-            'sis_term_id': insert_stmt.excluded.sis_term_id,
-            'sis_import_id': insert_stmt.excluded.sis_import_id,
-        }
+            "name": insert_stmt.excluded.name,
+            "start_at": insert_stmt.excluded.start_at,
+            "end_at": insert_stmt.excluded.end_at,
+            "created_at": insert_stmt.excluded.created_at,
+            "workflow_state": insert_stmt.excluded.workflow_state,
+            "sis_term_id": insert_stmt.excluded.sis_term_id,
+            "sis_import_id": insert_stmt.excluded.sis_import_id,
+        },
     )
     session.execute(update_stmt)
     session.commit()
@@ -237,23 +239,25 @@ def get_current_term():
     columns = EnrollmentTerms.c
     columns = [col.key for col in columns]
 
-    
     # Should only return a single term
     term = list(conn.execute(stmt))[0]
     term = dict(zip(columns, term))
-    
+
     return term
 
 
 def get_calculation_dictionaries():
-    cols = [GradeCalculation.c.grade, GradeCalculation.c.threshold,
-            GradeCalculation.c.min_score]
+    cols = [
+        GradeCalculation.c.grade,
+        GradeCalculation.c.threshold,
+        GradeCalculation.c.min_score,
+    ]
     stmt = select(cols).order_by(GradeCalculation.c.grade_rank)
     conn = session.connection()
     res = conn.execute(stmt)
 
     # Turn into grade dictionaries
-    keys = ['grade', 'threshold', 'min_score']
+    keys = ["grade", "threshold", "min_score"]
     calculation_dictionaries = [dict(zip(keys, r)) for r in res]
 
     return calculation_dictionaries
@@ -269,5 +273,5 @@ def get_token():
     return token[0][0]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(get_current_term())

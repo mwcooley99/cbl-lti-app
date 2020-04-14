@@ -136,7 +136,8 @@ function calcOutcomeAvg(alignments, drop_date, outcome) {
 function makeOutcomesTablev2(alignments, $table_el, drop_date) {
   // Check for a display name and use if available
   var outcomes = groupBy(alignments, (a) => a.outcome.id);
-
+  console.log("ldjlfsdj")
+  console.log(drop_date);
   // Calculate outcome averages, looping through the different outcome keys
   var outcome_avgs = Object.keys(outcomes).map(function (key) {
     let outcome = {};
@@ -185,12 +186,12 @@ function makeOutcomesTablev2(alignments, $table_el, drop_date) {
     // height: 480,
     detailView: true,
     onExpandRow: function (index, row, $detail) {
-      expandTablev2($detail, row);
+      expandTable($detail, row);
     },
   });
 }
 
-function expandTablev2($el, outcome) {
+function expandTable($el, outcome) {
   let alignments = outcome["alignments"].sort((a, b) =>
     a.submitted_or_assessed_at < b.submitted_or_assessed_at ? 1 : -1
   );
@@ -237,79 +238,6 @@ function expandTablev2($el, outcome) {
   });
 }
 
-//
-// function expandTable($el, outcome) {
-//     let alignments = outcome['alignments'];
-//
-//     let $card = $el.html("<div class='card p-3'></div>").find('.card');
-//     let text = "";
-//     if (outcome['drop_min']) {
-//         text = "<p>The lowest score <b>was</b> dropped from this outcome because it helped your average.</p>"
-//     } else {
-//         text = "<p>The lowest score <b>was not</b> dropped from this outcome because would not have helped your average.</p>"
-//     }
-//
-//     let $details = $card.append(text);
-//     let $subTable = $card.append('<table></table>').find('table');
-//
-//
-//     let columns = [
-//         {
-//             field: 'name',
-//             title: 'Assignment Name',
-//             sortable: true
-//         },
-//         {
-//             field: 'score',
-//             title: 'Score',
-//             align: 'center',
-//             sortable: true
-//         },
-//         {
-//             field: 'dropped',
-//             title: 'Dropped',
-//             align: 'center',
-//             formatter: function (value, row) {
-//                 let icon = value ? "fas fa-circle" : "";
-//                 return `<i class="${icon}"</i>`
-//             }
-//         }
-//     ];
-//     $subTable.bootstrapTable({
-//         columns: columns,
-//         data: alignments,
-//         // height:400
-//
-//     });
-//
-
-// }
-
-// function buildSubTable($el, alignments) {
-//     let columns = [
-//         {
-//             field: 'name',
-//             title: 'Assignment Name',
-//             sortable: true
-//         },
-//         {
-//             field: 'score',
-//             title: 'Score',
-//             sortable: true
-//         },
-//     ];
-//     $el.bootstrapTable({
-//         columns: columns,
-//         data: alignments,
-//
-//     });
-// }
-
-// $(function () {
-//     $button2.click(function () {
-//         $courseTable.bootstrapTable('collapseAllRows')
-//     })
-// });
 
 function mcellStyle(value, row, index) {
   var classes = ["bg-blue", "bg-green", "bg-orange", "bg-yellow", "bg-red"];

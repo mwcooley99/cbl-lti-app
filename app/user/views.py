@@ -99,6 +99,7 @@ def student_dashboard(lti=lti, user_id=None):
 
     # format as a string
     cut_off_date = cut_off_date.strftime("%Y-%m-%d")
+   
 
     if user_id:  # Todo - this probably isn't needed
         # check user is NOT authorized to access this file

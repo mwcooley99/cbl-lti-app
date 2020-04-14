@@ -14,7 +14,7 @@ import pandas as pd
 from pylti.flask import lti
 
 from app.extensions import db
-from app.models import Record
+from app.models import Record, EnrollmentTerm
 from app.queries import get_calculation_dictionaries, get_enrollment_term
 from app.user.views import get_user_dash_data
 from utilities.canvas_api import get_course_users
@@ -94,23 +94,27 @@ def student_dashboard(user_id, lti=lti):
     record = Record.query.order_by(Record.id.desc()).first()
     alignments, grades, user = get_user_dash_data(user_id)
 
+    # get current term
+    current_term = EnrollmentTerm.query.filter(EnrollmentTerm.current_term).first()
+    if current_term.cut_off_date:
+        cut_off_date = current_term.cut_off_date
+    else:
+        cut_off_date = current_term.end_at
+
+    # format as a string
+    cut_off_date = cut_off_date.strftime("%Y-%m-%d")
+
     calculation_dictionaries = get_calculation_dictionaries()
     return render_template(
         "account/student_dashboard.html",
         record=record,
         user=user,
         grades=grades,
+        cut_off_date=cut_off_date,
         calculation_dict=calculation_dictionaries,
         alignments=alignments,
         prev_url=request.referrer,
     )
-
-
-# @blueprint.route('reports')
-# @lti(error=error, request='session', role='admin', app=current_app)
-# def reports(lti=lti):
-#     form = GradeReportForm()
-#     return render_template('account/reports.html', form=form)
 
 
 @blueprint.route("grade_report", methods=["POST", "GET"])

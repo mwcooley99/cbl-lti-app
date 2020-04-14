@@ -203,7 +203,7 @@ function expandTablev2($el, outcome) {
       "<p>The lowest score <b>was</b> dropped from this outcome because it helped your average.</p>";
   } else {
     text =
-      "<p>The lowest score <b>was not</b> dropped from this outcome because dropping it would not have helped your average OR it was past the DROP DATE.</p>";
+      "<p>The lowest score <b>was not</b> dropped from this outcome because dropping it would not have helped your average <b>OR</b> it was past the DROP DATE.</p>";
   }
 
   let $details = $card.append(text);

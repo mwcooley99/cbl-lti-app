@@ -134,11 +134,21 @@ def pull_outcome_results(current_term):
         )
 
         # Format results, Removed Null filter (works better for upsert)
-        outcome_results = [
+        res_temp = [
             make_outcome_result(outcome_result, course["id"], current_term_id)
             for outcome_result in outcome_results
         ]
 
+        # filter out any duplicates (this shouldn't be an issue but a duplicate has sometimes shown up)
+        done = []
+        outcome_results = []
+        for res in res_temp:
+            if res['id'] not in done:
+                done.append(res['id'])
+                outcome_results.append(res)
+
+        # outcome_results = [i for n, i in enumerate(outcome_results) if i not in outcome_results[n + 1:]]
+        
         # Format outcomes
         outcomes = [format_outcome(outcome) for outcome in outcomes]
         # Filter out duplicate outcomes
@@ -398,11 +408,11 @@ def update_terms():
 if __name__ == "__main__":
     start = time.time()
     current_term = get_current_term()
-    # update_users()
-    # update_courses(current_term)
-    # update_course_students(current_term)
-    # pull_outcome_results(current_term)
-    # insert_grades(current_term)
+    update_users()
+    update_courses(current_term)
+    update_course_students(current_term)
+    pull_outcome_results(current_term)
+    insert_grades(current_term)
 
     end = time.time()
     print(f"pull took: {end - start} seconds")

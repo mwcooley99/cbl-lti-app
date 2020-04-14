@@ -23,11 +23,14 @@ from utilities.db_models import (
     CanvasApiToken,
 )
 
-config = configuration[os.getenv("PULL_CONFIG")]
 
-engine = create_engine(config.SQLALCHEMY_DATABASE_URI)
+def get_session():
+    config = configuration[os.getenv("PULL_CONFIG")]
+    engine = create_engine(config.SQLALCHEMY_DATABASE_URI)
+    session = Session(engine)
+    return session
 
-session = Session(engine)
+
 
 
 ####################################
@@ -51,9 +54,10 @@ def upsert_users(users):
             "login_id": insert_stmt.excluded.login_id,
         },
     )
+    session = get_session()
     session.execute(update_stmt)
     session.commit()
-
+    session.close()
 
 def upsert_courses(courses):
     """
@@ -72,8 +76,10 @@ def upsert_courses(courses):
             "enrollment_term_id": insert_stmt.excluded.enrollment_term_id,
         },
     )
+    session = get_session()
     session.execute(update_stmt)
     session.commit()
+    session.close()
 
 
 def upsert_outcomes(outcomes):
@@ -86,8 +92,10 @@ def upsert_outcomes(outcomes):
             "calculation_int": insert_stmt.excluded.calculation_int,
         },
     )
+    session = get_session()
     session.execute(update_stmt)
     session.commit()
+    session.close()
 
 
 def upsert_alignments(alignments):
@@ -95,8 +103,10 @@ def upsert_alignments(alignments):
     update_stmt = insert_stmt.on_conflict_do_update(
         index_elements=["id"], set_={"name": insert_stmt.excluded.name,}
     )
+    session = get_session()
     session.execute(update_stmt)
     session.commit()
+    session.close()
 
 
 def upsert_outcome_results(outcome_results):
@@ -114,8 +124,10 @@ def upsert_outcome_results(outcome_results):
             "enrollment_term": insert_stmt.excluded.enrollment_term,
         },
     )
+    session = get_session()
     session.execute(update_stmt)
     session.commit()
+    session.close()
 
 
 def update_outcome_res_dropped(values):
@@ -124,25 +136,33 @@ def update_outcome_res_dropped(values):
         .where(OutcomeResults.c.id == bindparam("_id"))
         .values({"dropped": bindparam("dropped"),})
     )
+    session = get_session()
     session.execute(stmt, values)
     session.commit()
+    session.close()
 
 
 def delete_outcome_results(course_id):
     delete_stmt = OutcomeResults.delete().where(OutcomeResults.c.course_id == course_id)
+    session = get_session()
     session.execute(delete_stmt)
     session.commit()
+    session.close()
 
 
 def delete_course_students(course_id):
     delete_stmt = CourseUserLink.delete().where(CourseUserLink.c.course_id == course_id)
+    session = get_session()
     session.execute(delete_stmt)
     session.commit()
+    session.close()
 
 
 def insert_course_students(students):
+    session = get_session()
     session.execute(CourseUserLink.insert().values(students))
     session.commit()
+    session.close()
 
 
 def create_record(current_term):
@@ -156,8 +176,10 @@ def create_record(current_term):
     values = {"created_at": timestamp, "term_id": current_term}
 
     # Make new record
+    session = get_session()
     session.execute(Records.insert().values(values))
     session.commit()
+    session.close()
 
     # Grab record to use id later
     record = session.query(Records).order_by(desc(Records.c.id)).first()
@@ -170,13 +192,17 @@ def delete_grades_current_term(current_term):
         .where(Grades.c.course_id == Courses.c.id)
         .where(Courses.c.enrollment_term_id == current_term)
     )
+    session = get_session()
     session.execute(delete_stmt)
     session.commit()
+    session.close()
 
 
 def insert_grades_to_db(grades_list):
+    session = get_session()
     session.execute(Grades.insert().values(grades_list))
     session.commit()
+    session.close()
 
 
 def query_current_outcome_results(current_term):
@@ -200,16 +226,20 @@ def query_current_outcome_results(current_term):
                  AND  c.enrollment_term_id = {current_term}
             ORDER BY o_res.submitted_or_assessed_at DESC;
         """
+    session = get_session()
     conn = session.connection()
     outcome_results = pd.read_sql(sql, conn)
+    session.close()
 
     return outcome_results
 
 
 def get_db_courses(current_term=None):
     stmt = Courses.select(Courses.c.enrollment_term_id == current_term)
+    session = get_session()
     conn = session.connection()
     courses = conn.execute(stmt)
+    session.close()
     return courses
 
 
@@ -227,12 +257,15 @@ def upsert_enrollment_terms(enrollment_terms):
             "sis_import_id": insert_stmt.excluded.sis_import_id,
         },
     )
+    session = get_session()
     session.execute(update_stmt)
     session.commit()
+    session.close()
 
 
 def get_current_term():
     stmt = EnrollmentTerms.select(EnrollmentTerms.c.current_term)
+    session = get_session()
     conn = session.connection()
 
     # Get columns for dict conversion
@@ -242,6 +275,8 @@ def get_current_term():
     # Should only return a single term
     term = list(conn.execute(stmt))[0]
     term = dict(zip(columns, term))
+
+    session.close()
 
     return term
 
@@ -253,8 +288,11 @@ def get_calculation_dictionaries():
         GradeCalculation.c.min_score,
     ]
     stmt = select(cols).order_by(GradeCalculation.c.grade_rank)
+
+    session = get_session()
     conn = session.connection()
     res = conn.execute(stmt)
+    session.close()
 
     # Turn into grade dictionaries
     keys = ["grade", "threshold", "min_score"]
@@ -266,10 +304,12 @@ def get_calculation_dictionaries():
 
 def get_token():
     stmt = select([CanvasApiToken.c.token])
+    session = get_session()
     conn = session.connection()
     res = conn.execute(stmt)
     token = [r for r in res]
-    print(token)
+    
+    session = get_session()
     return token[0][0]
 
 

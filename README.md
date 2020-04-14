@@ -99,7 +99,7 @@ flask db upgrade
 
 ## Environmental Variables
 
-Various environmental variables are required to handle development vs production environemnts, api tokens, and other sensitive information.
+Various environmental variables are required to handle development vs production environments, api tokens, and other sensitive information.
 
 ### For Canvas
 

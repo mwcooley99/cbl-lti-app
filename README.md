@@ -76,7 +76,7 @@ Your running server will be visible at [http://127.0.0.1:5000](http://127.0.0.1:
 
 ### Data
 
-Grade, user and course data are pulled nightly through a cron job (APScheduler in the *cron.py* file) and stored in a Postgres Database. 
+Grade, user and course data are pulled nightly through a cron job (APScheduler in the _cron.py_ file) and stored in a Postgres Database.
 
 - Updates Enrollments Terms
 - Updates all the users in the account
@@ -85,9 +85,7 @@ Grade, user and course data are pulled nightly through a cron job (APScheduler i
 - Pulls all outcome results for every course and updates them in the database
 - Calculates grades based on Design Tech High School's grading algorithm (grade algorithm can be updated in the the grade_calculation table)
 
-The *utilities* folder holds the logic for the data pull including Canvas and database related logic.
-
-
+The _utilities_ folder holds the logic for the data pull including Canvas and database related logic.
 
 ## Setup db
 
@@ -112,8 +110,8 @@ Various environmental variables are required to handle development vs production
 
 ### Config
 
-- CONFIG *(for the flask app)*
-- PULL_CONFIG *for the data_pull and cron job*
+- CONFIG _(for the flask app)_
+- PULL_CONFIG _for the data_pull and cron job_
 
 ### Flask Env
 
@@ -122,8 +120,8 @@ Various environmental variables are required to handle development vs production
 
 ### For Databases
 
-- DEVELOPMENT_DB_URI (*local*)
-- HEROKU_POSTGRESQL_OLIVE_URL (*or whatever your heroku db might be*)
+- DEVELOPMENT_DB_URI (_local_)
+- HEROKU_POSTGRESQL_OLIVE_URL (_or whatever your heroku db might be_)
 
 ## Built with
 

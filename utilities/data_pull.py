@@ -92,12 +92,24 @@ def make_outcome_result(outcome_result, course_id, enrollment_term):
 
 
 def format_outcome(outcome):
-    temp_dict = {
-        "id": outcome["id"],
-        "display_name": outcome["display_name"],
-        "title": outcome["title"],
-        "calculation_int": outcome["calculation_int"],
-    }
+    try:
+        temp_dict = {
+            "id": outcome["id"],
+            "display_name": outcome["display_name"],
+            "title": outcome["title"],
+            "calculation_int": outcome["calculation_int"],
+        }
+    except: 
+        temp_dict = {
+            "id": outcome["id"],
+            "display_name": outcome["display_name"],
+            "title": outcome["title"],
+            "calculation_int": 65,
+        }
+        print("*****************")
+        print("there was a calc_int error")
+
+    return temp_dict
 
     return temp_dict
 
@@ -107,11 +119,11 @@ def format_alignments(alignment):
     return {_id: alignment[_id] for _id in ids}
 
 
-def pull_outcome_results(current_term):
+def pull_outcome_results(current_term, engine):
     # get all courses for current term todo move outside of this function
     current_term_id = current_term["id"]
     courses = get_courses(current_term_id)
-    upsert_courses(courses)
+    upsert_courses(courses, engine)
 
     # get outcome result rollups for each course and list of outcomes
     pattern = "@dtech|Teacher Assistant|LAB Day|FIT|Innovation Diploma FIT"
@@ -139,7 +151,7 @@ def pull_outcome_results(current_term):
             for outcome_result in outcome_results
         ]
 
-        # filter out any duplicates (this shouldn't be an issue but a duplicate has sometimes shown up)
+        # filter out any duplicates (this shouldn't be an issue but a duplicate sometimes shown up)
         done = []
         outcome_results = []
         for res in res_temp:
@@ -167,17 +179,17 @@ def pull_outcome_results(current_term):
 
         # If there are results to upload
         if outcome_results:
-            upsert_outcomes(outcomes)
+            upsert_outcomes(outcomes, engine)
             print("outcome upsert complete")
-            upsert_alignments(alignments)
+            upsert_alignments(alignments, engine)
             print("alignment upsert complete")
 
             print(f'deleting outcome_results for {course["name"]}')
-            delete_outcome_results(course["id"])
+            delete_outcome_results(course["id"], engine)
             print("old outcome results deleted")
 
             print(f"outcomes results to upload: {len(outcome_results)}")
-            upsert_outcome_results(outcome_results)
+            upsert_outcome_results(outcome_results, engine)
             print("result upsert complete")
 
         # count = count + 1
@@ -185,9 +197,10 @@ def pull_outcome_results(current_term):
         #     break
 
 
-def insert_grades(current_term=10):
+def insert_grades(engine, current_term=10):
     print(f"Grade pull started at {datetime.now()}")
-    calculation_dictionaries = get_calculation_dictionaries()
+    calculation_dictionaries = get_calculation_dictionaries(engine)
+    print(calculation_dictionaries)
 
     # check if the cut off date has been set
     if current_term["cut_off_date"]:
@@ -196,7 +209,7 @@ def insert_grades(current_term=10):
     else:
         cut_off_date = current_term["end_at"]
 
-    outcome_results = query_current_outcome_results(current_term["id"])
+    outcome_results = query_current_outcome_results(current_term["id"], engine)
     drop_eligible_results = outcome_results.loc[
         outcome_results["submitted_or_assessed_at"] < cut_off_date
     ]
@@ -242,7 +255,7 @@ def insert_grades(current_term=10):
 
     # Make a new record
     print(f"Record created at {datetime.now()}")
-    record_id = create_record(current_term["id"])
+    record_id = create_record(current_term["id"], engine)
     grades["record_id"] = record_id
 
     # Create grades_dict for database insert
@@ -258,11 +271,11 @@ def insert_grades(current_term=10):
     grades_list = grades[grade_cols].to_dict("r")
 
     # Delete grades from current term
-    delete_grades_current_term(current_term["id"])
+    delete_grades_current_term(current_term["id"], engine)
 
     # Insert into Database
     if len(grades_list):
-        insert_grades_to_db(grades_list)
+        insert_grades_to_db(grades_list, engine)
 
 
 def calc_outcome_avgs(outcome_results):
@@ -357,10 +370,10 @@ def format_outcome_results(outcome_results):
     return outcome_results
 
 
-def update_course_students(current_term):
+def update_course_students(current_term, engine):
     current_term_id = current_term["id"]
     # Query current courses
-    courses = get_db_courses(current_term_id)
+    courses = get_db_courses(engine, current_term_id)
     pattern = "@dtech|Teacher Assistant|LAB Day|FIT|Innovation Diploma FIT"
 
     for course in courses:
@@ -380,39 +393,26 @@ def update_course_students(current_term):
 
         if student_dicts:
             # delete previous course roster
-            delete_course_students(course["id"])
+            delete_course_students(course["id"], engine)
             # insert current roster
-            insert_course_students(student_dicts)
+            insert_course_students(student_dicts, engine)
 
 
-def update_courses(current_term):
+def update_courses(current_term, engine):
     current_term_id = current_term["id"]
     courses = get_courses(current_term_id)
-    upsert_courses(courses)
+    upsert_courses(courses, engine)
 
 
-def update_users():
+def update_users(engine):
     """
     Updates users table in database with all current account users
     :return: None
     """
     users = get_users()
-    upsert_users(users)
+    upsert_users(users, engine)
 
 
-def update_terms():
+def update_terms(engine):
     terms = get_enrollment_terms()
-    upsert_enrollment_terms(terms)
-
-
-if __name__ == "__main__":
-    start = time.time()
-    current_term = get_current_term()
-    update_users()
-    update_courses(current_term)
-    update_course_students(current_term)
-    pull_outcome_results(current_term)
-    insert_grades(current_term)
-
-    end = time.time()
-    print(f"pull took: {end - start} seconds")
+    upsert_enrollment_terms(terms, engine)

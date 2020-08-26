@@ -23,20 +23,19 @@ from utilities.db_models import (
     CanvasApiToken,
 )
 
-
-def get_session():
-    config = configuration[os.getenv("PULL_CONFIG")]
-    engine = create_engine(config.SQLALCHEMY_DATABASE_URI)
+def execute_stmt(engine, update_stmt):
     session = Session(engine)
-    return session
+    res = session.execute(update_stmt)
+    session.commit()
+    session.close()
 
-
+    return res
 
 
 ####################################
 # Database Functions
 ####################################
-def upsert_users(users):
+def upsert_users(users, engine):
     """
     Upserts users into the Users table
     :param users: list of user dictionaries from Canvas API (/api/v1/accounts/:account_id/users)
@@ -54,12 +53,9 @@ def upsert_users(users):
             "login_id": insert_stmt.excluded.login_id,
         },
     )
-    session = get_session()
-    session.execute(update_stmt)
-    session.commit()
-    session.close()
+    execute_stmt(engine, update_stmt)
 
-def upsert_courses(courses):
+def upsert_courses(courses, engine):
     """
     Updates courses table
     :param courses: List of courses dictionaries from (/api/v1/accounts/:account_id/courses)
@@ -76,13 +72,10 @@ def upsert_courses(courses):
             "enrollment_term_id": insert_stmt.excluded.enrollment_term_id,
         },
     )
-    session = get_session()
-    session.execute(update_stmt)
-    session.commit()
-    session.close()
+    execute_stmt(engine, update_stmt)
 
 
-def upsert_outcomes(outcomes):
+def upsert_outcomes(outcomes, engine):
     insert_stmt = postgresql.insert(Outcomes).values(outcomes)
     update_stmt = insert_stmt.on_conflict_do_update(
         index_elements=["id"],
@@ -92,24 +85,18 @@ def upsert_outcomes(outcomes):
             "calculation_int": insert_stmt.excluded.calculation_int,
         },
     )
-    session = get_session()
-    session.execute(update_stmt)
-    session.commit()
-    session.close()
+    execute_stmt(engine, update_stmt)
 
 
-def upsert_alignments(alignments):
+def upsert_alignments(alignments, engine):
     insert_stmt = postgresql.insert(Alignments).values(alignments)
     update_stmt = insert_stmt.on_conflict_do_update(
         index_elements=["id"], set_={"name": insert_stmt.excluded.name,}
     )
-    session = get_session()
-    session.execute(update_stmt)
-    session.commit()
-    session.close()
+    execute_stmt(engine, update_stmt)
 
 
-def upsert_outcome_results(outcome_results):
+def upsert_outcome_results(outcome_results, engine):
     insert_stmt = postgresql.insert(OutcomeResults).values(outcome_results)
     update_stmt = insert_stmt.on_conflict_do_update(
         index_elements=["id"],
@@ -124,10 +111,7 @@ def upsert_outcome_results(outcome_results):
             "enrollment_term": insert_stmt.excluded.enrollment_term,
         },
     )
-    session = get_session()
-    session.execute(update_stmt)
-    session.commit()
-    session.close()
+    execute_stmt(engine, update_stmt)
 
 
 def update_outcome_res_dropped(values):
@@ -142,30 +126,22 @@ def update_outcome_res_dropped(values):
     session.close()
 
 
-def delete_outcome_results(course_id):
+def delete_outcome_results(course_id, engine):
     delete_stmt = OutcomeResults.delete().where(OutcomeResults.c.course_id == course_id)
-    session = get_session()
-    session.execute(delete_stmt)
-    session.commit()
-    session.close()
+    execute_stmt(engine, delete_stmt)
 
 
-def delete_course_students(course_id):
+def delete_course_students(course_id, engine):
     delete_stmt = CourseUserLink.delete().where(CourseUserLink.c.course_id == course_id)
-    session = get_session()
-    session.execute(delete_stmt)
-    session.commit()
-    session.close()
+    execute_stmt(engine, delete_stmt)
 
 
-def insert_course_students(students):
-    session = get_session()
-    session.execute(CourseUserLink.insert().values(students))
-    session.commit()
-    session.close()
+def insert_course_students(students, engine):
+    stmt = CourseUserLink.insert().values(students)
+    execute_stmt(engine, stmt)
 
 
-def create_record(current_term):
+def create_record(current_term, engine):
     """
     Creates new record
     :param current_term:
@@ -176,36 +152,31 @@ def create_record(current_term):
     values = {"created_at": timestamp, "term_id": current_term}
 
     # Make new record
-    session = get_session()
-    session.execute(Records.insert().values(values))
-    session.commit()
-    session.close()
+    make_stmt = Records.insert().values(values)
+    execute_stmt(engine, make_stmt)
 
     # Grab record to use id later
+    session = Session(engine)
     record = session.query(Records).order_by(desc(Records.c.id)).first()
+    session.close()
     return record[0]
 
 
-def delete_grades_current_term(current_term):
+def delete_grades_current_term(current_term, engine):
     delete_stmt = delete_stmt = (
         Grades.delete()
         .where(Grades.c.course_id == Courses.c.id)
         .where(Courses.c.enrollment_term_id == current_term)
     )
-    session = get_session()
-    session.execute(delete_stmt)
-    session.commit()
-    session.close()
+    execute_stmt(engine, delete_stmt)
 
 
-def insert_grades_to_db(grades_list):
-    session = get_session()
-    session.execute(Grades.insert().values(grades_list))
-    session.commit()
-    session.close()
+def insert_grades_to_db(grades_list, engine):
+    stmt = Grades.insert().values(grades_list)
+    execute_stmt(engine, stmt)
 
 
-def query_current_outcome_results(current_term):
+def query_current_outcome_results(current_term, engine):
     sql = f"""
             SELECT o_res.id as "_id",
                     o_res.user_id AS "links.user", 
@@ -226,7 +197,7 @@ def query_current_outcome_results(current_term):
                  AND  c.enrollment_term_id = {current_term}
             ORDER BY o_res.submitted_or_assessed_at DESC;
         """
-    session = get_session()
+    session = Session(engine)
     conn = session.connection()
     outcome_results = pd.read_sql(sql, conn)
     session.close()
@@ -234,16 +205,16 @@ def query_current_outcome_results(current_term):
     return outcome_results
 
 
-def get_db_courses(current_term=None):
+def get_db_courses(engine, current_term=None):
     stmt = Courses.select(Courses.c.enrollment_term_id == current_term)
-    session = get_session()
+    session = Session(engine)
     conn = session.connection()
     courses = conn.execute(stmt)
     session.close()
     return courses
 
 
-def upsert_enrollment_terms(enrollment_terms):
+def upsert_enrollment_terms(enrollment_terms, engine):
     insert_stmt = postgresql.insert(EnrollmentTerms).values(enrollment_terms)
     update_stmt = insert_stmt.on_conflict_do_update(
         index_elements=["id"],
@@ -257,15 +228,14 @@ def upsert_enrollment_terms(enrollment_terms):
             "sis_import_id": insert_stmt.excluded.sis_import_id,
         },
     )
-    session = get_session()
-    session.execute(update_stmt)
-    session.commit()
-    session.close()
+    execute_stmt(engine, update_stmt)
 
 
-def get_current_term():
+
+
+def get_current_term(engine):
     stmt = EnrollmentTerms.select(EnrollmentTerms.c.current_term)
-    session = get_session()
+    session = Session(engine)
     conn = session.connection()
 
     # Get columns for dict conversion
@@ -281,7 +251,7 @@ def get_current_term():
     return term
 
 
-def get_calculation_dictionaries():
+def get_calculation_dictionaries(engine):
     cols = [
         GradeCalculation.c.grade,
         GradeCalculation.c.threshold,
@@ -289,10 +259,7 @@ def get_calculation_dictionaries():
     ]
     stmt = select(cols).order_by(GradeCalculation.c.grade_rank)
 
-    session = get_session()
-    conn = session.connection()
-    res = conn.execute(stmt)
-    session.close()
+    res = execute_stmt(engine, stmt)
 
     # Turn into grade dictionaries
     keys = ["grade", "threshold", "min_score"]

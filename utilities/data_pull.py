@@ -393,7 +393,7 @@ def update_course_students(current_term, engine):
             ]
         except:
             print(f"Error parsing course students for course_id {course_id}")
-            pass
+            continue
 
         if student_dicts:
             # delete previous course roster

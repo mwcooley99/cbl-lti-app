@@ -374,7 +374,7 @@ def update_course_students(current_term, engine):
     current_term_id = current_term["id"]
     # Query current courses
     courses = get_db_courses(engine, current_term_id)
-    pattern = "@dtech|Teacher Assistant|LAB Day|FIT|Innovation Diploma FIT"
+    pattern = "@dtech|Teacher Assistant|LAB Day|FIT|Innovation Diploma FIT|Beyond D.Tech"
 
     for course in courses:
         course_id = course[0]
@@ -387,9 +387,13 @@ def update_course_students(current_term, engine):
         # Get course students
         students = get_course_users({"id": course_id})
         # Get user IDs in a list
-        student_dicts = [
-            {"course_id": course_id, "user_id": student["id"]} for student in students
-        ]
+        try: 
+            student_dicts = [
+                {"course_id": course_id, "user_id": student["id"]} for student in students
+            ]
+        except:
+            print(f"Error parsing course students for course_id {course_id}")
+            continue
 
         if student_dicts:
             # delete previous course roster

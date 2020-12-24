@@ -18,9 +18,6 @@ load_dotenv()
 CONSUMER_KEY = os.environ.get("CONSUMER_KEY", "CHANGEME")
 SHARED_SECRET = os.environ.get("SHARED_SECRET", "CHANGEME")
 
-# for env in os.environ:
-#     print(env)
-
 # Configuration for LTI
 PYLTI_CONFIG = {
     "consumers": {

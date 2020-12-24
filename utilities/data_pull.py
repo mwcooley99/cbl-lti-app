@@ -31,6 +31,7 @@ from utilities.db_functions import (
     upsert_enrollment_terms,
     get_calculation_dictionaries,
     get_current_term,
+    get_sync_terms
 )
 
 
@@ -197,7 +198,7 @@ def pull_outcome_results(current_term, engine):
         #     break
 
 
-def insert_grades(engine, current_term=10):
+def insert_grades(current_term, engine):
     print(f"Grade pull started at {datetime.now()}")
     calculation_dictionaries = get_calculation_dictionaries(engine)
     print(calculation_dictionaries)

@@ -16,33 +16,42 @@ from utilities.data_pull import (
     update_terms,
 )
 
-from utilities.db_functions import get_current_term
+from utilities.db_functions import get_sync_terms
 
 sched = BlockingScheduler(timezone=utc)
 
 
-@sched.scheduled_job("cron", day_of_week="mon-fri", hour=8, minute=5)
-def timed_job():
+def run():
     print(f"job started at {datetime.now()}")
     config = configuration[os.getenv("PULL_CONFIG")]
     engine = create_engine(config.SQLALCHEMY_DATABASE_URI)
     update_terms(engine)
     print(f"terms updated at {datetime.now()}")
-    # get current term
-    current_term = get_current_term(engine)
-    print(f"The current term is {current_term}")
+
+    # get the "sync" terms
+    sync_terms = get_sync_terms(engine)
+    print(f"The sync terms are {[term['id'] for term in sync_terms]}")
 
     update_users(engine)
     print(f"users updated at {datetime.now()}")
-    update_courses(current_term, engine)
-    print(f"courses updated at {datetime.now()}")
-    update_course_students(current_term, engine)
-    print(f"course students updated at {datetime.now()}")
-    pull_outcome_results(current_term, engine)
-    print(f"outcome_results pulled at {datetime.now()}")
-    insert_grades(engine, current_term)
-    print(f"grades inserted at {datetime.now()}")
+
+    for term in sync_terms:
+        print(f"syncing term {term['id']}")
+        update_courses(term, engine)
+        print(f"courses updated at {datetime.now()}")
+        update_course_students(term, engine)
+        print(f"course students updated at {datetime.now()}")
+        pull_outcome_results(term, engine)
+        print(f"outcome_results pulled at {datetime.now()}")
+        insert_grades(term, engine)
+        print(f"grades inserted at {datetime.now()}")
     engine.dispose()
+
+
+@sched.scheduled_job("cron", day_of_week="mon-fri", hour=3, minute=5)
+def timed_job():
+    run()
+
 
 if __name__ == "__main__":
     sched.start()

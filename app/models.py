@@ -15,6 +15,7 @@ class EnrollmentTerm(db.Model):
     cut_off_date = db.Column(db.DateTime)
 
     current_term = db.Column(db.Boolean, server_default="false", nullable=False)
+    sync_term = db.Column(db.Boolean, server_default="false", nullable=False)
 
 
 class Record(db.Model):

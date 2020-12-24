@@ -231,8 +231,6 @@ def upsert_enrollment_terms(enrollment_terms, engine):
     execute_stmt(engine, update_stmt)
 
 
-
-
 def get_current_term(engine):
     stmt = EnrollmentTerms.select(EnrollmentTerms.c.current_term)
     session = Session(engine)
@@ -249,6 +247,24 @@ def get_current_term(engine):
     session.close()
 
     return term
+
+
+def get_sync_terms(engine):
+    stmt = EnrollmentTerms.select(EnrollmentTerms.c.sync_term)
+    session = Session(engine)
+    conn = session.connection()
+
+    # Get columns for dict conversion
+    columns = EnrollmentTerms.c
+    columns = [col.key for col in columns]
+
+    # Can sync multiple terms
+    terms = list(conn.execute(stmt))
+    terms = [dict(zip(columns, term)) for term in terms]
+
+    session.close()
+
+    return terms
 
 
 def get_calculation_dictionaries(engine):
@@ -281,4 +297,4 @@ def get_token():
 
 
 if __name__ == "__main__":
-    print(get_current_term())
+    pass

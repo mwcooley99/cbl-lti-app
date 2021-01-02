@@ -121,10 +121,10 @@ def format_alignments(alignment):
 
 
 def pull_outcome_results(current_term, engine):
-    # get all courses for current term todo move outside of this function
+    # get all courses for current term todo - pull from database
     current_term_id = current_term["id"]
     courses = get_courses(current_term_id)
-    upsert_courses(courses, engine)
+    
 
     # get outcome result rollups for each course and list of outcomes
     pattern = "@dtech|Teacher Assistant|LAB Day|FIT|Innovation Diploma FIT"
@@ -201,7 +201,6 @@ def pull_outcome_results(current_term, engine):
 def insert_grades(current_term, engine):
     print(f"Grade pull started at {datetime.now()}")
     calculation_dictionaries = get_calculation_dictionaries(engine)
-    print(calculation_dictionaries)
 
     # check if the cut off date has been set
     if current_term["cut_off_date"]:
@@ -211,6 +210,12 @@ def insert_grades(current_term, engine):
         cut_off_date = current_term["end_at"]
 
     outcome_results = query_current_outcome_results(current_term["id"], engine)
+    
+    # Check if there are any outcome results in the current_term. If not exit. 
+    if outcome_results.empty:
+        print(f"Term {current_term['id']} has no outcome results.")
+        return None
+    
     drop_eligible_results = outcome_results.loc[
         outcome_results["submitted_or_assessed_at"] < cut_off_date
     ]
@@ -406,7 +411,10 @@ def update_course_students(current_term, engine):
 def update_courses(current_term, engine):
     current_term_id = current_term["id"]
     courses = get_courses(current_term_id)
-    upsert_courses(courses, engine)
+    if courses:
+        upsert_courses(courses, engine)
+    else:
+        print(f"Term {current_term['id']} has no courses to sync")
 
 
 def update_users(engine):

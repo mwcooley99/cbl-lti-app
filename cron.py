@@ -1,4 +1,5 @@
 from datetime import datetime
+import re
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 from pytz import utc
@@ -14,6 +15,7 @@ from utilities.data_pull import (
     update_courses,
     update_course_students,
     update_terms,
+    query_current_outcome_results,
 )
 
 from utilities.db_functions import get_sync_terms
@@ -25,6 +27,7 @@ def run():
     print(f"job started at {datetime.now()}")
     config = configuration[os.getenv("PULL_CONFIG")]
     engine = create_engine(config.SQLALCHEMY_DATABASE_URI)
+
     update_terms(engine)
     print(f"terms updated at {datetime.now()}")
 
@@ -37,14 +40,19 @@ def run():
 
     for term in sync_terms:
         print(f"syncing term {term['id']}")
+        
         update_courses(term, engine)
         print(f"courses updated at {datetime.now()}")
+
         update_course_students(term, engine)
         print(f"course students updated at {datetime.now()}")
+        
         pull_outcome_results(term, engine)
         print(f"outcome_results pulled at {datetime.now()}")
+
         insert_grades(term, engine)
         print(f"grades inserted at {datetime.now()}")
+
     engine.dispose()
 
 

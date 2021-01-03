@@ -56,7 +56,7 @@ def run():
     engine.dispose()
 
 
-@sched.scheduled_job("cron", day_of_week="mon-fri", hour=3, minute=5)
+@sched.scheduled_job("cron", day_of_week="sun, mon, tues, wed, thu", hour=18, minute=5)
 def timed_job():
     run()
 

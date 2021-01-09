@@ -37,8 +37,9 @@
           <h5>{{ user.name }}</h5>
 
           {% endif %} {# End dropdown #}
-          <small
-            >Data last updated: <br />{{ record.created_at|strftime }}
+          <small>
+            <p><strong>Data last updated:</strong> {{ record.created_at|strftime }}</p> 
+            <p>{{current_term.name}}</p>
           </small>
         </div>
         <hr />

@@ -114,6 +114,7 @@ def student_dashboard(user_id, lti=lti):
         calculation_dict=calculation_dictionaries,
         alignments=alignments,
         prev_url=request.referrer,
+        current_term=current_term
     )
 
 

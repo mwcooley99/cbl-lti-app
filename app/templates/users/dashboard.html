@@ -49,12 +49,14 @@
           role="tablist"
           aria-orientation="vertical"
         >
-          {% for course in user.courses %} {% set course_name =
-          course.course.name.split(' - ')[0] %} {% set course_id =
-          course.course.id %} {% set grades = (grades|selectattr("course_id",
-          "eq", course.course.id)|list) %} {% if grades|length == 1 %} {% set
-          grade = (grades|first).grade %} {% else %} {% set grade = 'n/a' %} {%
-          endif %} {% if loop.first %}
+          {% for course_link in user.courses if course_link.course.enrollment_term_id == current_term.id %} 
+            {% set course_name = course_link.course.name.split(' - ')[0] %} 
+            {% set course_id = course_link.course.id %} 
+            {% set grades = (grades|selectattr("course_id", "eq", course_link.course.id)|list) %} 
+            {% if grades|length == 1 %} 
+              {% set grade = (grades|first).grade %} {% else %} {% set grade = 'n/a' %} 
+            {% endif %} 
+            {% if loop.first %}
           <a
             class="nav-link text-sm-center active"
             id="v-pills-home-tab"
@@ -85,15 +87,21 @@
     {# End sidebar #} {# start#}
     <div class="col-md-9">
       <div class="tab-content" id="v-pills-tabContent">
-        {# Filter though the courses (aka grades) #} {% for course in
-        user.courses %} {% set course_name = course.course.name.split(' - ')[0]
-        %} {% set course_id = course.course.id %} {% set grades =
-        (grades|selectattr("course_id", "eq", course.course.id)|list) %} {% if
-        grades|length == 1 %} {% set grade = (grades|first).grade %} {% set
-        threshold = (grades|first).threshold %} {% set min_score =
-        (grades|first).min_score %} {% else %} {% set grade = 'n/a' %} {% set
-        threshold = 'n/a' %} {% set min_score = 'n/a' %} {% endif %} {% if
-        loop.first %} {# Make the first pane visible initially #}
+        {# Filter though the courses (aka grades) #} 
+        {% for course_link in user.courses if course_link.course.enrollment_term_id == current_term.id %} 
+        {% set course_name = course_link.course.name.split(' - ')[0]%} 
+        {% set course_id = course_link.course.id %} 
+        {% set grades = (grades|selectattr("course_id", "eq", course_link.course.id)|list) %} 
+        {% if grades|length == 1 %} 
+          {% set grade = (grades|first).grade %} 
+          {% set threshold = (grades|first).threshold %} 
+          {% set min_score = (grades|first).min_score %} 
+        {% else %} 
+          {% set grade = 'n/a' %} 
+          {% set threshold = 'n/a' %} 
+          {% set min_score = 'n/a' %} 
+        {% endif %} 
+        {% if loop.first %} {# Make the first pane visible initially #}
         <div
           class="tab-pane fade show active"
           id="v-pills-{{ course_id }}"
@@ -112,9 +120,7 @@
               <div class="card-header">
                 <div class="row">
                   <div class="col-12">
-                    <h5 class="card-title">
-                      Letter Grade: {{ grade }}
-                    </h5>
+                    <h5 class="card-title">Letter Grade: {{ grade }}</h5>
                   </div>
                 </div>
               </div>

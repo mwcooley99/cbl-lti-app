@@ -104,6 +104,7 @@ def student_dashboard(lti=lti, user_id=None):
     if user_id:  # Todo - this probably isn't needed
         # check user is NOT authorized to access this file
         auth_users_id = [user["id"] for user in session["users"]]
+        
         if not (
             int(user_id) in auth_users_id
             or lti.is_role("admin")
@@ -126,6 +127,7 @@ def student_dashboard(lti=lti, user_id=None):
                 grades=grades,
                 calculation_dict=calculation_dictionaries,
                 alignments=alignments,
+                current_term=current_term
             )
 
     return "You currently don't have any grades!"

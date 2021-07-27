@@ -37,3 +37,7 @@ blueprint = Blueprint(
 @blueprint.route("/hello_world")
 def hello():
     return "Hello world"
+
+@blueprint.route("/dragon_time", methods=["POST", "GET"])
+def dragon_time():
+    pass

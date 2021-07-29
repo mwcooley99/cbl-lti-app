@@ -75,6 +75,7 @@ Courses = Table(
     Column("id", Integer, primary_key=True),
     Column("name", String),
     Column("enrollment_term_id", Integer),
+    Column("sis_course_id", String)
 )
 
 Grades = Table(

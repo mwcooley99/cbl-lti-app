@@ -35,6 +35,7 @@ class Course(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     enrollment_term_id = db.Column(db.Integer, db.ForeignKey("enrollment_terms.id"))
+    sis_course_id = db.Column(db.String)
 
     grades = db.relationship("Grade", backref="course")
     courses = db.relationship("CourseUserLink", backref="course")

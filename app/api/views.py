@@ -47,10 +47,9 @@ def dragon_time():
     stmt = db.text(
         """
         SELECT
-            u.id
-            , u.login_id
+            u.sis_user_id
             , g.grade
-            , c.name as course_name
+            , c.sis_course_id
         FROM grades g
             JOIN courses c on c.id = g.course_id
             JOIN users u on u.id = g.user_id

@@ -1,5 +1,6 @@
 import time
 import jwt
+import os
 
 from flask import (
     Blueprint,
@@ -32,6 +33,9 @@ from utilities.canvas_api import get_course_users
 # from utilities.cbl_calculator import calculation_dictionaries
 from utilities.helpers import make_outcome_avg_dicts, format_users, error
 
+# api key
+api_key = os.getenv('DRAGON_TIME_KEY')
+
 blueprint = Blueprint(
     "api", __name__, url_prefix="/api"
 )
@@ -42,7 +46,6 @@ def hello():
 
 @blueprint.route("/dragon_time", methods=["POST", "GET"])
 def dragon_time():
-    key = "secret"
     enrollment_term = get_enrollment_term()
     stmt = db.text(
         """
@@ -59,5 +62,5 @@ def dragon_time():
     ).bindparams(enrollment_term_id=enrollment_term.id)
     results = db.session.execute(stmt)
     data = [dict(row) for row in results]
-    encoded = jwt.encode({'data': data}, key, algorithm="HS256")
+    encoded = jwt.encode({'data': data}, api_key, algorithm="HS256")
     return jsonify(encoded)

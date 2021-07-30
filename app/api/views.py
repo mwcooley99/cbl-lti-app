@@ -40,11 +40,7 @@ blueprint = Blueprint(
     "api", __name__, url_prefix="/api"
 )
 
-@blueprint.route("/hello_world")
-def hello():
-    return "Hello world"
-
-@blueprint.route("/dragon_time", methods=["POST", "GET"])
+@blueprint.route("/dragon_time", methods=["GET"])
 def dragon_time():
     enrollment_term = get_enrollment_term()
     stmt = db.text(
@@ -60,6 +56,7 @@ def dragon_time():
         ORDER BY g.id
         """
     ).bindparams(enrollment_term_id=enrollment_term.id)
+    
     results = db.session.execute(stmt)
     data = [dict(row) for row in results]
     encoded = jwt.encode({'data': data}, api_key, algorithm="HS256")

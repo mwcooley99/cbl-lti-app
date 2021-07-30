@@ -7,7 +7,7 @@ from flask import Flask, render_template
 
 import app.settings as settings
 from app import commands, course, user, public, \
-    account  # Need to import modules that contain blueprints
+    account, api  # Need to import modules that contain blueprints
 from app.extensions import (
     db,
     ma,
@@ -53,6 +53,7 @@ def register_blueprints(app):
     app.register_blueprint(course.views.blueprint)
     app.register_blueprint(public.views.blueprint)
     app.register_blueprint(account.views.blueprint)
+    app.register_blueprint(api.views.blueprint)
     return None
 
 

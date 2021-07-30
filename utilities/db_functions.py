@@ -62,7 +62,7 @@ def upsert_courses(courses, engine):
     :param session: DB session
     :return: None
     """
-    keys = ["id", "name", "enrollment_term_id"]
+    keys = ["id", "name", "enrollment_term_id", 'sis_course_id']
     values = [{key: course[key] for key in keys} for course in courses]
     insert_stmt = postgresql.insert(Courses).values(values)
     update_stmt = insert_stmt.on_conflict_do_update(
@@ -70,6 +70,7 @@ def upsert_courses(courses, engine):
         set_={
             "name": insert_stmt.excluded.name,
             "enrollment_term_id": insert_stmt.excluded.enrollment_term_id,
+            "sis_course_id": insert_stmt.excluded.sis_course_id
         },
     )
     execute_stmt(engine, update_stmt)

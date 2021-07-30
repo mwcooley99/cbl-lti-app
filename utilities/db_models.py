@@ -28,11 +28,38 @@ metadata.bind = engine
 Base = automap_base()
 Base.prepare(engine, reflect=True)
 
+EnrollmentTerms = Table(
+    "enrollment_terms",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("name", String),
+    Column("start_at", DateTime),
+    Column("end_at", DateTime),
+    Column("created_at", DateTime),
+    Column("workflow_state", String),
+    Column("sis_term_id", String),
+    Column("sis_import_id", Integer),
+    Column("cut_off_date", DateTime),
+    Column("current_term", Boolean),
+    Column("sync_term", Boolean),
+)
 
-EnrollmentTerms = Base.classes.enrollment_terms.__table__
-GradeCalculation = Base.classes.grade_calculation.__table__
-CanvasApiToken = Base.classes.canvas_api_tokens.__table__
+GradeCalculation = Table(
+    "grade_calculation",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("grade_rank", Integer),
+    Column("grade", String),
+    Column("threshold", Float),
+    Column("min_score", Float)
+)
 
+CanvasApiToken = Table(
+    "canvas_api_tokens",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("token", String)
+)
 
 Records = Table(
     "records",
@@ -48,6 +75,7 @@ Courses = Table(
     Column("id", Integer, primary_key=True),
     Column("name", String),
     Column("enrollment_term_id", Integer),
+    Column("sis_course_id", String)
 )
 
 Grades = Table(

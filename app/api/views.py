@@ -12,7 +12,8 @@ from flask import (
     redirect,
     jsonify
 )
-from app.queries import get_calculation_dictionaries, get_enrollment_term
+from app.queries import get_enrollment_term
+import app.settings as settings
 from app.extensions import db
 from app.models import (
     Outcome,
@@ -33,15 +34,25 @@ from utilities.canvas_api import get_course_users
 # from utilities.cbl_calculator import calculation_dictionaries
 from utilities.helpers import make_outcome_avg_dicts, format_users, error
 
-# api key
-api_key = os.getenv('DRAGON_TIME_KEY')
-
 blueprint = Blueprint(
     "api", __name__, url_prefix="/api/v1"
 )
 
 @blueprint.route("/dragon_time", methods=["GET"])
 def dragon_time():
+    token = None
+    print(os.getenv('SECRET_FLASK'))
+    if 'x-access-tokens' in request.headers:
+        token = request.headers['x-access-tokens']
+
+    if not token:
+        return jsonify({'message': 'a valid token is missing'})
+    try:
+        data = jwt.decode(token, os.getenv('SECRET_FLASK'), algorithms='HS256')
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'token is invalid'})
+    
     enrollment_term = get_enrollment_term()
     stmt = db.text(
         """
@@ -58,6 +69,5 @@ def dragon_time():
     ).bindparams(enrollment_term_id=enrollment_term.id)
 
     results = db.session.execute(stmt)
-    data = [dict(row) for row in results]
-    encoded = jwt.encode({'results': data}, api_key, algorithm="HS256")
-    return jsonify(encoded)
+    
+    return jsonify([dict(row) for row in results])

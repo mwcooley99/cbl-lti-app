@@ -37,7 +37,7 @@ from utilities.helpers import make_outcome_avg_dicts, format_users, error
 api_key = os.getenv('DRAGON_TIME_KEY')
 
 blueprint = Blueprint(
-    "api", __name__, url_prefix="/api"
+    "api", __name__, url_prefix="/api/v1"
 )
 
 @blueprint.route("/dragon_time", methods=["GET"])
@@ -56,8 +56,8 @@ def dragon_time():
         ORDER BY g.id
         """
     ).bindparams(enrollment_term_id=enrollment_term.id)
-    
+
     results = db.session.execute(stmt)
     data = [dict(row) for row in results]
-    encoded = jwt.encode({'data': data}, api_key, algorithm="HS256")
+    encoded = jwt.encode({'results': data}, api_key, algorithm="HS256")
     return jsonify(encoded)

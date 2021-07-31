@@ -54,6 +54,9 @@ def dragon_time():
     except Exception as e:
         return jsonify({'message': 'token is invalid'})
     
+    if data ["id"] != os.getenv('DRAGON_TIME_ID'):
+        return jsonify({'message': 'Invalid id!'})
+    
     enrollment_term = get_enrollment_term()
     stmt = db.text(
         """

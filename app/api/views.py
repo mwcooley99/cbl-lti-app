@@ -34,6 +34,9 @@ from utilities.canvas_api import get_course_users
 # from utilities.cbl_calculator import calculation_dictionaries
 from utilities.helpers import make_outcome_avg_dicts, format_users, error
 
+# api secret
+SECRET_API = os.getenv('SECRET_API')
+
 blueprint = Blueprint(
     "api", __name__, url_prefix="/api/v1"
 )
@@ -41,17 +44,18 @@ blueprint = Blueprint(
 @blueprint.route("/dragon_time", methods=["GET"])
 def dragon_time():
     token = None
-    print(os.getenv('SECRET_FLASK'))
     if 'x-access-tokens' in request.headers:
         token = request.headers['x-access-tokens']
 
     if not token:
         return jsonify({'message': 'a valid token is missing'})
     try:
-        data = jwt.decode(token, os.getenv('SECRET_FLASK'), algorithms='HS256')
+        data = jwt.decode(token, SECRET_API, algorithms='HS256')
     except Exception as e:
-        print(e)
         return jsonify({'message': 'token is invalid'})
+    
+    if data ["id"] != os.getenv('DRAGON_TIME_ID'):
+        return jsonify({'message': 'Invalid id!'})
     
     enrollment_term = get_enrollment_term()
     stmt = db.text(

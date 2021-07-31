@@ -52,7 +52,6 @@ def dragon_time():
     try:
         data = jwt.decode(token, SECRET_API, algorithms='HS256')
     except Exception as e:
-        print(e)
         return jsonify({'message': 'token is invalid'})
     
     enrollment_term = get_enrollment_term()

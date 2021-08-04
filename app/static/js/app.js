@@ -136,8 +136,7 @@ function calcOutcomeAvg(alignments, drop_date, outcome) {
 function makeOutcomesTablev2(alignments, $table_el, drop_date) {
   // Check for a display name and use if available
   var outcomes = groupBy(alignments, (a) => a.outcome.id);
-  console.log("ldjlfsdj")
-  console.log(drop_date);
+  
   // Calculate outcome averages, looping through the different outcome keys
   var outcome_avgs = Object.keys(outcomes).map(function (key) {
     let outcome = {};

@@ -23,6 +23,8 @@ from app.models import (
 from app.queries import get_calculation_dictionaries
 from utilities.canvas_api import get_observees
 
+from datetime import datetime
+
 blueprint = Blueprint("user", __name__, url_prefix="/users", static_folder="../static")
 
 
@@ -54,7 +56,6 @@ def launch(lti=lti):
     # TODO - exclude Teachers
     # Check if it's a student (or teacher currently)
     if "lis_person_sourcedid" in request.form.keys():
-
         users = (
             User.query.filter(User.id == session["user_id"])
             .with_entities(User.id, User.name)
@@ -81,6 +82,7 @@ def launch(lti=lti):
 @blueprint.route("/student_dashboard/<user_id>", methods=["GET"])
 @lti(error=error, request="session", role="any", app=current_app)
 def student_dashboard(lti=lti, user_id=None):
+# def student_dashboard(user_id=None):
     """
     Dashboard froms a student view. Used for students, parents and advisors
     :param lti: pylti
@@ -100,7 +102,6 @@ def student_dashboard(lti=lti, user_id=None):
     # format as a string
     cut_off_date = cut_off_date.strftime("%Y-%m-%d")
    
-
     if user_id:  # Todo - this probably isn't needed
         # check user is NOT authorized to access this file
         auth_users_id = [user["id"] for user in session["users"]]
@@ -111,7 +112,6 @@ def student_dashboard(lti=lti, user_id=None):
             or lti.is_role("instructor")
         ):  # TODO - OR role = 'admin'
             return "You are not authorized to view this users information"
-
         alignments, grades, user = get_user_dash_data(user_id)
 
         # calculation dictionaries
@@ -146,20 +146,62 @@ def get_user_dash_data(user_id):
         .all()
     )
     # Get outcome results
-    outcomes = (
-        OutcomeResult.query.options(
-            db.joinedload(OutcomeResult.outcome, innerjoin=True)
-        )
-        .options(db.joinedload(OutcomeResult.alignment, innerjoin=True))
-        .options(db.joinedload(OutcomeResult.course, innerjoin=True))
-        .filter(
-            OutcomeResult.user_id == user_id,
-            OutcomeResult.score.isnot(None),
-            Course.enrollment_term_id == current_term.id,
-        )
-        .order_by(OutcomeResult.course_id, OutcomeResult.outcome_id)
-        .all()
+    outcomes_stmt = db.text(
+        """
+        SELECT ores.id AS ores_id,
+            ores.score AS ores_score,
+            ores.course_id AS ores_course_id,
+            ores.user_id AS ores_user_id,
+            ores.outcome_id AS ores_outcome_id,
+            ores.alignment_id AS ores_alignment_id,
+            ores.submitted_or_assessed_at AS ores_submitted_or_assessed_at,
+            ores.last_updated AS ores_last_updated,
+            ores.enrollment_term AS ores_enrollment_term,
+            c.id AS c_id,
+            c.name AS c_name,
+            c.enrollment_term_id AS c_enrollment_term_id,
+            c.sis_course_id AS c_sis_course_id,
+            o.id AS o_id,
+            o.title AS o_title,
+            o.display_name AS o_display_name,
+            o.calculation_int AS o_calculation_int,
+            a.id AS a_id,
+            a.name AS a_name
+        FROM outcome_results ores
+            JOIN courses c on c.id = ores.course_id
+            JOIN outcomes o on o.id = ores.outcome_id
+            JOIN alignments a on a.id = ores.alignment_id
+        WHERE ores.user_id = :user_id
+                AND ores.score IS NOT NULL
+                AND c.enrollment_term_id = :current_term
+        ORDER BY  ores.course_id, ores.outcome_id;
+        """
     )
-    res_schema = OutcomeResultSchema()
-    alignments = res_schema.dump(outcomes, many=True)
+    outcomes = db.session.execute(outcomes_stmt, dict(user_id=user_id, current_term=current_term.id))
+    
+    # format outcome results into json format
+    alignments = [alignment_dict(a) for a in outcomes]
+
     return alignments, grades, user
+
+
+def alignment_dict(ores):
+    alignment =  {
+        "id": ores["ores_id"],
+        "outcome": {
+            "id": ores["o_id"],
+            "display_name": ores["o_display_name"],
+            "title": ores["o_title"]
+        },
+        "last_updated": datetime.strftime(ores["ores_last_updated"], '%Y-%m-%dT%H:%M:%S%z'),
+        "alignment": {
+            "id": ores["a_id"],
+            "name": ores["a_name"]
+        },
+        "course": ores["c_id"],
+        "score": ores["ores_score"],
+        "submitted_or_assessed_at": datetime.strftime(ores["ores_submitted_or_assessed_at"], '%Y-%m-%dT%H:%M:%S%z'),
+        "enrollment_term": ores["ores_enrollment_term"],
+        "user": ores["ores_user_id"]
+    }
+    return alignment

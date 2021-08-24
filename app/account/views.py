@@ -18,7 +18,7 @@ from app.models import Record, EnrollmentTerm
 from app.queries import get_calculation_dictionaries, get_enrollment_term
 from app.user.views import get_user_dash_data
 from utilities.canvas_api import get_course_users
-
+from cron import run
 from utilities.helpers import format_users, error
 
 
@@ -142,3 +142,13 @@ def grade_report(lti=lti):
     resp.headers["Content-Disposition"] = "attachment; filename=export.csv"
     resp.headers["Content-Type"] = "text/csv"
     return resp
+
+
+@blueprint.route("manual_sync", methods=["GET", "POST"])
+def manual_sync():
+    # run the whole thing
+    if request.method == "POST":
+        return "hellooooo"
+    # run()
+    
+    return render_template("account/manual_sync.html")

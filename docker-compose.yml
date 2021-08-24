@@ -1,0 +1,17 @@
+version: "3.7"
+
+services:
+    db:
+      image: postgres
+      restart: always
+      ports: 
+        - "5432:5432"
+      environment:
+        - POSTGRES_USER=TheDoctor
+        - POSTGRES_PASSWORD=secret
+        - PGDATA=/var/lib/postgresql/data/pgdata
+      volumes:
+        - db:/var/lib/postgresql/data/pgdata
+
+volumes:
+    db:

@@ -1,0 +1,9 @@
+{% extends 'base.html' %} {% block navbar %} {% include 'account/navbar.html' %}
+{% endblock %} {% block content %}
+<div class="container">
+  <p>Push the button below if you want manually trigger a sync!!</p>
+  <form method="post" action="{{ url_for('account.manual_sync') }}">
+    <input type="submit" value="SYNC ALL THE THINGS!!" name="Sync All" class="btn btn-primary"/>
+    </form>
+</div>
+{% endblock %}

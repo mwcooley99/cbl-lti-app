@@ -1,5 +1,6 @@
 # from app import db, ma
 from app.extensions import db, ma
+from datetime import datetime
 
 
 class EnrollmentTerm(db.Model):
@@ -178,6 +179,15 @@ class CanvasApiToken(db.Model):
     __tablename__ = "canvas_api_tokens"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     token = db.Column(db.String, unique=True, nullable=False)
+
+class TimeMixin(object):
+    #Keep track when records are created and updated.
+    created_on = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_on = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class SyncRecord(db.Model, TimeMixin):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    is_complete = db.Column(db.Boolean, nullable=False)
 
 
 # JSON Serialization

@@ -14,13 +14,14 @@ import pandas as pd
 from pylti.flask import lti
 
 from app.extensions import db
-from app.models import Record, EnrollmentTerm
+from app.models import Record, EnrollmentTerm, Task
 from app.queries import get_calculation_dictionaries, get_enrollment_term
 from app.user.views import get_user_dash_data
 from utilities.canvas_api import get_course_users
 from cron import run
 from utilities.helpers import format_users, error
-
+from app.tasks import launch_task
+import rq
 
 # from .forms import GradeReportForm
 
@@ -146,9 +147,12 @@ def grade_report(lti=lti):
 
 @blueprint.route("manual_sync", methods=["GET", "POST"])
 def manual_sync():
-    # run the whole thing
-    if request.method == "POST":
-        return "hellooooo"
-    # run()
-    
-    return render_template("account/manual_sync.html")
+    progress = None
+    return render_template("account/manual_sync.html", progress=progress)
+
+@blueprint.route("run_sync")
+def run_sync():
+    task = launch_task('example', 'bla bla', seconds=30)
+    db.session.commit()
+
+    return redirect(url_for("account.manual_sync"))

@@ -1,6 +1,9 @@
 # from app import db, ma
 from app.extensions import db, ma
 from datetime import datetime
+import redis
+import rq
+from flask import current_app
 
 
 class EnrollmentTerm(db.Model):
@@ -185,9 +188,22 @@ class TimeMixin(object):
     created_on = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_on = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-class SyncRecord(db.Model, TimeMixin):
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    is_complete = db.Column(db.Boolean, nullable=False)
+class Task(db.Model):
+    id = db.Column(db.String(36), primary_key=True)
+    name = db.Column(db.String(128), index=True)
+    description = db.Column(db.String(128))
+    complete = db.Column(db.Boolean, default=False)
+
+    def get_rq_job(self):
+        try:
+            rq_job = rq.job.Job.fetch(self.id, connection=current_app.redis)
+        except (redis.exceptions.RedisError, rq.exceptions.NoSuchJobError):
+            return None
+        return rq_job
+
+    def get_progress(self):
+        job = self.get_rq_job()
+        return job.meta.get('progress', 0) if job is not None else 100
 
 
 # JSON Serialization

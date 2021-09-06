@@ -25,6 +25,7 @@ class DevelopmentConfig(BaseConfig):
     SQLALCHEMY_ECHO = True
     # SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_SAMESITE = "None"
+    REDIS_URL = os.getenv("REDIS_URL")
 
 
 class StageConfig(BaseConfig):

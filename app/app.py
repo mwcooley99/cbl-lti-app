@@ -2,6 +2,8 @@
 """The app module, containing the app factory function."""
 import logging
 import sys
+from redis import Redis
+import rq
 
 from flask import Flask, render_template
 
@@ -24,6 +26,8 @@ def create_app(config_object="app.settings.configClass"):
     config_object = settings.configClass
     app = Flask(__name__.split(".")[0])
     app.config.from_object(config_object)
+    app.redis = Redis.from_url(app.config['REDIS_URL'])
+    app.task_queue = rq.Queue('cbl-tasks', connection=app.redis)
 
     register_extensions(app)
     register_blueprints(app)
@@ -81,7 +85,7 @@ def register_shellcontext(app):
         from app.models import Outcome, Course, Record, Grade, \
             User, EnrollmentTerm, GradeCalculation, \
             UserSchema, GradeSchema, Alignment, OutcomeResult, CourseUserLink, \
-            OutcomeSchema, OutcomeResultSchema, AlignmentSchema
+            OutcomeSchema, OutcomeResultSchema, AlignmentSchema, Task
 
         return dict(db=db, Outcome=Outcome,
                     Course=Course, Record=Record, Grade=Grade, User=User,
@@ -91,7 +95,7 @@ def register_shellcontext(app):
                     EnrollmentTerm=EnrollmentTerm, GradeCriteria=GradeCalculation,
                     OutcomeSchema=OutcomeSchema,
                     OutcomeResultSchema=OutcomeResultSchema,
-                    AlignmentSchema=AlignmentSchema)
+                    AlignmentSchema=AlignmentSchema, Task=Task)
 
     app.shell_context_processor(shell_context)
 

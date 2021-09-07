@@ -1,13 +1,13 @@
 import time
 from rq import get_current_job
-# from app.app import create_app
+from app.app import create_app
 from app.models import Task
 from app.extensions import db
 from flask import current_app
 import sys
 
-# app = create_app()
-# app.app_context()
+app = create_app()
+app.app_context()
 
 def example(seconds):
     try:
@@ -26,12 +26,12 @@ def example(seconds):
 
 
 
-# def launch_task(name, description, *args, **kwargs):
-#     rq_job = current_app.task_queue.enqueue('app.tasks.' + name,
-#                                             *args, **kwargs)
-#     task = Task(id=rq_job.get_id(), name=name, description=description)
-#     db.session.add(task)
-#     return task
+def launch_task(name, description, *args, **kwargs):
+    rq_job = current_app.task_queue.enqueue('app.tasks.' + name,
+                                            *args, **kwargs)
+    task = Task(id=rq_job.get_id(), name=name, description=description)
+    db.session.add(task)
+    return task
 
 def _set_task_progress(progress):
     job = get_current_job()

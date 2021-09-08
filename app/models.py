@@ -193,6 +193,9 @@ class Task(db.Model):
     name = db.Column(db.String(128), index=True)
     description = db.Column(db.String(128))
     complete = db.Column(db.Boolean, default=False)
+    status = db.Column(db.String())
+    started_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    completed_at = db.Column(db.DateTime)
 
     def get_rq_job(self):
         try:

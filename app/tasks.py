@@ -36,9 +36,9 @@ def full_sync():
     try:
         _set_task_progress(0)
         run()
-    except:
+    except Exception as e:
         _set_task_progress(100)
-        print("there was an error")
+        print(f"there was an error: {e}")
     finally:
         _set_task_progress(100)
         print('Task Completed')

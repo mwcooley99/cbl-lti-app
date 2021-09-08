@@ -149,7 +149,8 @@ def manual_sync():
 
 @blueprint.route("run_sync")
 def run_sync():
-    task = launch_task('example', 'bla bla', seconds=30)
+    # set time limit to 4 hours
+    task = launch_task('full_sync', 'running a full sync', job_timeout=14400)
     db.session.commit()
 
     return redirect(url_for("account.manual_sync"))

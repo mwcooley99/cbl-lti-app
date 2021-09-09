@@ -21,6 +21,7 @@ from utilities.canvas_api import get_course_users
 from cron import run
 from utilities.helpers import format_users, error
 from app.task_utils import launch_task
+from rq import get_current_job
 from app.account import blueprint
 
 from app.app import create_app
@@ -144,8 +145,12 @@ def grade_report(lti=lti):
 
 @blueprint.route("manual_sync", methods=["GET", "POST"])
 def manual_sync():
-    progress = None
-    return render_template("account/manual_sync.html", progress=progress)
+    task = Task.query.filter(Task.complete == False and Task.name == 'full_sync').first()
+    if task is None:
+        completed_task = Task.query.filter(Task.complete == True and Task.name == 'full_sync').order_by(Task.completed_at.desc()).first()
+    else:
+        completed_task = None
+    return render_template("account/manual_sync.html", task=task, completed_task=completed_task)
 
 @blueprint.route("run_sync")
 def run_sync():

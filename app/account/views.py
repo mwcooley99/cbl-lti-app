@@ -143,6 +143,7 @@ def grade_report(lti=lti):
     return resp
 
 
+@lti(error=error, request="session", role="admin", app=app)
 @blueprint.route("manual_sync", methods=["GET", "POST"])
 def manual_sync():
     task = Task.query.filter(Task.complete == False and Task.name == 'full_sync').first()
@@ -152,6 +153,8 @@ def manual_sync():
         completed_task = None
     return render_template("account/manual_sync.html", task=task, completed_task=completed_task)
 
+
+@lti(error=error, request="session", role="admin", app=app)
 @blueprint.route("run_sync")
 def run_sync():
     # set time limit to 4 hours

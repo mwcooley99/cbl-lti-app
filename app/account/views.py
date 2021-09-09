@@ -145,7 +145,7 @@ def grade_report(lti=lti):
 
 @blueprint.route("manual_sync", methods=["GET", "POST"])
 @lti(error=error, request="session", role="admin", app=app)
-def manual_sync():
+def manual_sync(lti=lti):
     task = Task.query.filter(Task.complete == False and Task.name == 'full_sync').first()
     if task is None:
         completed_task = Task.query.filter(Task.complete == True and Task.name == 'full_sync').order_by(Task.completed_at.desc()).first()
@@ -156,7 +156,7 @@ def manual_sync():
 
 @blueprint.route("run_sync")
 @lti(error=error, request="session", role="admin", app=app)
-def run_sync():
+def run_sync(lti=lti):
     # set time limit to 4 hours
     task = launch_task('full_sync', 'running a full sync', job_timeout=14400)
     db.session.commit()

@@ -41,7 +41,7 @@ def run():
     for term in sync_terms:
         print(f"syncing term {term['id']}")
         
-        update_courses(term, engine)
+        update_courses(term, engine) # TODO - create `update_all_courses` and decompose the function
         print(f"courses updated at {datetime.now()}")
 
         update_course_students(term, engine)

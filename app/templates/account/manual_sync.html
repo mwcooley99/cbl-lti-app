@@ -1,0 +1,13 @@
+{% extends 'base.html' %} {% block navbar %} {% include 'account/navbar.html' %}
+{% endblock %} {% block content %}
+<div class="container">
+  <p>Push the button below if you want manually trigger a sync!!</p>
+  {% if not task %}
+  <p><a class="btn btn-primary" href="{{ url_for('account.run_sync') }}">Start Sync</a></p>
+  <p>There is no running sync. The most recent sync completed at: {{ completed_task.completed_at }} UTC</p>
+  {% else %}
+  <a class="btn btn-primary disabled" href="{{ url_for('account.run_sync') }}" aria-disabled="true">Disabled until sync is complete.</a>
+  <p>The current task started at: {{ task.started_at }}</p>
+  {% endif %}
+</div>
+{% endblock %}

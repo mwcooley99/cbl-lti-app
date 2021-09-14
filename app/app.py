@@ -2,17 +2,17 @@
 """The app module, containing the app factory function."""
 import logging
 import sys
+from redis import Redis
+import rq
 
 from flask import Flask, render_template
 
 import app.settings as settings
-from app import commands, course, user, public, \
-    account, api  # Need to import modules that contain blueprints
+from app import commands, course, user, public, api  # Need to import modules that contain blueprints
 from app.extensions import (
     db,
     ma,
-    migrate,
-    admin
+    migrate
 )
 
 
@@ -24,14 +24,16 @@ def create_app(config_object="app.settings.configClass"):
     config_object = settings.configClass
     app = Flask(__name__.split(".")[0])
     app.config.from_object(config_object)
+    app.redis = Redis.from_url(app.config['REDIS_URL'])
+    app.task_queue = rq.Queue('cbl-tasks', connection=app.redis)
 
-    register_extensions(app)
-    register_blueprints(app)
     register_errorhandlers(app)
     register_shellcontext(app)
     register_commands(app)
     configure_logger(app)
     register_filters(app)
+    register_blueprints(app)
+    register_extensions(app)
     return app
 
 
@@ -41,6 +43,7 @@ def register_extensions(app):
     db.init_app(app)
     ma.init_app(app)
     migrate.init_app(app, db, compare_server_default=True)
+    from app.extensions import admin
     admin.init_app(app)
 
     # Import models
@@ -52,7 +55,8 @@ def register_blueprints(app):
     app.register_blueprint(user.views.blueprint)
     app.register_blueprint(course.views.blueprint)
     app.register_blueprint(public.views.blueprint)
-    app.register_blueprint(account.views.blueprint)
+    from app.account import blueprint as account_bp
+    app.register_blueprint(account_bp)
     app.register_blueprint(api.views.blueprint)
     return None
 
@@ -81,7 +85,7 @@ def register_shellcontext(app):
         from app.models import Outcome, Course, Record, Grade, \
             User, EnrollmentTerm, GradeCalculation, \
             UserSchema, GradeSchema, Alignment, OutcomeResult, CourseUserLink, \
-            OutcomeSchema, OutcomeResultSchema, AlignmentSchema
+            OutcomeSchema, OutcomeResultSchema, AlignmentSchema, Task
 
         return dict(db=db, Outcome=Outcome,
                     Course=Course, Record=Record, Grade=Grade, User=User,
@@ -91,7 +95,7 @@ def register_shellcontext(app):
                     EnrollmentTerm=EnrollmentTerm, GradeCriteria=GradeCalculation,
                     OutcomeSchema=OutcomeSchema,
                     OutcomeResultSchema=OutcomeResultSchema,
-                    AlignmentSchema=AlignmentSchema)
+                    AlignmentSchema=AlignmentSchema, Task=Task)
 
     app.shell_context_processor(shell_context)
 

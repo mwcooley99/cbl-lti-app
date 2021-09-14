@@ -14,24 +14,23 @@ import pandas as pd
 from pylti.flask import lti
 
 from app.extensions import db
-from app.models import Record, EnrollmentTerm
+from app.models import Record, EnrollmentTerm, Task
 from app.queries import get_calculation_dictionaries, get_enrollment_term
 from app.user.views import get_user_dash_data
 from utilities.canvas_api import get_course_users
-
+from cron import run
 from utilities.helpers import format_users, error
+from app.task_utils import launch_task
+from rq import get_current_job
+from app.account import blueprint
 
+from app.app import create_app
 
-# from .forms import GradeReportForm
-
-
-blueprint = Blueprint(
-    "account", __name__, url_prefix="/account", static_folder="../static"
-)
-
+app = create_app()
+app.app_context().push()
 
 @blueprint.route("/launch", methods=["POST", "GET"])
-@lti(error=error, request="initial", role="admin", app=current_app)
+@lti(error=error, request="initial", role="admin", app=app)
 def launch(lti=lti):
     """
     Authorization for course navigation
@@ -58,7 +57,7 @@ def launch(lti=lti):
 
 
 @blueprint.route("/incompletes")
-@lti(error=error, request="session", role="admin", app=current_app)
+@lti(error=error, request="session", role="admin", app=app)
 def incompletes(lti=lti):
     enrollment_term = get_enrollment_term()
     stmt = db.text(
@@ -89,7 +88,7 @@ def incompletes(lti=lti):
 
 
 @blueprint.route("student_dashboard/<user_id>")
-@lti(error=error, request="session", role="admin", app=current_app)
+@lti(error=error, request="session", role="admin", app=app)
 def student_dashboard(user_id, lti=lti):
     record = Record.query.order_by(Record.id.desc()).first()
     alignments, grades, user = get_user_dash_data(user_id)
@@ -119,7 +118,7 @@ def student_dashboard(user_id, lti=lti):
 
 
 @blueprint.route("grade_report", methods=["POST", "GET"])
-@lti(error=error, request="session", role="admin", app=current_app)
+@lti(error=error, request="session", role="admin", app=app)
 def grade_report(lti=lti):
     stmt = """
         SELECT 	u.name student_name,
@@ -142,3 +141,24 @@ def grade_report(lti=lti):
     resp.headers["Content-Disposition"] = "attachment; filename=export.csv"
     resp.headers["Content-Type"] = "text/csv"
     return resp
+
+
+@blueprint.route("manual_sync", methods=["GET", "POST"])
+@lti(error=error, request="session", role="admin", app=app)
+def manual_sync(lti=lti):
+    task = Task.query.filter(Task.complete == False and Task.name == 'full_sync').first()
+    if task is None:
+        completed_task = Task.query.filter(Task.complete == True and Task.name == 'full_sync').order_by(Task.completed_at.desc()).first()
+    else:
+        completed_task = None
+    return render_template("account/manual_sync.html", task=task, completed_task=completed_task)
+
+
+@blueprint.route("run_sync")
+@lti(error=error, request="session", role="admin", app=app)
+def run_sync(lti=lti):
+    # set time limit to 4 hours
+    task = launch_task('full_sync', 'running a full sync', job_timeout=14400)
+    db.session.commit()
+
+    return redirect(url_for("account.manual_sync"))

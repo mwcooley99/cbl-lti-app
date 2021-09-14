@@ -2,14 +2,14 @@ from flask import session
 from flask_admin.contrib.sqla import ModelView
 
 from app.extensions import admin, db
-from app.models import EnrollmentTerm, GradeCalculation, CanvasApiToken
+from app.models import EnrollmentTerm, GradeCalculation, Task
 
 
 class CblModelView(ModelView):
     def is_accessible(self):
         if "role" in session:
             return session["role"] == "Admin"
-        return False
+        return True
 
     def inaccessible_callback(self, name, **kwargs):
         # redirect to login page if user doesn't have access
@@ -47,6 +47,13 @@ class GradeCriteriaView(CblModelView):
         grade_rank="1 = Highest grade. This order must be correct for grades to calculate correctly"
     )
 
+class TaskView(CblModelView):
+    column_editable_list = ["complete"]
+    column_descriptions = dict(
+        complete = "If a job is clearly dead, but isn't showing as complete (i.e. It's been running for over 4 hours). Change this to `true` to allow a new job."
+    )
+
 
 admin.add_view(EnrollmentTermView(EnrollmentTerm, db.session))
 admin.add_view(GradeCriteriaView(GradeCalculation, db.session))
+admin.add_view(TaskView(Task, db.session))

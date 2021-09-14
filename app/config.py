@@ -25,6 +25,7 @@ class DevelopmentConfig(BaseConfig):
     SQLALCHEMY_ECHO = True
     # SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_SAMESITE = "None"
+    REDIS_URL = os.getenv("REDIS_URL")
 
 
 class StageConfig(BaseConfig):
@@ -39,6 +40,7 @@ class StageConfig(BaseConfig):
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "None"
+    REDIS_URL = os.getenv("REDIS_URL")
 
 
 class ProductionConfig(BaseConfig):
@@ -53,6 +55,7 @@ class ProductionConfig(BaseConfig):
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "None"
+    REDIS_URL = os.getenv("REDIS_URL")
 
 
 class TestingConfig(BaseConfig):

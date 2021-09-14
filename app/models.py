@@ -1,5 +1,9 @@
 # from app import db, ma
 from app.extensions import db, ma
+from datetime import datetime
+import redis
+import rq
+from flask import current_app
 
 
 class EnrollmentTerm(db.Model):
@@ -178,6 +182,31 @@ class CanvasApiToken(db.Model):
     __tablename__ = "canvas_api_tokens"
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     token = db.Column(db.String, unique=True, nullable=False)
+
+class TimeMixin(object):
+    #Keep track when records are created and updated.
+    created_on = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_on = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class Task(db.Model):
+    id = db.Column(db.String(36), primary_key=True)
+    name = db.Column(db.String(128), index=True)
+    description = db.Column(db.String(128))
+    complete = db.Column(db.Boolean, default=False)
+    status = db.Column(db.String())
+    started_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    completed_at = db.Column(db.DateTime)
+
+    def get_rq_job(self):
+        try:
+            rq_job = rq.job.Job.fetch(self.id, connection=current_app.redis)
+        except (redis.exceptions.RedisError, rq.exceptions.NoSuchJobError):
+            return None
+        return rq_job
+
+    def get_progress(self):
+        job = self.get_rq_job()
+        return job.meta.get('progress', 0) if job is not None else 100
 
 
 # JSON Serialization

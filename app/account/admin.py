@@ -9,7 +9,7 @@ class CblModelView(ModelView):
     def is_accessible(self):
         if "role" in session:
             return session["role"] == "Admin"
-        return True
+        return False
 
     def inaccessible_callback(self, name, **kwargs):
         # redirect to login page if user doesn't have access

@@ -13,3 +13,7 @@ node_modules
 secrets/
 grade_reports.ipynb
 pyrightconfig.json
+secrets/*
+.python-version
+*.json
+*.ipynb

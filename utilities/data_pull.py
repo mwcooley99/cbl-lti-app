@@ -12,6 +12,7 @@ from utilities.canvas_api import (
     get_course_users,
     get_users,
     get_enrollment_terms,
+    get_sections
 )
 from utilities.cbl_calculator import calculate_traditional_grade
 from utilities.db_functions import (
@@ -381,7 +382,7 @@ def update_course_students(current_term, engine):
     # Query current courses
     courses = get_db_courses(engine, current_term_id)
     pattern = "@dtech|Teacher Assistant|LAB Day|FIT|Innovation Diploma FIT|Beyond D.Tech"
-
+    
     for course in courses:
         course_id = course[0]
         course_name = course[1]
@@ -390,22 +391,41 @@ def update_course_students(current_term, engine):
             print(course_name)
             continue
 
-        # Get course students
-        students = get_course_users({"id": course_id})
-        # Get user IDs in a list
-        try: 
-            student_dicts = [
-                {"course_id": course_id, "user_id": student["id"]} for student in students
-            ]
-        except:
-            print(f"Error parsing course students for course_id {course_id}")
-            continue
+        # Get course sections + students
+        sections = get_sections(course_id)
 
-        if student_dicts:
+        try:
+            student_dicts = []
+            # parse sections
+            for section in sections:
+                section_id = section["id"]
+                section_name = section["name"]
+                if not section["students"]:
+                    print(f"Section {section_id} has no students...skipping")
+                    continue
+                for student in section["students"]:
+                    # Check if the enrollment is active:
+                    # TODO: add this field to the model and use enrollments instead. This will require pulling all sections too. The Enrollments api doesn't pull a human readable name
+                    if student["enrollments"][0]["enrollment_state"] == "active" and student["enrollments"][0]["sis_import_id"]:
+                        _temp = {
+                            "user_id": student["id"],
+                            "course_id": course_id,
+                            "section_id": section_id,
+                            "section_name": section_name
+                        }
+                        student_dicts.append(_temp)
+        except Exception as e:
+            print(e)
+            print(f"Error parsing course students for course_id {course_id}")
+            continue  #TODO: Probably remove this...
+ 
+        if student_dicts: # TODO: update these functions to handle new model and update model to include section_id/name
             # delete previous course roster
-            delete_course_students(course["id"], engine)
+            delete_course_students(course_id, engine)
             # insert current roster
             insert_course_students(student_dicts, engine)
+
+
 
 
 def update_courses(current_term, engine):

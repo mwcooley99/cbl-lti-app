@@ -120,20 +120,25 @@ def student_dashboard(user_id, lti=lti):
 @blueprint.route("grade_report", methods=["POST", "GET"])
 @lti(error=error, request="session", role="admin", app=app)
 def grade_report(lti=lti):
+    # TODO: Add section to this report.
     stmt = """
-        SELECT 	u.name student_name,
-		right(u.sis_user_id, length(u.sis_user_id) -8) as studentid,
-		u.login_id as email,
-		c.name as course_name,
-		g.grade,
-		g.course_id,
-		g.threshold,
-		g.min_score
-    FROM grades g
-        LEFT JOIN courses c on c.id = g.course_id
-        Left JOIN users u on u.id = g.user_id
-        LEFT JOIN enrollment_terms et on et.id = c.enrollment_term_id
-    WHERE et.current_term;
+         SELECT 	
+            u.name student_name,
+            right(u.sis_user_id, length(u.sis_user_id) -8) as studentid,
+            u.login_id as email,
+            c.name as course_name, 
+            g.grade,
+            g.course_id,
+            g.threshold,
+            g.min_score,
+            split_part(cu.section_name, '-', 3) as period
+        FROM grades g
+            LEFT JOIN courses c on c.id = g.course_id
+            Left JOIN users u on u.id = g.user_id
+            LEFT JOIN enrollment_terms et on et.id = c.enrollment_term_id
+            LEFT JOIN course_user_link cu on cu.course_id = c.id
+                and cu.user_id = u.id
+        WHERE et.current_term
     """
 
     df = pd.read_sql(stmt, db.session.connection())
@@ -142,6 +147,8 @@ def grade_report(lti=lti):
     resp.headers["Content-Type"] = "text/csv"
     return resp
 
+
+# TODO: Add route for menu item (same as above) that will download csv formatted with demo info from All Student G-sheet.
 
 @blueprint.route("manual_sync", methods=["GET", "POST"])
 @lti(error=error, request="session", role="admin", app=app)

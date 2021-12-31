@@ -4,7 +4,7 @@ services:
     db:
       image: postgres
       restart: always
-      ports: 
+      ports:
         - "5432:5432"
       environment:
         - POSTGRES_USER=TheDoctor
@@ -14,7 +14,7 @@ services:
         - db:/var/lib/postgresql/data/pgdata
     redis:
       image: "redis:alpine"
-      ports: 
+      ports:
         - 6379:6379
 
 volumes:

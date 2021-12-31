@@ -10,3 +10,5 @@ node_modules
 .vscode/
 .ipynb_checkpoints/
 .idea/
+secrets/
+grade_reports.ipynb

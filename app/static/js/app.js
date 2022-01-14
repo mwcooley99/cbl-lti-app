@@ -48,6 +48,25 @@ function makeCourseTable(students, alignments) {
 }
 
 function makeMasteryTable(grades, outcomes, masteryTable) {
+  // Reformat the grade names
+  grades.map((value, index) => {
+    let name = value.user_name.split(/\s+/);
+    value.user_name = name.pop() + ', ' + name.join(' ');
+    return value;
+  });
+
+  grades.sort((a, b) => {
+    let fa = a.user_name.toLowerCase();
+    let fb = b.user_name.toLowerCase();
+    if (fa < fb) {
+      return -1;
+    }
+    if (fa > fb) {
+      return 1;
+    }
+    return 0;
+  });
+
   // Create the columns for the table
   const columns = outcomes.map(function (value, index) {
     let temp_dict = {

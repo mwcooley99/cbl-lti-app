@@ -1,7 +1,7 @@
 function makeIncompleteTable(incompletes, table){
     incompletes.map((value, index) => {
         console.log(value);
-        let name = value.name.split(/\s+/);
+        let name = value.name.trim().split(/\s+/);
         value.name = name.pop() + ', ' + name.join(' ');
         return value;
       });

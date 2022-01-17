@@ -50,7 +50,7 @@ function makeCourseTable(students, alignments) {
 function makeMasteryTable(grades, outcomes, masteryTable) {
   // Reformat the grade names
   grades.map((value, index) => {
-    let name = value.user_name.split(/\s+/);
+    let name = value.user_name.trim().split(/\s+/);
     value.user_name = name.pop() + ', ' + name.join(' ');
     return value;
   });

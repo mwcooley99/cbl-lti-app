@@ -124,7 +124,7 @@ def grade_report(lti=lti):
         SELECT 	u.name student_name,
 		right(u.sis_user_id, length(u.sis_user_id) -8) as studentid,
 		u.login_id as email,
-		c.name as course_name, 
+		c.name as course_name,
 		g.grade,
 		g.course_id,
 		g.threshold,

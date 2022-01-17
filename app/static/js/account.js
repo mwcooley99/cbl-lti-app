@@ -1,4 +1,22 @@
 function makeIncompleteTable(incompletes, table){
+    incompletes.map((value, index) => {
+        console.log(value);
+        let name = value.name.trim().split(/\s+/);
+        value.name = name.pop() + ', ' + name.join(' ');
+        return value;
+      });
+
+    incompletes.sort((a, b) => {
+        let fa = a.name.toLowerCase();
+        let fb = b.name.toLowerCase();
+        if (fa < fb) {
+          return -1;
+        }
+        if (fa > fb) {
+          return 1;
+        }
+        return 0;
+      });
     let columns = [
         {
             field: 'name',

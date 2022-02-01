@@ -405,7 +405,6 @@ def update_course_students(current_term, engine):
                     continue
                 for student in section["students"]:
                     # Check if the enrollment is active:
-                    # TODO: add this field to the model and use enrollments instead. This will require pulling all sections too. The Enrollments api doesn't pull a human readable name
                     if student["enrollments"][0]["enrollment_state"] == "active" and student["enrollments"][0]["sis_import_id"]:
                         _temp = {
                             "user_id": student["id"],
@@ -419,7 +418,7 @@ def update_course_students(current_term, engine):
             print(f"Error parsing course students for course_id {course_id}")
             continue  #TODO: Probably remove this...
  
-        if student_dicts: # TODO: update these functions to handle new model and update model to include section_id/name
+        if student_dicts:
             # delete previous course roster
             delete_course_students(course_id, engine)
             # insert current roster

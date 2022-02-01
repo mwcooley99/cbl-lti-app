@@ -4,7 +4,7 @@ import pandas as pd
 import requests
 from pandas.io.json import json_normalize
 
-from utilities.db_functions import upsert_enrollment_terms, get_token
+from utilities.db_functions import upsert_enrollment_terms, get_token, get_db_courses
 
 
 def get_headers():
@@ -221,7 +221,16 @@ def get_enrollment_terms():
     return terms
 
 
+def get_sections(course_id):
+    headers = get_headers()
+    url = f"https://dtechhs.instructure.com/api/v1/courses/{course_id}/sections"
+    querystring = {"per_page": "100", "include[]": ["students", "enrollments"]}
+    response = requests.request("GET", url, headers=headers, params=querystring)
+
+    sections = response.json()
+
+    return sections
+
+
 if __name__ == "__main__":
-    terms = get_enrollment_terms()
-    upsert_enrollment_terms(terms)
-    print(terms)
+    get_sections(1503)

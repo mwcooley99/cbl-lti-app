@@ -12,6 +12,7 @@ from utilities.canvas_api import (
     get_course_users,
     get_users,
     get_enrollment_terms,
+    get_sections
 )
 from utilities.cbl_calculator import calculate_traditional_grade
 from utilities.db_functions import (
@@ -100,7 +101,7 @@ def format_outcome(outcome):
             "title": outcome["title"],
             "calculation_int": outcome["calculation_int"],
         }
-    except: 
+    except:
         temp_dict = {
             "id": outcome["id"],
             "display_name": outcome["display_name"],
@@ -124,7 +125,7 @@ def pull_outcome_results(current_term, engine):
     # get all courses for current term todo - pull from database
     current_term_id = current_term["id"]
     courses = get_courses(current_term_id)
-    
+
 
     # get outcome result rollups for each course and list of outcomes
     pattern = "@dtech|Teacher Assistant|LAB Day|FIT|Innovation Diploma FIT"
@@ -161,7 +162,7 @@ def pull_outcome_results(current_term, engine):
                 outcome_results.append(res)
 
         # outcome_results = [i for n, i in enumerate(outcome_results) if i not in outcome_results[n + 1:]]
-        
+
         # Format outcomes
         outcomes = [format_outcome(outcome) for outcome in outcomes]
         # Filter out duplicate outcomes
@@ -210,12 +211,12 @@ def insert_grades(current_term, engine):
         cut_off_date = current_term["end_at"]
 
     outcome_results = query_current_outcome_results(current_term["id"], engine)
-    
-    # Check if there are any outcome results in the current_term. If not exit. 
+
+    # Check if there are any outcome results in the current_term. If not exit.
     if outcome_results.empty:
         print(f"Term {current_term['id']} has no outcome results.")
         return None
-    
+
     drop_eligible_results = outcome_results.loc[
         outcome_results["submitted_or_assessed_at"] < cut_off_date
     ]
@@ -390,22 +391,40 @@ def update_course_students(current_term, engine):
             print(course_name)
             continue
 
-        # Get course students
-        students = get_course_users({"id": course_id})
-        # Get user IDs in a list
-        try: 
-            student_dicts = [
-                {"course_id": course_id, "user_id": student["id"]} for student in students
-            ]
-        except:
+        # Get course sections + students
+        sections = get_sections(course_id)
+
+        try:
+            student_dicts = []
+            # parse sections
+            for section in sections:
+                section_id = section["id"]
+                section_name = section["name"]
+                if not section["students"]:
+                    print(f"Section {section_id} has no students...skipping")
+                    continue
+                for student in section["students"]:
+                    # Check if the enrollment is active:
+                    if student["enrollments"][0]["enrollment_state"] == "active" and student["enrollments"][0]["sis_import_id"]:
+                        _temp = {
+                            "user_id": student["id"],
+                            "course_id": course_id,
+                            "section_id": section_id,
+                            "section_name": section_name
+                        }
+                        student_dicts.append(_temp)
+        except Exception as e:
+            print(e)
             print(f"Error parsing course students for course_id {course_id}")
-            continue
+            continue  #TODO: Probably remove this...
 
         if student_dicts:
             # delete previous course roster
-            delete_course_students(course["id"], engine)
+            delete_course_students(course_id, engine)
             # insert current roster
             insert_course_students(student_dicts, engine)
+
+
 
 
 def update_courses(current_term, engine):

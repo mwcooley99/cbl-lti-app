@@ -136,4 +136,6 @@ CourseUserLink = Table(
     metadata,
     Column("course_id", ForeignKey("courses.id"), primary_key=True, nullable=False),
     Column("user_id", ForeignKey("users.id"), primary_key=True, nullable=False),
+    Column("section_id", Integer),
+    Column("section_name", String)
 )

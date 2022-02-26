@@ -10,6 +10,7 @@ services:
         - POSTGRES_USER=TheDoctor
         - POSTGRES_PASSWORD=secret
         - PGDATA=/var/lib/postgresql/data/pgdata
+        - POSTGRES_HOST_AUTH_METHOD=trust
       volumes:
         - db:/var/lib/postgresql/data/pgdata
     redis:

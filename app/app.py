@@ -34,6 +34,8 @@ def create_app(config_object="app.settings.configClass"):
     register_filters(app)
     register_blueprints(app)
     register_extensions(app)
+    with app.app_context():
+        db.reflect()
     return app
 
 
@@ -91,7 +93,7 @@ def register_shellcontext(app):
                     Course=Course, Record=Record, Grade=Grade, User=User,
                     UserSchema=UserSchema, GradeSchema=GradeSchema,
                     Alignment=Alignment, OutcomeResult=OutcomeResult,
-                    CourseUserLink=Enrollment,
+                    Enrollment=Enrollment,
                     EnrollmentTerm=EnrollmentTerm, GradeCriteria=GradeCalculation,
                     OutcomeSchema=OutcomeSchema,
                     OutcomeResultSchema=OutcomeResultSchema,

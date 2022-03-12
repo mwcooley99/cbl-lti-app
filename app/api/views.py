@@ -22,7 +22,7 @@ from app.models import (
     Grade,
     User,
     OutcomeResult,
-    CourseUserLink,
+    Enrollment,
     OutcomeResultSchema,
     OutcomeSchema,
     EnrollmentTerm,

@@ -84,14 +84,14 @@ def register_shellcontext(app):
         # TODO - move import...
         from app.models import Outcome, Course, Record, Grade, \
             User, EnrollmentTerm, GradeCalculation, \
-            UserSchema, GradeSchema, Alignment, OutcomeResult, CourseUserLink, \
+            UserSchema, GradeSchema, Alignment, OutcomeResult, Enrollment, \
             OutcomeSchema, OutcomeResultSchema, AlignmentSchema, Task
 
         return dict(db=db, Outcome=Outcome,
                     Course=Course, Record=Record, Grade=Grade, User=User,
                     UserSchema=UserSchema, GradeSchema=GradeSchema,
                     Alignment=Alignment, OutcomeResult=OutcomeResult,
-                    CourseUserLink=CourseUserLink,
+                    CourseUserLink=Enrollment,
                     EnrollmentTerm=EnrollmentTerm, GradeCriteria=GradeCalculation,
                     OutcomeSchema=OutcomeSchema,
                     OutcomeResultSchema=OutcomeResultSchema,

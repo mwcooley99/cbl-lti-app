@@ -7,7 +7,7 @@ from flask import current_app
 
 
 class EnrollmentTerm(db.Model):
-    __tablename__ = "enrollment_terms"
+    __tablename__ = "terms"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     start_at = db.Column(db.DateTime)
@@ -16,10 +16,9 @@ class EnrollmentTerm(db.Model):
     workflow_state = db.Column(db.String)
     sis_term_id = db.Column(db.String)
     sis_import_id = db.Column(db.Integer)
-    cut_off_date = db.Column(db.DateTime)
 
+    cut_off_date = db.Column(db.DateTime)
     current_term = db.Column(db.Boolean, server_default="false", nullable=False)
-    sync_term = db.Column(db.Boolean, server_default="false", nullable=False)
 
 
 class Record(db.Model):
@@ -163,12 +162,12 @@ class Alignment(db.Model):
     outcome_results = db.relationship("OutcomeResult", backref="alignment")
 
 
-class CourseUserLink(db.Model):
-    __tablename__ = "course_user_link"
+class Enrollment(db.Model):
+    __tablename__ = "enrollments"
     course_id = db.Column(db.Integer, db.ForeignKey("courses.id"), primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), primary_key=True)
-    section_id = db.Column(db.Integer)
-    section_name = db.Column(db.String)
+    course_section_id = db.Column(db.Integer)
+
 
 class GradeCalculation(db.Model):
     __tablename__ = "grade_calculation"

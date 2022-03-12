@@ -19,7 +19,7 @@ from app.models import (
     Grade,
     User,
     OutcomeResult,
-    CourseUserLink,
+    Enrollment,
     OutcomeResultSchema,
     OutcomeSchema,
     EnrollmentTerm,
@@ -75,9 +75,9 @@ def dashboard(lti=lti):
 
     # Query users
     users = (
-        CourseUserLink.query.join(User)
-        .options(db.joinedload(CourseUserLink.user, innerjoin=True))
-        .filter(CourseUserLink.course_id == course_id)
+        Enrollment.query.join(User)
+        .options(db.joinedload(Enrollment.user, innerjoin=True))
+        .filter(Enrollment.course_id == course_id)
         .order_by(User.name)
         .all()
     )

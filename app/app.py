@@ -34,8 +34,6 @@ def create_app(config_object="app.settings.configClass"):
     register_filters(app)
     register_blueprints(app)
     register_extensions(app)
-    with app.app_context():
-        db.reflect()
     return app
 
 

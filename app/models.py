@@ -6,20 +6,63 @@ import rq
 from flask import current_app
 
 
+# TODO: add to airflow migrations
+class GradeCalculation(db.Model):
+    __tablename__ = "grade_calculation"
+    __table_args__ = {"schema": "public"}
+    id = db.Column(db.Integer, primary_key=True)
+    grade_rank = db.Column(db.Integer, unique=True, nullable=False)
+    grade = db.Column(db.String, nullable=False)
+    threshold = db.Column(db.Float, nullable=False)
+    min_score = db.Column(db.Float, nullable=False)
+
+
+class Grade(db.Model):
+    __tablename__ = "grades"
+    __table_args__ = {"schema": "public"}
+    id = db.Column(db.Integer, primary_key=True)
+    course_id = db.Column(db.Integer, db.ForeignKey("courses.id"), index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    grade = db.Column(db.String)
+    outcomes = db.Column(db.JSON)
+    record_id = db.Column(db.Integer, db.ForeignKey("records.id"))
+    threshold = db.Column(db.Numeric(asdecimal=False))
+    min_score = db.Column(db.Numeric(asdecimal=False))
+
+    def to_dict(self):
+        """
+        Helper to return dictionary with the joined data included
+        :return:
+        """
+        d = {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
+
+        d["user"] = {
+            k: v for k, v in self.user.__dict__.items() if not k.startswith("_")
+        }
+        # del d['_sa_instance_state']
+        # del d['user']['_sa_instance_state']
+
+        return d
+
+    def __repr__(self):
+        return str(self.__dict__)
+
+
 class EnrollmentTerm(db.Model):
     __tablename__ = "terms"
     id = db.Column(db.Integer, primary_key=True)
-    # name = db.Column(db.String)
-    # start_at = db.Column(db.DateTime)
-    # end_at = db.Column(db.DateTime)
-    # created_at = db.Column(db.DateTime)
-    # workflow_state = db.Column(db.String)
-    # sis_term_id = db.Column(db.String)
-    # sis_import_id = db.Column(db.Integer)
+    created_at = db.Column(db.DateTime)
+    end_at = db.Column(db.DateTime)
+    grading_period_group_id = db.Column(db.Integer)
+    name = db.Column(db.String)
+    sis_import_id = db.Column(db.String)
+    sis_term_id = db.Column(db.String)
+    start_at = db.Column(db.DateTime)
+    workflow_state = db.Column(db.String)
+    cut_off_date = db.Column(db.DateTime)
+    current_term = db.Column(db.Boolean)
+    sync_term = db.Column(db.Boolean)
 
-    # cut_off_date = db.Column(db.DateTime)
-    # current_term = db.Column(db.Boolean, server_default="false", nullable=False)
-    # sync_term = db.Column(db.Boolean, server_default="false", nullable=False)
 
     courses = db.relationship("Course", backref="term")
 
@@ -39,12 +82,11 @@ class Record(db.Model):
 class Course(db.Model):
     __tablename__ = "courses"
     id = db.Column(db.Integer, primary_key=True)
-    # name = db.Column(db.String)
+    name = db.Column(db.String)
     enrollment_term_id = db.Column(db.Integer, db.ForeignKey("terms.id"))
-    # sis_course_id = db.Column(db.String)
+    sis_course_id = db.Column(db.String)
 
     grades = db.relationship("Grade", backref="course")
-    courses = db.relationship("Enrollment", backref="course")
     outcome_results = db.relationship("OutcomeResult", backref="course")
 
     @staticmethod
@@ -91,45 +133,19 @@ class Course(db.Model):
         return str(self.name)
 
 
-class Grade(db.Model):
-    __tablename__ = "grades"
-    id = db.Column(db.Integer, primary_key=True)
-    course_id = db.Column(db.Integer, db.ForeignKey("courses.id"), index=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
-    grade = db.Column(db.String)
-    outcomes = db.Column(db.JSON)
-    record_id = db.Column(db.Integer, db.ForeignKey("records.id"))
-    threshold = db.Column(db.Numeric(asdecimal=False))
-    min_score = db.Column(db.Numeric(asdecimal=False))
-
-    def to_dict(self):
-        """
-        Helper to return dictionary with the joined data included
-        :return:
-        """
-        d = {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
-
-        d["user"] = {
-            k: v for k, v in self.user.__dict__.items() if not k.startswith("_")
-        }
-        # del d['_sa_instance_state']
-        # del d['user']['_sa_instance_state']
-
-        return d
-
-    def __repr__(self):
-        return str(self.__dict__)
-
-
 class User(db.Model):
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
-    # name = db.Column(db.String)
-    # sis_user_id = db.Column(db.String)
-    # login_id = db.Column(db.String)
+    created_at = db.Column(db.DateTime)
+    login_id = db.Column(db.String)
+    name = db.Column(db.String)
+    short_name = db.Column(db.String)
+    sis_import_id = db.Column(db.Integer)
+    sis_user_id = db.Column(db.String)
+    sortable_name = db.Column(db.String)
 
     grades = db.relationship("Grade", backref="user", lazy="dynamic")
-    courses = db.relationship("Enrollment", backref="user")
+    enrollments = db.relationship("Enrollment", backref="user")
     outcome_results = db.relationship("OutcomeResult", backref="user")
 
     def __repr__(self):
@@ -139,64 +155,80 @@ class User(db.Model):
 class OutcomeResult(db.Model):
     __tablename__ = "outcome_results"
     id = db.Column(db.Integer, primary_key=True)
-    # score = db.Column(db.Float)
-    course_id = db.Column(db.Integer, db.ForeignKey("courses.id"), index=True)
+    alignment_id = db.Column(db.String)
+    alignment_name = db.Column(db.String)
+    course_id = db.Column(db.Integer, db.ForeignKey("courses.id"))
+    hidden = db.Column(db.Boolean)
+    hide_points = db.Column(db.Boolean)
+    mastery = db.Column(db.Boolean)
+    outcome_display_name = db.Column(db.String)
+    outcome_id = db.Column(db.Integer)
+    outcome_title = db.Column(db.String)
+    percent = db.Column(db.Float(53))
+    possible = db.Column(db.Float(53))
+    score = db.Column(db.Float(53))
+    submitted_or_assessed_at = db.Column(db.DateTime)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
-    # outcome_id = db.Column(db.Integer, db.ForeignKey("outcomes.id"))
-    # alignment_id = db.Column(db.String, db.ForeignKey("alignments.id"))
-    # submitted_or_assessed_at = db.Column(db.DateTime)
-    # last_updated = db.Column(db.DateTime)
-    # enrollment_term = db.Column(db.Integer)
 
 
-# class Outcome(db.Model):
-#     __tablename__ = "outcomes"
-#     id = db.Column(db.Integer, primary_key=True)
-#     title = db.Column(db.String, nullable=False)
-#     display_name = db.Column(db.String)
-#     calculation_int = db.Column(db.Integer)
-#     outcome_results = db.relationship("OutcomeResult", backref="outcome")
+class Outcome(db.Model):
+    __tablename__ = "outcomes"
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String, nullable=False)
+    display_name = db.Column(db.String)
+    calculation_int = db.Column(db.Integer)
+    # outcome_results = db.relationship("OutcomeResult", backref="outcome")
 
-#     def __repr__(self):
-#         return str(self.__dict__)
+    def __repr__(self):
+        return str(self.__dict__)
 
 
-# class Alignment(db.Model):
-#     __tablename__ = "alignments"
-#     id = db.Column(db.String, primary_key=True)
-#     name = db.Column(db.String)
+class Alignment(db.Model):
+    __tablename__ = "alignments"
+    id = db.Column(db.String, primary_key=True)
+    name = db.Column(db.String)
 
-#     outcome_results = db.relationship("OutcomeResult", backref="alignment")
+    # outcome_results = db.relationship("OutcomeResult", backref="alignment")
 
 
 class Enrollment(db.Model):
     __tablename__ = "enrollments"
     id = db.Column(db.Integer, primary_key=True)
-    course_id = db.Column(db.Integer, db.ForeignKey("courses.id"), primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), primary_key=True)
-    # course_section_id = db.Column(db.Integer)
+    course_id = db.Column(db.Integer, db.ForeignKey("courses.id"))
+    course_section_id = db.Column(db.Integer)
+    created_at = db.Column(db.DateTime)
+    end_at = db.Column(db.DateTime)
+    enrollment_state = db.Column(db.String)
+    html_url = db.Column(db.String)
+    last_activity_at = db.Column(db.DateTime)
+    role = db.Column(db.String)
+    role_id = db.Column(db.Integer)
+    root_account_id = db.Column(db.Integer)
+    sis_account_id = db.Column(db.String)
+    sis_course_id = db.Column(db.String)
+    sis_import_id = db.Column(db.Integer)
+    sis_section_id = db.Column(db.Integer)
+    sis_user_id = db.Column(db.String)
+    start_at = db.Column(db.DateTime)
+    total_activity_time = db.Column(db.Integer)
+    type = db.Column(db.String)
+    updated_at = db.Column(db.DateTime)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
 
 class Section(db.Model):
     __tablename__ = "sections"
     id = db.Column(db.Integer, primary_key=True)
-    # course_id = db.Column(db.Float)
-    # created_at = db.Column(db.DateTime)
-    # end_at = db.Column(db.Float)
-    # id = db.Column(db.Float)
-    # name = db.Column(db.Float)
-    # sis_course_id = db.Column(db.Float)
-    # sis_import_id = db.Column(db.Float)
-    # sis_section_id = db.Column(db.Float)
-    # start_at = db.Column(db.Float)
-
-# TODO: add to airflow migrations
-class GradeCalculation(db.Model):
-    __tablename__ = "grade_calculation"
+    course_id = db.Column(db.Integer)
+    created_at = db.Column(db.DateTime)
+    end_at = db.Column(db.DateTime)
     id = db.Column(db.Integer, primary_key=True)
-    grade_rank = db.Column(db.Integer, unique=True, nullable=False)
-    grade = db.Column(db.String, nullable=False)
-    threshold = db.Column(db.Float, nullable=False)
-    min_score = db.Column(db.Float, nullable=False)
+    name = db.Column(db.String)
+    restrict_enrollments_to_section_dates = db.Column(db.Boolean)
+    sis_course_id = db.Column(db.String)
+    sis_section_id = db.Column(db.Integer)
+    start_at = db.Column(db.DateTime)
+    sis_import_id = db.Column(db.Integer)
+
 
 
 class CanvasApiToken(db.Model):

@@ -17,12 +17,13 @@ class EnrollmentTerm(db.Model):
     # sis_term_id = db.Column(db.String)
     # sis_import_id = db.Column(db.Integer)
 
-    cut_off_date = db.Column(db.DateTime)
-    current_term = db.Column(db.Boolean, server_default="false", nullable=False)
-    sync_term = db.Column(db.Boolean, server_default="false", nullable=False)
+    # cut_off_date = db.Column(db.DateTime)
+    # current_term = db.Column(db.Boolean, server_default="false", nullable=False)
+    # sync_term = db.Column(db.Boolean, server_default="false", nullable=False)
 
     courses = db.relationship("Course", backref="term")
 
+# Consider removing
 class Record(db.Model):
     __tablename__ = "records"
     id = db.Column(db.Integer, primary_key=True)
@@ -38,9 +39,9 @@ class Record(db.Model):
 class Course(db.Model):
     __tablename__ = "courses"
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
+    # name = db.Column(db.String)
     enrollment_term_id = db.Column(db.Integer, db.ForeignKey("terms.id"))
-    sis_course_id = db.Column(db.String)
+    # sis_course_id = db.Column(db.String)
 
     grades = db.relationship("Grade", backref="course")
     courses = db.relationship("Enrollment", backref="course")
@@ -52,11 +53,16 @@ class Course(db.Model):
             """
             SELECT grade, cast( count(*) AS FLOAT)/cnt AS percent
             FROM 
-                (SELECT u.id, COALESCE(left(g.grade, 1), 'N/A') AS GRADE, count(*) OVER() AS cnt
-                FROM course_user_link cl
-                    LEFT JOIN users u ON u.id = cl.user_id
-                    LEFT JOIN grades g ON g.course_id = cl.course_id AND g.user_id = cl.user_id
-                WHERE cl.course_id = :course_id) temp
+                (
+                    SELECT 
+                        u.id, 
+                        COALESCE(left(g.grade, 1), 'N/A') AS GRADE, 
+                        count(*) OVER() AS cnt
+                    FROM enrollments e
+                        LEFT JOIN users u ON u.id = e.user_id
+                        LEFT JOIN grades g ON g.course_id = cl.course_id AND g.user_id = cl.user_id
+                    WHERE cl.course_id = :course_id
+                ) temp
             GROUP BY grade, cnt
             ORDER BY grade;
         """
@@ -70,11 +76,10 @@ class Course(db.Model):
             """
             SELECT title, id, max(cnt) max, min(cnt) min
             FROM
-                (SELECT o.id, o.title title, count(*) cnt
+                (SELECT ores.outcome_id, ores.outcome_title title, count(*) cnt
                 FROM outcome_results ores
-                    JOIN outcomes o ON o.id = ores.outcome_id
                 WHERE ores.course_id = :course_id
-                GROUP BY ores.user_id, o.id, o.title) temp
+                GROUP BY ores.user_id, ores.outcome_id, ores.outcome_title) temp
             GROUP BY id, title
             ORDER BY max DESC;
         """
@@ -118,10 +123,10 @@ class Grade(db.Model):
 
 class User(db.Model):
     __tablename__ = "users"
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    name = db.Column(db.String)
-    sis_user_id = db.Column(db.String)
-    login_id = db.Column(db.String)
+    id = db.Column(db.Integer, primary_key=True)
+    # name = db.Column(db.String)
+    # sis_user_id = db.Column(db.String)
+    # login_id = db.Column(db.String)
 
     grades = db.relationship("Grade", backref="user", lazy="dynamic")
     courses = db.relationship("Enrollment", backref="user")
@@ -134,41 +139,42 @@ class User(db.Model):
 class OutcomeResult(db.Model):
     __tablename__ = "outcome_results"
     id = db.Column(db.Integer, primary_key=True)
-    score = db.Column(db.Float)
+    # score = db.Column(db.Float)
     course_id = db.Column(db.Integer, db.ForeignKey("courses.id"), index=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
-    outcome_id = db.Column(db.Integer, db.ForeignKey("outcomes.id"))
-    alignment_id = db.Column(db.String, db.ForeignKey("alignments.id"))
-    submitted_or_assessed_at = db.Column(db.DateTime)
-    last_updated = db.Column(db.DateTime)
-    enrollment_term = db.Column(db.Integer)
+    # outcome_id = db.Column(db.Integer, db.ForeignKey("outcomes.id"))
+    # alignment_id = db.Column(db.String, db.ForeignKey("alignments.id"))
+    # submitted_or_assessed_at = db.Column(db.DateTime)
+    # last_updated = db.Column(db.DateTime)
+    # enrollment_term = db.Column(db.Integer)
 
 
-class Outcome(db.Model):
-    __tablename__ = "outcomes"
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String, nullable=False)
-    display_name = db.Column(db.String)
-    calculation_int = db.Column(db.Integer)
-    outcome_results = db.relationship("OutcomeResult", backref="outcome")
+# class Outcome(db.Model):
+#     __tablename__ = "outcomes"
+#     id = db.Column(db.Integer, primary_key=True)
+#     title = db.Column(db.String, nullable=False)
+#     display_name = db.Column(db.String)
+#     calculation_int = db.Column(db.Integer)
+#     outcome_results = db.relationship("OutcomeResult", backref="outcome")
 
-    def __repr__(self):
-        return str(self.__dict__)
+#     def __repr__(self):
+#         return str(self.__dict__)
 
 
-class Alignment(db.Model):
-    __tablename__ = "alignments"
-    id = db.Column(db.String, primary_key=True)
-    name = db.Column(db.String)
+# class Alignment(db.Model):
+#     __tablename__ = "alignments"
+#     id = db.Column(db.String, primary_key=True)
+#     name = db.Column(db.String)
 
-    outcome_results = db.relationship("OutcomeResult", backref="alignment")
+#     outcome_results = db.relationship("OutcomeResult", backref="alignment")
 
 
 class Enrollment(db.Model):
     __tablename__ = "enrollments"
+    id = db.Column(db.Integer, primary_key=True)
     course_id = db.Column(db.Integer, db.ForeignKey("courses.id"), primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), primary_key=True)
-    course_section_id = db.Column(db.Integer)
+    # course_section_id = db.Column(db.Integer)
 
 class Section(db.Model):
     __tablename__ = "sections"
@@ -183,7 +189,7 @@ class Section(db.Model):
     # sis_section_id = db.Column(db.Float)
     # start_at = db.Column(db.Float)
 
-
+# TODO: add to airflow migrations
 class GradeCalculation(db.Model):
     __tablename__ = "grade_calculation"
     id = db.Column(db.Integer, primary_key=True)
@@ -203,6 +209,7 @@ class TimeMixin(object):
     created_on = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_on = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+# TODO: remove. Replaceing functionality with Airflow
 class Task(db.Model):
     id = db.Column(db.String(36), primary_key=True)
     name = db.Column(db.String(128), index=True)

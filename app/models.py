@@ -48,6 +48,91 @@ class Grade(db.Model):
         return str(self.__dict__)
 
 
+class CanvasApiToken(db.Model):
+    __tablename__ = "canvas_api_tokens"
+    __table_args__ = {"schema": "public"}
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    token = db.Column(db.String, unique=True, nullable=False)
+
+
+# TODO: remove. Replaceing functionality with Airflow
+class Task(db.Model):
+    id = db.Column(db.String(36), primary_key=True)
+    name = db.Column(db.String(128), index=True)
+    description = db.Column(db.String(128))
+    complete = db.Column(db.Boolean, default=False)
+    status = db.Column(db.String())
+    started_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    completed_at = db.Column(db.DateTime)
+
+    def get_rq_job(self):
+        try:
+            rq_job = rq.job.Job.fetch(self.id, connection=current_app.redis)
+        except (redis.exceptions.RedisError, rq.exceptions.NoSuchJobError):
+            return None
+        return rq_job
+
+    def get_progress(self):
+        job = self.get_rq_job()
+        return job.meta.get('progress', 0) if job is not None else 100
+
+
+class TimeMixin(object):
+    #Keep track when records are created and updated.
+    created_on = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_on = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+# JSON Serialization
+class CourseSchema(ma.Schema):
+    class Meta:
+        fields = ("id", "name", "enrollment_term_id")
+
+
+class UserSchema(ma.Schema):
+    class Meta:
+        fields = ("id", "name", "sis_user_id", "login_id")
+
+
+class GradeSchema(ma.Schema):
+    class Meta:
+        fields = (
+            "id",
+            "course_id",
+            "grade",
+            "record_id",
+            "user",
+            "threshold",
+            "min_score",
+        )
+
+    user = ma.Nested(UserSchema)
+
+
+class OutcomeSchema(ma.ModelSchema):
+    class Meta:
+        fields = ("title", "id", "display_name")
+
+
+class AlignmentSchema(ma.ModelSchema):
+    class Meta:
+        fields = ("id", "name")
+
+
+class OutcomeResultSchema(ma.ModelSchema):
+    class Meta:
+        model = OutcomeResult
+
+    outcome = ma.Nested(OutcomeSchema)
+    alignment = ma.Nested(AlignmentSchema)
+
+
+class GradeCriteriaSchema(ma.ModelSchema):
+    class Meta:
+        # model = GradeCriteria
+        fields = ("grade_rank", "grade", "threshold", "min_score")
+
+
 class EnrollmentTerm(db.Model):
     __tablename__ = "terms"
     id = db.Column(db.Integer, primary_key=True)

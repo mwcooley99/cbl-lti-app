@@ -204,11 +204,12 @@ def insert_grades(current_term, engine):
     calculation_dictionaries = get_calculation_dictionaries(engine)
 
     # check if the cut off date has been set
-    if current_term["cut_off_date"]:
-        cut_off_date = current_term["cut_off_date"]
-    # if not, set it to the last day of the term
-    else:
-        cut_off_date = current_term["end_at"]
+    # if current_term["cut_off_date"]:
+    #     cut_off_date = current_term["cut_off_date"]
+    # # if not, set it to the last day of the term
+    # else:
+    #     cut_off_date = current_term["end_at"]
+    cut_off_date = current_term["end_at"]
 
     outcome_results = query_current_outcome_results(current_term["id"], engine)
 
@@ -216,7 +217,7 @@ def insert_grades(current_term, engine):
     if outcome_results.empty:
         print(f"Term {current_term['id']} has no outcome results.")
         return None
-
+    print(outcome_results.head())
     drop_eligible_results = outcome_results.loc[
         outcome_results["submitted_or_assessed_at"] < cut_off_date
     ]

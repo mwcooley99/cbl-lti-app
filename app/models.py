@@ -57,6 +57,8 @@ class CanvasApiToken(db.Model):
 
 # TODO: remove. Replaceing functionality with Airflow
 class Task(db.Model):
+    __tablename__ = "task"
+    __table_args__ = {"schema": "public"}
     id = db.Column(db.String(36), primary_key=True)
     name = db.Column(db.String(128), index=True)
     description = db.Column(db.String(128))
@@ -120,8 +122,8 @@ class AlignmentSchema(ma.ModelSchema):
 
 
 class OutcomeResultSchema(ma.ModelSchema):
-    class Meta:
-        model = OutcomeResult
+    # class Meta:
+    #     model = OutcomeResult
 
     outcome = ma.Nested(OutcomeSchema)
     alignment = ma.Nested(AlignmentSchema)

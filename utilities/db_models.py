@@ -51,7 +51,8 @@ GradeCalculation = Table(
     Column("grade_rank", Integer),
     Column("grade", String),
     Column("threshold", Float),
-    Column("min_score", Float)
+    Column("min_score", Float),
+    schema="public"
 )
 
 CanvasApiToken = Table(
@@ -67,6 +68,7 @@ Records = Table(
     Column("id", Integer, primary_key=True, autoincrement=True),
     Column("created_at", DateTime),
     Column("term_id", Integer),
+    schema="public"
 )
 
 Courses = Table(
@@ -89,6 +91,7 @@ Grades = Table(
     Column("record_id", Integer),
     Column("threshold", Float),
     Column("min_score", Float),
+    schema="public"
 )
 
 Users = Table(

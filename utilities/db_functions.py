@@ -181,19 +181,12 @@ def query_current_outcome_results(current_term, engine):
     sql = f"""
             SELECT o_res.id as "_id",
                     o_res.user_id AS "links.user", 
-                    o_res.score, o.id AS outcome_id, 
+                    o_res.score, o_res.outcome_id AS outcome_id, 
                     c.name AS course_name, 
-                    c.id AS course_id, 
-                    o.title, 
-                    o.calculation_int, 
-                    o.display_name, 
-                    a.name, 
-                    o_res.enrollment_term, 
-                    o_res.submitted_or_assessed_at
+                    c.id AS course_id,
+                    o_res.submitted_or_assessed_at 
             FROM outcome_results o_res
                 LEFT JOIN courses c ON c.id = o_res.course_id
-                LEFT JOIN outcomes o ON o.id = o_res.outcome_id
-                LEFT JOIN alignments a ON a.id = o_res.alignment_id
             WHERE o_res.score IS NOT NULL 
                  AND  c.enrollment_term_id = {current_term}
             ORDER BY o_res.submitted_or_assessed_at DESC;

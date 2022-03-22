@@ -88,6 +88,7 @@ def register_shellcontext(app):
             OutcomeSchema, OutcomeResultSchema, AlignmentSchema, Task
 
         return dict(db=db, Outcome=Outcome,
+                    GradeCalculation=GradeCalculation,
                     Course=Course, Record=Record, Grade=Grade, User=User,
                     UserSchema=UserSchema, GradeSchema=GradeSchema,
                     Alignment=Alignment, OutcomeResult=OutcomeResult,

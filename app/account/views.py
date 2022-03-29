@@ -62,6 +62,13 @@ def incompletes(lti=lti):
     enrollment_term = get_enrollment_term()
     stmt = db.text(
         """
+        select
+            users.id as user_id,
+            users.name,
+            users.login_id,
+            sum(case when grades.grade = "I" then 1 else 0 end) as count
+        from raw_canvas.users
+            join raw_canvas.grades on users.id =
         SELECT DISTINCT u.id AS user_id, u.name, u.login_id, cnt.count
         FROM course_user_link cl
             INNER JOIN users u ON cl.user_id = u.id

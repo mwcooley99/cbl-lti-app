@@ -66,21 +66,13 @@ def incompletes(lti=lti):
             users.id as user_id,
             users.name,
             users.login_id,
-            sum(case when grades.grade = "I" then 1 else 0 end) as count
+            sum(case when grades.grade = 'I' then 1 else 0 end) as count
         from raw_canvas.users
-            join raw_canvas.grades on users.id =
-        SELECT DISTINCT u.id AS user_id, u.name, u.login_id, cnt.count
-        FROM course_user_link cl
-            INNER JOIN users u ON cl.user_id = u.id
-            LEFT JOIN (
-                SELECT g.user_id, count(*)
-                FROM grades g
-                    INNER JOIN courses c ON c.id = g.course_id
-                WHERE g.grade = 'I'
-                    AND c.enrollment_term_id = :enrollment_term_id
-                GROUP BY g.user_id
-            ) cnt ON cnt.user_id = cl.user_id
-        ORDER BY name;
+            join raw_canvas.grades on users.id = grades.user_id
+            join raw_canvas.courses on grades.course_id = courses.id
+        where courses.enrollment_term_id = :enrollment_term_id
+        group by 1, 2, 3
+        order by name
         """
     ).bindparams(enrollment_term_id=enrollment_term.id)
     results = db.session.execute(stmt)

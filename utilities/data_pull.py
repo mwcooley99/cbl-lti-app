@@ -405,7 +405,7 @@ def update_course_students(current_term, engine):
                     continue
                 for student in section["students"]:
                     # Check if the enrollment is active:
-                    if student["enrollments"][0]["enrollment_state"] == "active" and student["enrollments"][0]["sis_import_id"]:
+                    if student["enrollments"][0]["enrollment_state"] == "active":
                         _temp = {
                             "user_id": student["id"],
                             "course_id": course_id,
